@@ -78,6 +78,22 @@ font-9 = "Hack Nerd Font Mono:style=Regular:size=22;4"
 font-10 = "Hack Nerd Font Mono:style=Bold:size=11;4"
 font-11 = "Hack Nerd Font Mono:style=Bold:size=12;4"
 
+# MODULES
+{{ if eq .chezmoi.hostname "arch-desktop" }}
+modules-left = bspwm bspwm_layout crypto_prices
+modules-right = recorder network wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard
+{{ else if eq .chezmoi.hostname "thinkpad-arch" }}
+modules-right = recorder network vpn wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard battery
+{{ end }}
+modules-center =  date 
+cursor-click = pointer
+cursor-scroll = ns-resize
+enable-ipc = true
+; wm-restack = generic
+wm-restack = bspwm
+; wm-restack = i3
+; override-redirect = true
+
 # ╔───────────────╗
 # │╔╗ ╔═╗╔═╗╦ ╦╔╦╗│
 # │╠╩╗╚═╗╠═╝║║║║║║│
@@ -107,26 +123,7 @@ ws-icon-5 = "6;%{F#B8860B}%{T10}%{F-}%{T-}"
 ws-icon-6 = "7;%{F#4682B4}%{T10}%{F-}%{T-}"
 ws-icon-7 = "8;%{F#FFA500}%{T10}󰃯%{F-}%{T-}"
 ws-icon-8 = "9;%{F#FF00FF}%{T10}󰧑%{F-}%{T-}"
-{{ if eq .chezmoi.hostname "arch-desktop" }}
-modules-right = recorder network wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard
-{{ else if eq .chezmoi.hostname "thinkpad-arch" }}
-modules-right = recorder network vpn wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard battery
-{{ end }}
-modules-left = bspwm bspwm_layout crypto_prices
-modules-center =  date 
-cursor-click = pointer
-cursor-scroll = ns-resize
-enable-ipc = true
-; wm-restack = generic
-wm-restack = bspwm
-; wm-restack = i3
-; override-redirect = true
 
-# ╔─────────────────────╗
-# │┌┬┐┌─┐┌┬┐┬ ┬┬  ┌─┐┌─┐│
-# │││││ │ │││ ││  ├┤ └─┐│
-# │┴ ┴└─┘─┴┘└─┘┴─┘└─┘└─┘│
-# ╚─────────────────────╝
 
 # ╔─────────────────────╗
 # │┌─┐┬ ┬┌─┐┌┬┐┬─┐┌─┐┬ ┬│
