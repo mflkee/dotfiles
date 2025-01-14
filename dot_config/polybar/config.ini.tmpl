@@ -1,415 +1,3 @@
-{{ if eq .chezmoi.hostname "arch-desktop" }}
-[colors]
-; Основные цвета
-background = #080808
-foreground = #c6c6c6
-; Цвета для специального использования
-primary = #ff9100
-secondary = #e3c78a
-date = #ff9100
-disabled = #ff5454
-background-alt = #323437
-foreground-alt = #ae81ff
-alert = #ff5454
-
-[bar/mybar]
-width = 100%
-height = 18pt
-radius = 1
-dpi = 96
-background = ${colors.background}
-foreground = ${colors.foreground}
-line-size = 2pt
-border-size = 0pt
-border-color = ${colors.foreground}
-padding-left = 1
-padding-right = 1
-module-margin = 1
-separator =
-separator-foreground = ${colors.disabled}
-
-;[FONTS]
-;text
-font-0 = "Hack Nerd Font Mono:style=Regular:size=10;3"
-
-;lang
-font-1 = "Hack Nerd Font Mono:style=Regular:size=14;4"
-
-;data
-font-2 = "Hack Nerd Font Mono:style=Regular:size=16;4"
-
-;ram
-font-3 = "Hack Nerd Font Mono:style=Regular:size=24;6"
-
-;temperature
-font-4 = "Hack Nerd Font Mono:style=Regular:size=16;4"
-
-;wifi
-font-5 = "Hack Nerd Font Mono:style=Regular:size=23;6"
-
-;cpu
-font-6 = "Hack Nerd Font Mono:style=Regular:size=20;5"
-
-;rec
-font-7 = "Hack Nerd Font Mono:style=Regular:size=17;4"
-
-;battery
-font-8 = "Hack Nerd Font Mono:style=Regular:size=32;8"
-
-;icons
-font-9 = "Hack Nerd Font Mono:style=Regular:size=19;4"
-
-font-10 = "Hack Nerd Font Mono:style=Reqular:size=11;4"
-
-modules-left = bspwm bspwm_layout crypto_prices
-modules-right = recorder network wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard battery
-modules-center =  date 
-cursor-click = pointer
-cursor-scroll = ns-resize
-enable-ipc = true
-; wm-restack = generic
-wm-restack = bspwm
-; wm-restack = i3
-; override-redirect = true
-
-[module/systray]
-type = internal/tray
-format-margin = 1pt
-tray-spacing = 1pt
-
-[module/bspwm]
-type = internal/bspwm
-
-label-focused = %icon%
-label-focused-background = ${colors.background-alt}
-label-focused-underline= ${colors.primary}
-label-focused-padding = 1
-
-label-occupied = %icon%
-label-occupied-padding = 1
-
-label-urgent = %icon%!
-label-urgent-background = ${colors.alert}
-label-urgent-padding = 1
-
-label-empty = %icon%
-label-empty-foreground = ${colors.foreground-alt}
-label-empty-padding = 1
-
-pin-workspaces = true
-
-ws-icon-0 = "1;%{F#FF8C00}%{T10}%{F-}%{T-}"
-ws-icon-1 = "2;%{F#C0C0C0}%{T10}%{F-}%{T-}"
-ws-icon-2 = "3;%{F#228B22}%{T10}%{F-}%{T-}"
-ws-icon-3 = "4;%{F#DC143C}%{T10}%{F-}%{T-}"
-ws-icon-4 = "5;%{F#FFE4C4}%{T10}%{F-}%{T-}"
-ws-icon-5 = "6;%{F#B8860B}%{T10}%{F-}%{T-}"
-ws-icon-6 = "7;%{F#4682B4}%{T10}%{F-}%{T-}"
-ws-icon-7 = "8;%{F#FFA500}%{T10}󰃯%{F-}%{T-}"
-ws-icon-8 = "9;%{F#FF00FF}%{T10}󰧑%{F-}%{T-}"
-
-; Separator  in between workspaces
-; label-separator = |
-# [module/xworkspaces]
-# type = internal/xworkspaces
-# label-active = %name%
-# label-active-background = ${colors.background-alt}
-# label-active-underline= ${colors.primary}
-# underline-size = 0
-# label-active-padding = 1
-# label-occupied = %name%
-# label-occupied-padding = 1
-# label-urgent = %name%
-# label-urgent-background = ${colors.alert}
-# label-urgent-padding = 1
-# label-empty = %name%
-# label-empty-foreground = ${colors.disabled}
-# label-empty-padding = 1
-
-
-[module/xwindow]
-type = internal/xwindow
-label = %title:0:60:...%
-
-[module/filesystem]
-type = internal/fs
-interval = 25
-mount-0 = /
-label-mounted = %{T3}󰆼%{T-}%{F-} %percentage_used%%
-label-mounted-foreground = ${colors.primary}
-
-[module/pulseaudio]
-type = internal/pulseaudio
-
-; Sink to be used, if it exists (find using `pacmd list-sinks`, name field)
-; If not, uses default sink
-; sink = alsa_output.pci-0000_12_00.3.analog-stereo
-
-; Use PA_VOLUME_UI_MAX (~153%) if true, or PA_VOLUME_NORM (100%) if false
-; Default: true
-use-ui-max = true
-
-; Interval for volume increase/decrease (in percent points)
-; Default: 5
-interval = 5
-
-; Reverses the increment/decrement on scroll event. Set this to true if you are
-; using natural scrolling option on your touchpad.
-; New in version 3.7.0
-; Default: false
-reverse-scroll = false
-
-; Available tags:
-;   <label-volume> (default)
-;   <ramp-volume>
-;   <bar-volume>
-format-volume = <ramp-volume> <label-volume>
-
-; Available tags:
-;   <label-muted> (default)
-;   <ramp-volume>
-;   <bar-volume>
-;format-muted = <label-muted>
-
-; Available tokens:
-;   %percentage% (default)
-;   %decibels%
-;label-volume = %percentage%%
-
-; Available tokens:
-;   %percentage% (default)
-;   %decibels%
-label-muted = %{T4}%{T-}
-label-muted-foreground = #ff5454
-
-; Only applies if <ramp-volume> is used
-ramp-volume-0 = %{F#ff5454}%{T4}%{T-}
-ramp-volume-1 = %{F#e3c78a}%{T4}%{T-}
-ramp-volume-2 = %{F#8cc85f}%{T4}%{T-}
-
-
-
-; Right and Middle click
-click-right = pavucontrol
-; click-middle = 
-[module/xkeyboard]
-type = custom/script
-exec = /home/mflkee/.config/polybar/scripts/uppercase.sh
-interval = 1
-
-[module/crypto_prices]
-type = custom/script
-exec = ~/.config/polybar/scripts/crypto_prices.sh
-interval = 100
-label = %output%
-
-[module/memory]
-type = internal/memory
-interval = 2
-format-prefix = "%{T4}%{T1} "
-format-prefix-foreground = ${colors.primary}
-label = %percentage_used:2%%
-
-[module/cpu]
-type = internal/cpu
-interval = 2
-format-prefix = "%{T7}%{T1} "
-format-prefix-foreground = ${colors.primary}
-
-[module/sensor]
-type = custom/script
-exec = ~/.config/polybar/scripts/cpu_temp.sh
-format-prefix = "%{T5}%{T1} "
-format-prefix-foreground = ${colors.primary}
-interval = 5
-click-left = kitty -e /home/mflkee/logs/scripts/stress-test-ram.sh
-
-[module/bluetooth]
-type = custom/script
-exec = /home/mflkee/.config/polybar/scripts/bluetooth_toggle.sh
-click-left = /home/mflkee/.config/polybar/scripts/bluetooth_switch.sh
-click-right = kitty -e bluetui
-
-[module/wifi]
-type = custom/script
-exec = /home/mflkee/.config/polybar/scripts/wifi_toggle.sh
-click-left = /home/mflkee/.config/polybar/scripts/wifi_switch.sh
-click-right = kitty -e nmtui
-
-[module/network]
-type = custom/script
-exec = ~/.config/polybar/scripts/network_status.sh
-interval = 3
-click-right = kitty -e nmtui & disown 
-click-left = kitty -e ~/.config/polybar/scripts/speedtest.sh
-
-[module/date]
-type = internal/date
-interval = 1
-date = %Y-%m-%d %H:%M:%S
-label = %{T11}%date%
-label-foreground = ${colors.date}
-
-; Общие иконки для всех рабочих столов
-label-focused = %icon%
-label-occupied = %icon%
-label-empty = %icon%
-label-urgent = %icon%
-
-; Иконка и цвет для 10-го рабочего стола
-label-focused-monitor-1-desktop-10 = ""
-label-occupied-monitor-1-desktop-10 = ""
-label-empty-monitor-1-desktop-10 = ""
-label-urgent-monitor-1-desktop-10 = ""
-
-label-focused-foreground-monitor-1-desktop-10 = #ff0000
-label-occupied-foreground-monitor-1-desktop-10 = #00ff00
-label-empty-foreground-monitor-1-desktop-10 = #0000ff
-
-[module/bspwm_layout]
-type = custom/script
-exec = ~/.config/polybar/scripts/bspwm_layout.sh
-interval = 1
-
-[settings]
-screenchange-reload = true
-pseudo-transparency = true
-
-[module/recorder]
-type = custom/script
-exec = ~/.config/polybar/scripts/record.sh
-interval = 1
-label = %output%
-click-left = ~/.config/sxhkd/scripts/record.sh
-
-[module/battery]
-type = internal/battery
-
-; This is useful in case the battery never reports 100% charge
-; Default: 100
-full-at = 96
-
-; format-low once this charge percentage is reached
-; Default: 10
-; New in version 3.6.0
-low-at = 5
-
-; Use the following command to list batteries and adapters:
-; $ ls -1 /sys/class/power_supply/
-battery = BAT0
-adapter = ADP1
-
-; If an inotify event haven't been reported in this many
-; seconds, manually poll for new values.
-;
-; Needed as a fallback for systems that don't report events
-; on sysfs/procfs.
-;
-; Disable polling by setting the interval to 0.
-;
-; Default: 5
-poll-interval = 5
-; see "man date" for details on how to format the time string
-; NOTE: if you want to use syntax tags here you need to use %%{...}
-; Default: %H:%M:%S
-time-format = %H:%M
-
-; Available tags:
-;   <label-charging> (default)
-;   <bar-capacity>
-;   <ramp-capacity>
-;   <animation-charging>
-format-charging = <animation-charging> <label-charging>
-
-; Available tags:
-;   <label-discharging> (default)
-;   <bar-capacity>
-;   <ramp-capacity>
-;   <animation-discharging>
-format-discharging = <ramp-capacity> <label-discharging>
-
-; Available tags:
-;   <label-full> (default)
-;   <bar-capacity>
-;   <ramp-capacity>
-;format-full = <ramp-capacity> <label-full>
-
-; Format used when battery level drops to low-at
-; If not defined, format-discharging is used instead.
-; Available tags:
-;   <label-low>
-;   <animation-low>
-;   <bar-capacity>
-;   <ramp-capacity>
-; New in version 3.6.0
-;format-low = <label-low> <animation-low>
-
-; Available tokens:
-;   %percentage% (default) - is set to 100 if full-at is reached
-;   %percentage_raw%
-;   %time%
-;   %consumption% (shows current charge rate in watts)
-label-charging = %percentage%%
-
-; Available tokens:
-;   %percentage% (default) - is set to 100 if full-at is reached
-;   %percentage_raw%
-;   %time%
-;   %consumption% (shows current discharge rate in watts)
-label-discharging = %percentage%%
-
-; Available tokens:
-;   %percentage% (default) - is set to 100 if full-at is reached
-;   %percentage_raw%
-label-full = %{F#8cc85f}%{T9}%{T-} %percentage%%
-
-; Available tokens:
-;   %percentage% (default) - is set to 100 if full-at is reached
-;   %percentage_raw%
-;   %time%
-;   %consumption% (shows current discharge rate in watts)
-; New in version 3.6.0
-label-low = BATTERY LOW
-
-; Only applies if <ramp-capacity> is used
-ramp-capacity-0 = %{F#ff5454}%{T9}%{T-}
-ramp-capacity-1 = %{F#ff5454}%{T9}%{T-}
-ramp-capacity-2 = %{F#e3c78a}%{T9}%{T-}
-ramp-capacity-3 = %{F#8cc85f}%{T9}%{T-}
-ramp-capacity-4 = %{F#8cc85f}%{T9}%{T-}
-
-; Only applies if <bar-capacity> is used
-bar-capacity-width = 10
-
-; Only applies if <animation-charging> is used
-animation-charging-0 = %{F#ff5454}%{T9}%{T-}
-animation-charging-1 = %{F#ff5454}%{T9}%{T-}
-animation-charging-2 = %{F#e3c78a}%{T9}%{T-}
-animation-charging-3 = %{F#8cc85f}%{T9}%{T-}
-animation-charging-4 = %{F#8cc85f}%{T9}%{T-}
-; Framerate in milliseconds
-animation-charging-framerate = 750
-
-; Only applies if <animation-discharging> is used
-animation-discharging-0 = 
-animation-discharging-1 = 
-animation-discharging-2 = 
-animation-discharging-3 = 
-animation-discharging-4 = 
-; Framerate in milliseconds
-animation-discharging-framerate = 500
-
-; Only applies if <animation-low> is used
-; New in version 3.6.0
-animation-low-0 = !
-animation-low-1 = 
-animation-low-framerate = 200
-; vim:ft=dosini
-; # color1 = #ff5454
-# color2 = #8cc85f
-# color3 = #e3c78a
-{{ else if eq .chezmoi.hostname "thinkpad-arch" }}
-
 #  .--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--..--. 
 # / .. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \
 # \ \/\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ \/ /
@@ -430,7 +18,6 @@ animation-low-framerate = 200
 # / /\ \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \.. \/\ \
 # \ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `'\ `' /
 #  `--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--'`--' 
-
 # ╔──────────────────╗
 # │┌─┐┌─┐┬  ┌─┐┬─┐┌─┐│
 # ││  │ ││  │ │├┬┘└─┐│
@@ -469,6 +56,9 @@ padding-right = 1
 module-margin = 1
 separator =
 separator-foreground = ${colors.disabled}
+{{ if eq .chezmoi.hostname "arch-desktop" }}
+monitor = DP-0
+{{ end }}
 
 # ╔────────────╗
 # │┌─┐┌─┐┌┐┌┌┬┐│
@@ -487,44 +77,6 @@ font-8 = "Hack Nerd Font Mono:style=Regular:size=32;8"
 font-9 = "Hack Nerd Font Mono:style=Regular:size=22;4"
 font-10 = "Hack Nerd Font Mono:style=Bold:size=11;4"
 font-11 = "Hack Nerd Font Mono:style=Bold:size=12;4"
-
-# ╔─────────────────────╗
-# │┌┬┐┌─┐┌┬┐┬ ┬┬  ┌─┐┌─┐│
-# │││││ │ │││ ││  ├┤ └─┐│
-# │┴ ┴└─┘─┴┘└─┘┴─┘└─┘└─┘│
-# ╚─────────────────────╝
-
-modules-left = bspwm bspwm_layout crypto_prices
-modules-right = recorder network vpn wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard battery
-modules-center =  date 
-cursor-click = pointer
-cursor-scroll = ns-resize
-enable-ipc = true
-; wm-restack = generic
-wm-restack = bspwm
-; wm-restack = i3
-; override-redirect = true
-
-# ╔──────────╗
-# │╦  ╦╔═╗╔╗╔│
-# │╚╗╔╝╠═╝║║║│
-# │ ╚╝ ╩  ╝╚╝│
-# ╚──────────╝
-[module/vpn]
-type = custom/script
-exec = /home/mflkee/.config/polybar/scripts/vpn-status.sh
-click-left = /home/mflkee/.config/polybar/scripts/vpn-toggle.sh
-click-right = /home/mflkee/.config/polybar/scripts/openvpn_menu.sh
-
-# ╔─────────────────────╗
-# │┌─┐┬ ┬┌─┐┌┬┐┬─┐┌─┐┬ ┬│
-# │└─┐└┬┘└─┐ │ ├┬┘├─┤└┬┘│
-# │└─┘ ┴ └─┘ ┴ ┴└─┴ ┴ ┴ │
-# ╚─────────────────────╝
-[module/systray]
-type = internal/tray
-format-margin = 1pt
-tray-spacing = 1pt
 
 # ╔───────────────╗
 # │╔╗ ╔═╗╔═╗╦ ╦╔╦╗│
@@ -555,6 +107,36 @@ ws-icon-5 = "6;%{F#B8860B}%{T10}%{F-}%{T-}"
 ws-icon-6 = "7;%{F#4682B4}%{T10}%{F-}%{T-}"
 ws-icon-7 = "8;%{F#FFA500}%{T10}󰃯%{F-}%{T-}"
 ws-icon-8 = "9;%{F#FF00FF}%{T10}󰧑%{F-}%{T-}"
+{{ if eq .chezmoi.hostname "arch-desktop" }}
+modules-right = recorder network wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard
+{{ else if eq .chezmoi.hostname "thinkpad-arch" }}
+modules-right = recorder network vpn wifi bluetooth filesystem  memory cpu sensor pulseaudio xkeyboard battery
+{{ end }}
+modules-left = bspwm bspwm_layout crypto_prices
+modules-center =  date 
+cursor-click = pointer
+cursor-scroll = ns-resize
+enable-ipc = true
+; wm-restack = generic
+wm-restack = bspwm
+; wm-restack = i3
+; override-redirect = true
+
+# ╔─────────────────────╗
+# │┌┬┐┌─┐┌┬┐┬ ┬┬  ┌─┐┌─┐│
+# │││││ │ │││ ││  ├┤ └─┐│
+# │┴ ┴└─┘─┴┘└─┘┴─┘└─┘└─┘│
+# ╚─────────────────────╝
+
+# ╔─────────────────────╗
+# │┌─┐┬ ┬┌─┐┌┬┐┬─┐┌─┐┬ ┬│
+# │└─┐└┬┘└─┐ │ ├┬┘├─┤└┬┘│
+# │└─┘ ┴ └─┘ ┴ ┴└─┴ ┴ ┴ │
+# ╚─────────────────────╝
+[module/systray]
+type = internal/tray
+format-margin = 1pt
+tray-spacing = 1pt
 
 # ╔────────────────────╗
 # │─┐ ┬┬ ┬┬┌┐┌┌┬┐┌─┐┬ ┬│
@@ -625,16 +207,6 @@ ramp-volume-2 = %{F#8cc85f}%{T4}%{T-}
 click-right = pavucontrol
 ; click-middle = 
 
-# ╔────────────────────────────╗
-# │─┐ ┬┬┌─┌─┐┬ ┬┌┐ ┌─┐┌─┐┬─┐┌┬┐│
-# │┌┴┬┘├┴┐├┤ └┬┘├┴┐│ │├─┤├┬┘ │││
-# │┴ └─┴ ┴└─┘ ┴ └─┘└─┘┴ ┴┴└──┴┘│
-# ╚────────────────────────────╝
-[module/xkeyboard]
-type = custom/script
-exec = /home/mflkee/.config/polybar/scripts/uppercase.sh
-interval = 1
-
 # ╔──────────────────────────────────────╗
 # │┌─┐┬─┐┬ ┬┌─┐┌┬┐┌─┐    ┌─┐┬─┐┬┌─┐┌─┐┌─┐│
 # ││  ├┬┘└┬┘├─┘ │ │ │    ├─┘├┬┘││  ├┤ └─┐│
@@ -680,7 +252,7 @@ exec = ~/.config/polybar/scripts/cpu_temp.sh
 format-prefix = "%{T5}%{T1} "
 format-prefix-foreground = ${colors.primary}
 interval = 5
-click-left = alacritty -e /home/mflkee/logs/scripts/stress-test-ram.sh
+click-left = kitty -e /home/mflkee/logs/scripts/stress-test-ram.sh
 
 # ╔───────────────────────────╗
 # │┌┐ ┬  ┬ ┬┌─┐┌┬┐┌─┐┌─┐┌┬┐┬ ┬│
@@ -691,7 +263,7 @@ click-left = alacritty -e /home/mflkee/logs/scripts/stress-test-ram.sh
 type = custom/script
 exec = /home/mflkee/.config/polybar/scripts/bluetooth_toggle.sh
 click-left = /home/mflkee/.config/polybar/scripts/bluetooth_switch.sh
-click-right = alacritty -e bluetui
+click-right = kitty -e bluetui
 
 # ╔────────╗
 # │╦ ╦┬╔═╗┬│
@@ -702,7 +274,7 @@ click-right = alacritty -e bluetui
 type = custom/script
 exec = /home/mflkee/.config/polybar/scripts/wifi_toggle.sh
 click-left = /home/mflkee/.config/polybar/scripts/wifi_switch.sh
-click-right = alacritty -e nmtui
+click-right = kitty -e nmtui
 
 # ╔─────────────────────╗
 # │┌┐┌┌─┐┌┬┐┬ ┬┌─┐┬─┐┬┌─│
@@ -713,8 +285,8 @@ click-right = alacritty -e nmtui
 type = custom/script
 exec = ~/.config/polybar/scripts/network_status.sh
 interval = 3
-click-right = alacritty -e nmtui & disown 
-click-left = alacritty -e ~/.config/polybar/scripts/speedtest.sh
+click-right = kitty -e nmtui & disown 
+click-left = kitty -e ~/.config/polybar/scripts/speedtest.sh
 
 # ╔────────────╗
 # │┌┬┐┌─┐┌┬┐┌─┐│
@@ -727,19 +299,6 @@ interval = 1
 date = %Y-%m-%d %H:%M:%S
 label = %{T11}%date%
 label-foreground = ${colors.date}
-; Общие иконки для всех рабочих столов
-label-focused = %icon%
-label-occupied = %icon%
-label-empty = %icon%
-label-urgent = %icon%
-; Иконка и цвет для 10-го рабочего стола
-label-focused-monitor-1-desktop-10 = ""
-label-occupied-monitor-1-desktop-10 = ""
-label-empty-monitor-1-desktop-10 = ""
-label-urgent-monitor-1-desktop-10 = ""
-label-focused-foreground-monitor-1-desktop-10 = #ff0000
-label-occupied-foreground-monitor-1-desktop-10 = #00ff00
-label-empty-foreground-monitor-1-desktop-10 = #0000ff
 
 # /========================================\
 # ||┌┐ ┌─┐┌─┐┬ ┬┌┬┐    ┬  ┌─┐┬ ┬┌─┐┬ ┬┌┬┐ ||
@@ -771,6 +330,28 @@ exec = ~/.config/polybar/scripts/record.sh
 interval = 1
 label = %output%
 click-left = ~/.config/sxhkd/scripts/record.sh
+
+# ╔────────────────────────────╗
+# │─┐ ┬┬┌─┌─┐┬ ┬┌┐ ┌─┐┌─┐┬─┐┌┬┐│
+# │┌┴┬┘├┴┐├┤ └┬┘├┴┐│ │├─┤├┬┘ │││
+# │┴ └─┴ ┴└─┘ ┴ └─┘└─┘┴ ┴┴└──┴┘│
+# ╚────────────────────────────╝
+[module/xkeyboard]
+type = custom/script
+exec = /home/mflkee/.config/polybar/scripts/uppercase.sh
+interval = 1
+
+{{ if eq .chezmoi.hostname "thinkpad-arch" }}
+# ╔──────────╗
+# │╦  ╦╔═╗╔╗╔│
+# │╚╗╔╝╠═╝║║║│
+# │ ╚╝ ╩  ╝╚╝│
+# ╚──────────╝
+[module/vpn]
+type = custom/script
+exec = /home/mflkee/.config/polybar/scripts/vpn-status.sh
+click-left = /home/mflkee/.config/polybar/scripts/vpn-toggle.sh
+click-right = /home/mflkee/.config/polybar/scripts/openvpn_menu.sh
 
 # /========================\
 # ||┌┐ ┌─┐┌┬┐┌┬┐┌─┐┬─┐┬ ┬ ||
