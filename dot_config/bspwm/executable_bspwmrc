@@ -3,8 +3,8 @@
 pgrep -x sxhkd > /dev/null || sxhkd &
 xrandr --output DP-0 --mode 1920x1080 --rate 143.85
 xsetroot -cursor_name left_ptr
-feh --bg-fill --randomize ~/dotfiles/wallpaper/*
-redshift &
+feh --bg-fill --randomize ~/.config/wallpaper/*
+# redshift &
 xscreensaver -no-splash &
 udiskie &
 
