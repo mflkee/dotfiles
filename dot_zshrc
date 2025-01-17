@@ -18,7 +18,7 @@ export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
 
 export EDITOR=nvim
 
-# Aliases
+# Aliases system
 alias ds="cd ~/study/DS"
 alias vim="nvim"
 alias xc="xclip -selection clipboard"
@@ -36,22 +36,25 @@ alias szsh="source ~/.zshrc"
 alias sysoff="sudo shutdown now"
 alias lg="lazygit"
 alias rr="ranger"
-alias spr="sudo python3 -m pip uninstall $1 --break-system-packages"
-alias spi="sudo python3 -m pip install $1 --break-system-packages"
 alias cfgzsh="nvim ~/.zshrc"
 alias cfg="cd ~/.config"
 alias cfgvim="cd ~/.config/nvim"
 alias wh="which"
-alias dfs="~/dotfiles/scripts/git/dotfiles_sync.sh"
+
+# chezmoi
 alias cc="chezmoi cd"
 alias ca="chezmoi apply"
+alias cadd="chezmoi add"
 
+# python
 alias vd="deactivate"
 alias vds="source ~/study/DS/venv/bin/activate"
 alias vs="source venv/bin/activate"
+alias spr="sudo python3 -m pip uninstall $1 --break-system-packages"
+alias spi="sudo python3 -m pip install $1 --break-system-packages"
 
 # cleaner
-alias clean="./dotfiles/scripts/archclean.sh"
+alias clean="~/.config/scripts/archclean.sh"
 
 # Lock screen settings
 export XSECURELOCK_AUTH=auth_x11

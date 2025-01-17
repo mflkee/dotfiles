@@ -1,0 +1,41 @@
+# Configuration for Alacritty, the GPU enhanced terminal emulator.
+
+# Color configuration for Alacritty
+[colors]
+# Default colors
+primary.background = "0x282726"
+primary.foreground = "0xFFFCF0"
+# Dim colors
+primary.dim_foreground = "0xFFFCF0"
+primary.bright_foreground = "0xFFFCF0"
+# Cursor colors
+cursor.text = "0xFFFCF0"
+cursor.cursor = "0xFFFCF0"
+# Normal colors
+normal.black = "0x100F0F"
+normal.red = "0xAF3029"
+normal.green = "0x66800B"
+normal.yellow = "0xAD8301"
+normal.blue = "0x205EA6"
+normal.magenta = "0xA02F6F"
+normal.cyan = "0x24837B"
+normal.white = "0xFFFCF0"
+# Bright colors
+bright.black = "0x100F0F"
+bright.red = "0xD14D41"
+bright.green = "0x879A39"
+bright.yellow = "0xD0A215"
+bright.blue = "0x4385BE"
+bright.magenta = "0xCE5D97"
+bright.cyan = "0x3AA99F"
+bright.white = "0xFFFCF0"
+# Dim colors
+dim.black = "0x100F0F"
+dim.red = "0xAF3029"
+dim.green = "0x66800B"
+dim.yellow = "0xAD8301"
+dim.blue = "0x205EA6"
+dim.magenta = "0xA02F6F"
+dim.cyan = "0x24837B"
+dim.white = "0xFFFCF0"
+
