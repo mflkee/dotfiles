@@ -43,15 +43,15 @@ super + shift + x
 
 # calcurse
 super + shift + c 
-	alacritty -e calcurse
+	kitty -e calcurse
 
 # bluetui
 super + shift + b 
-	alacritty -e bluetui
+	kitty -e bluetui
 
 # nmtui
 super + shift + n
-	alacritty -e nmtui
+	kitty -e nmtui
 
 # obsidian
 super + shift + o
