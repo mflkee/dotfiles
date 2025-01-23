@@ -8,6 +8,7 @@ feh --bg-fill --randomize ~/.config/wallpaper/*
 xscreensaver -no-splash &
 udiskie &
 picom --config ~/.config/picom/picom.conf &
+dunst &
 
 $HOME/.config/polybar/launch.sh
 (sleep 5 && ~/dotfiles/bspwm/scripts/download_manager.sh) &
@@ -23,7 +24,6 @@ bspc config gapless_monocle      true
 
 bspc rule -a obsidian desktop='^9'
 bspc rule -a firefox desktop='^1'
-
 
 bspc config normal_border_color "#282A36"
 bspc config active_border_color "#FF79C6"
