@@ -3,6 +3,9 @@
 #
 #Проверка на desktop
 #
+# ~/.config/sxhkd/sxhkdrc
+super + p
+    ~/.config/polybar/scripts/polybar-toggle.sh
 # terminal emulator
 super + Return
 	kitty
