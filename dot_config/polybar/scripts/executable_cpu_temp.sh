@@ -1,19 +1,25 @@
 #!/bin/bash
 
-# Извлекаем температуру из строки "Tctl" или "AMD TSI"
-temp=$(sensors | grep -E 'Tctl|edge|Tccd1' | head -n 1 | awk '{print $2}' | sed 's/[^0-9.]//g')
+# Извлекаем температуру из строки "Core" или "CPU"
+temp=$(sensors | grep -E 'Core|CPU' | head -n 1 | awk '{print $3}' | sed 's/[^0-9.]//g')
 temp=${temp%.*}  # Удаляем десятичную часть
 
-# Определение цветов
-COLOR1="#8A9A7B" # до 60
-COLOR2="#E6C384" # после 60 и до 80
-COLOR3="#E46876" # после 80 и выше 
+# Определение цветов для текста и иконки
+COLOR1="#50FA7B" # до 40 (зеленый)
+COLOR2="#FFB86C" # от 40 до 80 (оранжевый)
+COLOR3="#FF5555" # выше 80 (красный)
 
-# Проверяем и выводим температуру с соответствующим цветом
+# Выбор иконки в зависимости от температуры
 if [[ "$temp" -ge 80 ]]; then
-  echo "%{F$COLOR3}$temp°C%{F-}"
+  ICON="%{T14}{T-}"  # Иконка для высокой температуры
+  COLOR=$COLOR3
 elif [[ "$temp" -ge 60 ]]; then
-  echo "%{F$COLOR2}$temp°C%{F-}"
+  ICON="%{T14}%{T-}"  # Иконка для средней температуры
+  COLOR=$COLOR2
 else
-  echo "%{F$COLOR1}$temp°C%{F-}"
+  ICON="%{T14}%{T-}"  # Иконка для низкой температуры
+  COLOR=$COLOR1
 fi
+
+# Вывод иконки и температуры с соответствующим цветом
+echo "%{F$COLOR}$ICON%{F-} %{F$COLOR}$temp°C%{F-}"
