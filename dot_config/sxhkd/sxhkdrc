@@ -63,7 +63,7 @@ super + shift + t
 
 # program launcher
 super + space
-	dmenu_run -b -nb '#1a1b26' -nf '#e0af68' -sb '#c0caf5' -sf '#15161e'
+	rofi -show drun
 
 # make sxhkd reload its configuration files:
 super + Escape
@@ -191,7 +191,7 @@ super + {Left,Down,Up,Right}
 
 # screanshot
 super + shift + s
-	~/dotfiles/scripts/screenshot.sh
+	~/.config/scripts/screenshot.sh
 
 # record
 super + shift + r
