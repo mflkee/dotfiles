@@ -1,4 +1,3 @@
-#
 # wm independent hotkeys
 #
 #Проверка на desktop
@@ -113,7 +112,7 @@ super + ctrl + {m,x,y,z}
 
 #
 # focus/swap
-#
+
 # Перемещение окна на рабочий стол слева и переход на этот рабочий стол
 super + shift + bracketleft
     bspc node -d prev && bspc desktop -f prev
