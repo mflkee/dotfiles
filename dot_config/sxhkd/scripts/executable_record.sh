@@ -1,11 +1,22 @@
 #!/bin/bash
 
+# Проверка зависимостей
+for cmd in ffmpeg rofi slop notify-send pactl xdpyinfo; do
+  if ! command -v $cmd &> /dev/null; then
+    echo "Ошибка: $cmd не установлен."
+    exit 1
+  fi
+done
+
 # Путь для сохранения видеофайла
 OUTPUT_DIR="/home/$USER/videos"
 mkdir -p "$OUTPUT_DIR"
 
 # Файл-маркер для отслеживания состояния записи
 LOCK_FILE="/tmp/screen_record.lock"
+
+# Обработчик сигналов для удаления временных файлов
+trap "rm -f $LOCK_FILE" EXIT
 
 # Если запись уже запущена, завершаем её
 if [ -f "$LOCK_FILE" ]; then
