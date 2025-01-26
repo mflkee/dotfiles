@@ -33,7 +33,7 @@ XF86AudioLowerVolume
 
 # Включить/выключить звук (mute/unmute)
 XF86AudioMute
-    ~/dotfiles/sxhkd/scripts/volume_control.sh toggle
+    ~/.config/sxhkd/scripts/volume_control.sh toggle
 
 #mic
 XF86AudioMicMute
