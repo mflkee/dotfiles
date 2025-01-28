@@ -2,7 +2,7 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load
-ZSH_THEME="dracula"
+ZSH_THEME="ys"
 
 # Plugins
 plugins=(git zsh-syntax-highlighting)
