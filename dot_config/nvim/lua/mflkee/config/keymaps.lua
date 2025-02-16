@@ -56,22 +56,7 @@ vim.keymap.set("n", "<leader>R", function()
 	local current_file = vim.fn.expand("%:p") -- Полный путь к текущему файлу
 	local dir = vim.fn.expand("%:p:h") -- Директория текущего файла
 
-	if filetype == "asm" or filetype == "nasm" then
-		local output = vim.fn.expand("%:r") -- Имя файла без расширения
-		vim.cmd(
-			"TermExec cmd='cd "
-				.. dir
-				.. " && nasm -f elf64 "
-				.. current_file
-				.. " && ld "
-				.. output
-				.. ".o -o "
-				.. output
-				.. " && ./"
-				.. output
-				.. "'"
-		)
-	elseif filetype == "rust" then
+	if filetype == "rust" then
 		-- Запуск Rust-кода через cargo run
 		vim.cmd("TermExec cmd='cargo run' dir=" .. dir)
 	elseif filetype == "python" then
