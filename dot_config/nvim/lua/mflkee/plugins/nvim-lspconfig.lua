@@ -9,19 +9,13 @@ return {
 
 	{ -- LSP Configuration & Plugins
 		"neovim/nvim-lspconfig",
-		opts = {
-			setup = {
-				rust_analyzer = function()
-					return true
-				end,
-			},
-		},
+		opts = {},
+
 		dependencies = {
 			-- Automatically install LSPs and related tools to stdpath for Neovim
 			{ "williamboman/mason.nvim", config = true }, -- NOTE: Must be loaded before dependants
 			"williamboman/mason-lspconfig.nvim",
 			"WhoIsSethDaniel/mason-tool-installer.nvim",
-
 			-- Useful status updates for LSP.
 			-- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
 			{ "j-hui/fidget.nvim", opts = {} },
@@ -31,7 +25,19 @@ return {
 			{ "folke/neodev.nvim", opts = {} },
 		},
 		config = function()
-			-- Brief aside: **What is LSP?**
+			local lspconfig = require("lspconfig")
+			lspconfig.clangd.setup({
+				cmd = {
+					"clangd",
+					"--background-index",
+					"--clang-tidy",
+					"--all-scopes-completion",
+					"--std=c++23", -- Указываем стандарт C++23
+					"--query-driver=/usr/bin/clang++", -- Указываем путь к компилятору
+				},
+				filetypes = { "c", "cpp", "objc", "objcpp" },
+				root_dir = require("lspconfig.util").root_pattern("compile_commands.json", ".git"),
+			}) -- Brief aside: **What is LSP?**
 			--
 			-- LSP is an initialism you've probably heard, but might not understand what it is.
 			--
@@ -178,36 +184,25 @@ return {
 			--  - settings (table): Override the default settings passed when initializing the server.
 			--        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
 			local servers = {
-				clangd = {},
-				-- gopls = {},
-				pyright = {},
-				rust_analyzer = {},
-				bashls = {},
-				yamlls = {},
-				taplo = {},
-				-- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-				--
-				-- Some languages (like typescript) have entire language plugins that can be useful:
-				--    https://github.com/pmizio/typescript-tools.nvim
-				--
-				-- But for many setups, the LSP (`tsserver`) will work just fine
-				-- tsserver = {},
-				--
-
-				lua_ls = {
-					-- cmd = {...},
-					-- filetypes = { ...},
-					-- capabilities = {},
+				clangd = {}, -- C/C++ Language Server
+				pyright = {}, -- Python Language Server
+				rust_analyzer = {}, -- Rust Language Server
+				bashls = {}, -- Bash Language Server
+				yamlls = {}, -- YAML Language Server
+				taplo = {}, -- TOML Language Server
+				lua_ls = { -- Lua Language Server
 					settings = {
 						Lua = {
 							completion = {
-								callSnippet = "Replace",
+								callSnippet = "Replace", -- Show function signatures in completion
 							},
-							-- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-							-- diagnostics = { disable = { 'missing-fields' } },
+							diagnostics = {
+								disable = { "missing-fields" }, -- Disable noisy warnings
+							},
 						},
 					},
 				},
+				asm_lsp = {},
 			}
 
 			-- Ensure the servers and tools above are installed
@@ -225,6 +220,14 @@ return {
 				"stylua", -- Used to format Lua code
 				"black",
 				"clang-format",
+				"asm-lsp",
+			})
+			require("conform").setup({
+				formatters_by_ft = {
+					cpp = { "clang_format" }, -- Использовать clang-format для C++
+					c = { "clang_format" }, -- Использовать clang-format для C
+				},
+				format_on_save = true, -- Автоматическое форматирование при сохранении
 			})
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 

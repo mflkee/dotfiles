@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DOWNLOAD_DIR=~/downloads
-OBSIDIAN_DIR="/home/mflkee/obsidian/1. IT/math/cache/"
+OBSIDIAN_DIR="/home/mflkee/obsidian/13. math/cache/"
 
 # Проверка существования папки
 if [ ! -d "$OBSIDIAN_DIR" ]; then

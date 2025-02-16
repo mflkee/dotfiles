@@ -37,15 +37,21 @@ alias szsh="source ~/.zshrc"
 alias sysoff="sudo shutdown now"
 alias lg="lazygit"
 alias rr="ranger"
-alias cfgzsh="nvim ~/.zshrc"
-alias cfg="cd ~/.config"
-alias cfgvim="cd ~/.config/nvim"
 alias wh="which"
+
+#config file
+alias cfgbspwm="ce ~/.config/bspwm/bspwmrc"
+alias cfgsxhkd="ce ~/.config/sxhkd/sxhkdrc"
+alias cfgzsh="ce ~/.zshrc"
+
+alias cfgvim="cd ~/.config/nvim"
+alias cfgnvim=cfgvim
 
 # chezmoi
 alias cc="chezmoi cd"
 alias ca="chezmoi apply"
 alias cadd="chezmoi add"
+alias ce="chezmoi edit"
 
 # python
 alias vd="deactivate"
@@ -53,6 +59,9 @@ alias vds="source ~/study/DS/venv/bin/activate"
 alias vs="source venv/bin/activate"
 alias spr="sudo python3 -m pip uninstall $1 --break-system-packages"
 alias spi="sudo python3 -m pip install $1 --break-system-packages"
+
+#c++
+alias g++='g++ -std=c++23'
 
 # cleaner
 alias clean="~/.config/scripts/archclean.sh"

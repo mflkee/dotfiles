@@ -1,90 +1,103 @@
--- debug.lua
---
--- Shows how to use the DAP plugin to debug your code.
---
--- Primarily focused on configuring the debugger for Go, but can
--- be extended to other languages as well. That's why it's called
--- kickstart.nvim and not kitchen-sink.nvim ;)
-
 return {
-  -- NOTE: Yes, you can install new plugins here!
-  'mfussenegger/nvim-dap',
-  -- NOTE: And you can specify dependencies as well
-  dependencies = {
-    -- Creates a beautiful debugger UI
-    'rcarriga/nvim-dap-ui',
+	"mfussenegger/nvim-dap",
+	dependencies = {
+		"rcarriga/nvim-dap-ui",
+		"nvim-neotest/nvim-nio",
+		"williamboman/mason.nvim",
+		"jay-babu/mason-nvim-dap.nvim",
+		"leoluz/nvim-dap-go",
+	},
+	config = function()
+		local dap = require("dap")
+		local dapui = require("dapui")
 
-    -- Required dependency for nvim-dap-ui
-    'nvim-neotest/nvim-nio',
+		require("mason-nvim-dap").setup({
+			automatic_setup = true,
+			handlers = {},
+			ensure_installed = {
+				"delve",
+				"cppdbg",
+			},
+		})
 
-    -- Installs the debug adapters for you
-    'williamboman/mason.nvim',
-    'jay-babu/mason-nvim-dap.nvim',
+		-- Новые хоткеи через <leader>
+		vim.keymap.set("n", "<leader>dc", dap.continue, { desc = "Debug: Start/Continue" })
+		vim.keymap.set("n", "<leader>di", dap.step_into, { desc = "Debug: Step Into" })
+		vim.keymap.set("n", "<leader>do", dap.step_over, { desc = "Debug: Step Over" })
+		vim.keymap.set("n", "<leader>du", dap.step_out, { desc = "Debug: Step Out" })
+		vim.keymap.set("n", "<leader>db", dap.toggle_breakpoint, { desc = "Debug: Toggle Breakpoint" })
+		vim.keymap.set("n", "<leader>dB", function()
+			dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
+		end, { desc = "Debug: Set Conditional Breakpoint" })
+		vim.keymap.set("n", "<leader>dr", dap.restart, { desc = "Debug: Restart" })
+		vim.keymap.set("n", "<leader>ds", dap.stop, { desc = "Debug: Stop" })
+		vim.keymap.set("n", "<leader>dp", dap.pause, { desc = "Debug: Pause" })
+		vim.keymap.set("n", "<leader>dn", dap.run_to_cursor, { desc = "Debug: Run to Cursor" })
 
-    -- Add your own debuggers here
-    'leoluz/nvim-dap-go',
-  },
-  config = function()
-    local dap = require 'dap'
-    local dapui = require 'dapui'
+		-- Настройка Dap UI
+		dapui.setup({
+			icons = { expanded = "", collapsed = "", current_frame = "" },
+			controls = {
+				icons = {
+					pause = "",
+					play = "",
+					step_into = "",
+					step_over = "",
+					step_out = "",
+					step_back = "",
+					run_last = "",
+					terminate = "",
+					disconnect = "⏏",
+				},
+			},
+		})
 
-    require('mason-nvim-dap').setup {
-      -- Makes a best effort to setup the various debuggers with
-      -- reasonable debug configurations
-      automatic_setup = true,
+		-- Настройка адаптера для C++
+		dap.adapters.cppdbg = {
+			id = "cppdbg",
+			type = "executable",
+			command = vim.fn.stdpath("data") .. "/mason/packages/cpptools/extension/debugAdapters/bin/OpenDebugAD7",
+		}
 
-      -- You can provide additional configuration to the handlers,
-      -- see mason-nvim-dap README for more information
-      handlers = {},
+		dap.configurations.cpp = {
+			{
+				name = "Launch file",
+				type = "cppdbg",
+				request = "launch",
+				program = function()
+					-- Получаем путь к текущему файлу без расширения
+					local executable = vim.fn.expand("%:p:r") -- Убираем расширение .cpp
+					-- Компилируем файл с флагом -g
+					local compile_command = "g++ -g " .. vim.fn.expand("%:p") .. " -o " .. executable
+					local success, result = os.execute(compile_command)
+					if not success then
+						vim.notify("Compilation failed: " .. result, vim.log.levels.ERROR)
+						return nil
+					end
+					return executable
+				end,
+				cwd = "${workspaceFolder}",
+				stopAtEntry = true,
+				MIDebuggerPath = "/usr/bin/gdb", -- Убедитесь, что путь к GDB правильный
+				setupCommands = {
+					{
+						text = "-enable-pretty-printing",
+						description = "Enable pretty printing",
+						ignoreFailures = false,
+					},
+				},
+			},
+		}
 
-      -- You'll need to check that you have the required things installed
-      -- online, please don't ask me how to install them :)
-      ensure_installed = {
-        -- Update this to ensure that you have the debuggers for the langs you want
-        'delve',
-      },
-    }
+		-- Открыть/закрыть UI дебаггера
+		vim.keymap.set("n", "<leader>dt", dapui.toggle, { desc = "Debug: Toggle Debug UI" })
 
-    -- Basic debugging keymaps, feel free to change to your liking!
-    vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
-    vim.keymap.set('n', '<F1>', dap.step_into, { desc = 'Debug: Step Into' })
-    vim.keymap.set('n', '<F2>', dap.step_over, { desc = 'Debug: Step Over' })
-    vim.keymap.set('n', '<F3>', dap.step_out, { desc = 'Debug: Step Out' })
-    vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, { desc = 'Debug: Toggle Breakpoint' })
-    vim.keymap.set('n', '<leader>B', function()
-      dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
-    end, { desc = 'Debug: Set Breakpoint' })
+		-- Автоматически открывать/закрывать UI при старте/завершении отладки
+		dap.listeners.after.event_initialized["dapui_config"] = dapui.open
+		dap.listeners.before.event_terminated["dapui_config"] = dapui.close
+		dap.listeners.before.event_exited["dapui_config"] = dapui.close
 
-    -- Dap UI setup
-    -- For more information, see |:help nvim-dap-ui|
-    dapui.setup {
-      -- Set icons to characters that are more likely to work in every terminal.
-      --    Feel free to remove or use ones that you like more! :)
-      --    Don't feel like these are good choices.
-      icons = { expanded = '▾', collapsed = '▸', current_frame = '*' },
-      controls = {
-        icons = {
-          pause = '⏸',
-          play = '▶',
-          step_into = '⏎',
-          step_over = '⏭',
-          step_out = '⏮',
-          step_back = 'b',
-          run_last = '▶▶',
-          terminate = '⏹',
-          disconnect = '⏏',
-        },
-      },
-    }
-
-    -- Toggle to see last session result. Without this, you can't see session output in case of unhandled exception.
-    vim.keymap.set('n', '<F7>', dapui.toggle, { desc = 'Debug: See last session result.' })
-
-    dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-    dap.listeners.before.event_exited['dapui_config'] = dapui.close
-
-    -- Install golang specific config
-    require('dap-go').setup()
-  end,
+		-- Настройка Go-отладчика (если нужно)
+		require("dap-go").setup()
+	end,
 }

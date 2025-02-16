@@ -41,6 +41,10 @@ XF86AudioMicMute
 super + shift + x
 	xscreensaver-command -lock
 
+# vpn
+super + shift + v
+	~/.config/polybar/scripts/vpn-toggle.sh
+
 # calcurse
 super + shift + c 
 	kitty -e calcurse
