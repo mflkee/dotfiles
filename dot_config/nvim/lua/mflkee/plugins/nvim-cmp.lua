@@ -108,19 +108,6 @@ return {
 					{ name = "otter" },
 				},
 			})
-			-- Настройка LSP для ассемблера
-			local lspconfig = require("lspconfig")
-			lspconfig.asm_lsp.setup({
-				on_attach = function(client, bufnr)
-					-- Подключение автодополнения для ассемблера
-					cmp.setup.buffer({ sources = { { name = "nvim_lsp" } } })
-				end,
-				settings = {
-					assembly = {
-						dialect = "nasm", -- Указываем синтаксис NASM
-					},
-				},
-			})
 		end,
 	},
 }

@@ -13,7 +13,7 @@ xsetroot -cursor_name left_ptr
 mpv --loop=inf --no-audio --wid=0x4bd /home/mflkee/pictures/berserk.gif &
 
 # Запуск xscreensaver и других утилит
-xscreensaver -no-splash &
+#xscreensaver -no-splash &
 udiskie &
 dunst &
 

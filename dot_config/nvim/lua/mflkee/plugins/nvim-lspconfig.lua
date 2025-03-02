@@ -23,8 +23,11 @@ return {
 			-- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
 			-- used for completion, annotations and signatures of Neovim apis
 			{ "folke/neodev.nvim", opts = {} },
+			"hrsh7th/nvim-cmp",
 		},
 		config = function()
+			-- Добавляем отладочный вывод
+			vim.lsp.set_log_level("debug")
 			local lspconfig = require("lspconfig")
 			lspconfig.clangd.setup({
 				cmd = {
@@ -32,11 +35,17 @@ return {
 					"--background-index",
 					"--clang-tidy",
 					"--all-scopes-completion",
-					"--std=c++23", -- Указываем стандарт C++23
-					"--query-driver=/usr/bin/clang++", -- Указываем путь к компилятору
+					"--completion-style=detailed",
+					"--header-insertion=iwyu",
+					"--pch-storage=memory",
+
 				},
 				filetypes = { "c", "cpp", "objc", "objcpp" },
-				root_dir = require("lspconfig.util").root_pattern("compile_commands.json", ".git"),
+				root_dir = require("lspconfig.util").root_pattern(
+					"compile_commands.json",
+					"compile_flags.txt",
+					".git"
+				),
 			}) -- Brief aside: **What is LSP?**
 			--
 			-- LSP is an initialism you've probably heard, but might not understand what it is.
@@ -132,7 +141,7 @@ return {
 					if client and client.server_capabilities.documentHighlightProvider then
 						local highlight_augroup =
 							vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
-						vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+							vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 							buffer = event.buf,
 							group = highlight_augroup,
 							callback = vim.lsp.buf.document_highlight,
@@ -184,7 +193,23 @@ return {
 			--  - settings (table): Override the default settings passed when initializing the server.
 			--        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
 			local servers = {
-				clangd = {}, -- C/C++ Language Server
+				clangd = {
+					cmd = {
+						"clangd",
+						"--background-index",
+						"--clang-tidy",
+						"--all-scopes-completion",
+						"--completion-style=detailed",
+						"--header-insertion=iwyu",
+						"--pch-storage=memory",
+					},
+					filetypes = { "c", "cpp", "objc", "objcpp" },
+					root_dir = require("lspconfig.util").root_pattern(
+						"compile_commands.json",
+						"compile_flags.txt",
+						".git"
+					),
+				},
 				pyright = {}, -- Python Language Server
 				rust_analyzer = {}, -- Rust Language Server
 				bashls = {}, -- Bash Language Server
@@ -204,6 +229,7 @@ return {
 				},
 			}
 
+
 			-- Ensure the servers and tools above are installed
 			--  To check the current status of installed tools and/or manually install
 			--  other tools, you can run
@@ -219,13 +245,18 @@ return {
 				"stylua", -- Used to format Lua code
 				"black",
 				"clang-format",
+				"clangd",  -- Добавляем clangd явно
+				"typescript-language-server",
+				"css-lsp",
+				"ast-grep"
+
 			})
 			require("conform").setup({
 				formatters_by_ft = {
 					cpp = { "clang_format" }, -- Использовать clang-format для C++
 					c = { "clang_format" }, -- Использовать clang-format для C
 				},
-				format_on_save = true, -- Автоматическое форматирование при сохранении
+				format_on_save = false, -- Автоматическое форматирование при сохранении
 			})
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
