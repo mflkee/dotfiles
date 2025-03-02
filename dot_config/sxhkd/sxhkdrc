@@ -35,7 +35,7 @@ XF86AudioMute
 
 #mic
 XF86AudioMicMute
-    ~/dotfiles/scripts/mic.sh
+    ~/.config/scripts/mic.sh
 
 # lock
 super + shift + x
