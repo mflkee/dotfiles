@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Получаем свободное место на диске (в гигабайтах)
-disk_free=$(df -h / | awk 'NR==2 {print $4}')
+disk_free=$(df -h /home | awk 'NR==2 {print $4}')
 
 # Получаем процент использования диска (для цветовой индикации)
-disk_usage=$(df -h / | awk 'NR==2 {print $5}' | sed 's/%//g')
+disk_usage=$(df -h /home | awk 'NR==2 {print $5}' | sed 's/%//g')
 
 # Определение цветов
 COLOR1="#50FA7B" # до 50% использования (зеленый)
