@@ -1,12 +1,15 @@
 #!/bin/bash
 
 {{ if eq .chezmoi.hostname "arch-desktop" }}
+# Для arch-desktop: извлекаем температуру из строки Tctl:
 temp=$(sensors | awk '/k10temp-pci-00c3/,/^$/{if ($0 ~ /Tctl:/) {print $2}}' | sed 's/[^0-9.]//g' | head -1)
 {{ else if eq .chezmoi.hostname "arch-thinkpad" }}
+# Для arch-thinkpad: извлекаем температуру из строки Core 0
 temp=$(sensors | awk '/coretemp-isa-0000/,/^$/{if ($0 ~ /Core 0/) {print $3}}' | sed 's/[^0-9.]//g' | head -1)
 {{ end }}
 
-temp=${temp%.*}  # Удаляем десятичную часть
+# Удаляем десятичную часть
+temp=${temp%.*}
 
 # Определение цветов для текста и иконки
 COLOR1="#50FA7B" # до 60 (зеленый)

@@ -9,8 +9,7 @@ xrandr --output DP-0 --mode 1920x1080 --rate 143.85
 # Установка курсора
 xsetroot -cursor_name left_ptr
 
-# Запуск фонового GIF
-#
+#gif
 {{ if eq .chezmoi.hostname "arch-desktop" }}
 mpv --loop=inf --no-audio --wid=0x21c /home/mflkee/pictures/berserk.gif &
 {{ else if eq .chezmoi.hostname "arch-thinkpad" }}
