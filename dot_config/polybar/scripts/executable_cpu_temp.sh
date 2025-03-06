@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Извлекаем температуру из раздела coretemp (первое ядро)
-temp=$(sensors | sed -n '/coretemp-isa-0000/,/^$/p' | grep -m1 'Core' | awk '{print $3}' | sed 's/[^0-9.]//g')
+{{ if eq .chezmoi.hostname "arch-desktop" }}
+temp=$(sensors | awk '/k10temp-pci-00c3/,/^$/{if ($0 ~ /Tctl:/) {print $2}}' | sed 's/[^0-9.]//g' | head -1)
+{{ else if eq .chezmoi.hostname "arch-thinkpad" }}
+temp=$(sensors | awk '/coretemp-isa-0000/,/^$/{if ($0 ~ /Core 0/) {print $3}}' | sed 's/[^0-9.]//g' | head -1)
+{{ end }}
+
 temp=${temp%.*}  # Удаляем десятичную часть
 
 # Определение цветов для текста и иконки
