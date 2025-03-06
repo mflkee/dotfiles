@@ -9,12 +9,13 @@ xrandr --output DP-0 --mode 1920x1080 --rate 143.85
 # Установка курсора
 xsetroot -cursor_name left_ptr
 
-#gif
-{{ if eq .chezmoi.hostname "arch-desktop" }}
-mpv --loop=inf --no-audio --wid=0x21c /home/mflkee/pictures/berserk.gif &
-{{ else if eq .chezmoi.hostname "arch-thinkpad" }}
-mpv --loop=inf --no-audio --wid=0x4da /home/mflkee/pictures/berserk.gif &
-{{ end }}
+## #gif
+## {{ if eq .chezmoi.hostname "arch-desktop" }}
+## mpv --loop=inf --no-audio --wid=0x21c /home/mflkee/pictures/berserk.gif &
+## {{ else if eq .chezmoi.hostname "arch-thinkpad" }}
+## mpv --loop=inf --no-audio --wid=0x4da /home/mflkee/pictures/berserk.gif &
+## {{ end }}
+(sleep 2 && feh --bg-scale --randomize ~/.config/wallpaper/*) &
 
 # Запуск xscreensaver и других утилит
 #xscreensaver -no-splash &
