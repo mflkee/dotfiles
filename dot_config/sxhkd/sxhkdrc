@@ -8,7 +8,7 @@ super + p
 
 # terminal emulator
 super + Return
-	kitty
+	wezterm
 
 super + shift + f
 	firefox
