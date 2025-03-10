@@ -31,10 +31,6 @@ return {
   -- Настройки курсора
   default_cursor_style = "SteadyBlock",
 
-  -- Настройки окна
-  window_decorations = wezterm.WindowDecorations.NONE,
-  window_startup_mode = "Maximized",
-
   -- Горячие клавиши
   keys = {
     -- Создание новой вкладки (Ctrl + T)
