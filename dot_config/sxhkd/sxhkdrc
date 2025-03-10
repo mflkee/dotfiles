@@ -19,6 +19,11 @@ super + shift + g
 super + shift + m
 	yandex-music
 
+XF86MonBrightnessUp
+    light -A 10
+
+XF86MonBrightnessDown
+    light -U 10
 
 # sound
 # Увеличить громкость
@@ -47,15 +52,15 @@ super + shift + v
 
 # calcurse
 super + shift + c 
-	kitty -e calcurse
+	wezterm -e calcurse
 
 # bluetui
 super + shift + b 
-	kitty -e bluetui
+	wezterm -e bluetui
 
 # nmtui
 super + shift + n
-	kitty -e nmtui
+	wezterm -e nmtui
 
 # obsidian
 super + shift + o
