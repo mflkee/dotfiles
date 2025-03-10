@@ -8,7 +8,7 @@ super + p
 
 # terminal emulator
 super + Return
-	wezterm
+	kitty
 
 super + shift + f
 	firefox
@@ -52,15 +52,15 @@ super + shift + v
 
 # calcurse
 super + shift + c 
-	wezterm -e calcurse
+	kitty -e calcurse
 
 # bluetui
 super + shift + b 
-	wezterm -e bluetui
+	kitty -e bluetui
 
 # nmtui
 super + shift + n
-	wezterm -e nmtui
+	kitty -e nmtui
 
 # obsidian
 super + shift + o
