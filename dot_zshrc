@@ -1,84 +1,127 @@
-# Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+#!/usr/bin/env zsh
+# ================================================================
+# .zshrc - Конфигурация Zsh с использованием Zinit и Oh My Zsh
+# ================================================================
+# Описание:
+#  • Инициализирует Zinit для управления плагинами.
+#  • Загружает плагины и библиотеки Oh My Zsh, необходимые для корректной работы.
+#  • Устанавливает заглушки для функций, если некоторые скрипты не загружаются.
+#  • Подключает пользовательские алиасы, функции и настройки окружения.
+# ================================================================
 
-# Set name of the theme to load
-ZSH_THEME="ys"
+# --------------------
+# Zinit Plugin Manager
+# --------------------
+if [[ ! -f ~/.config/zsh/plugins/zinit/zinit.zsh ]]; then
+  git clone https://github.com/zdharma-continuum/zinit.git ~/.config/zsh/plugins/zinit
+fi
+source ~/.config/zsh/plugins/zinit/zinit.zsh
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
 
-# Plugins
-plugins=(git zsh-syntax-highlighting)
+# --------------------
+# Инициализация автодополнений
+# --------------------
+autoload -Uz compinit && compinit -u
 
-source ~/zsh-syntax-highlighting/zsh-syntax-highlighting.sh
+# --------------------
+# Заглушки для функций Oh My Zsh
+# --------------------
+if ! type _omz_register_handler >/dev/null 2>&1; then
+  _omz_register_handler() { :; }
+fi
 
-# Source Oh My Zsh
-source $ZSH/oh-my-zsh.sh
+if ! type svn_prompt_info >/dev/null 2>&1; then
+  svn_prompt_info() { :; }
+fi
 
-# User configuration
-export PATH="/home/mflkee/.local/bin:$PATH"
+# --------------------
+# Загрузка основных компонентов Oh My Zsh
+# --------------------
+# Примечание: Загрузка OMZ::lib/async.zsh пропущена, так как URL вернул 404.
+zinit snippet OMZ::lib/git.zsh
+zinit snippet OMZ::lib/theme-and-appearance.zsh
+zinit snippet OMZ::plugins/git/git.plugin.zsh
+
+# --------------------
+# Загрузка дополнительных плагинов
+# --------------------
+zinit light zdharma-continuum/fast-syntax-highlighting
+zinit light zsh-users/zsh-autosuggestions
+zinit light agkozak/zsh-z
+zinit light MichaelAquilina/zsh-you-should-use
+
+# --------------------
+# Основные настройки Zsh
+# --------------------
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt appendhistory
+
+bindkey -e
+bindkey '^[[3~' delete-char
+
+# --------------------
+# Загрузка пользовательских конфигураций
+# --------------------
+# Загружаем алиасы без вывода сообщений
+for file in ~/.config/zsh/aliases/*.zsh; do
+  source "$file"
+done
+
+# Загружаем функции без вывода сообщений
+for file in ~/.config/zsh/functions/*.zsh; do
+  source "$file"
+done
+
+if [[ -f ~/.config/zsh/venv_manager.zsh ]]; then
+  source ~/.config/zsh/venv_manager.zsh
+fi
+
+# --------------------
+# Переменные окружения
+# --------------------
+export PATH="$HOME/.local/bin:$PATH"
+export EDITOR="nvim"
+export MANPAGER="nvim +Man!"
+export XDG_CONFIG_HOME="$HOME/.config"
+
 export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
 export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
+export PYTHONSTARTUP="$HOME/.config/python/pythonrc.py"
 
-export EDITOR=nvim
-
-# Aliases system
-alias ds="cd ~/study/DS"
-alias vim="nvim"
-alias xc="xclip -selection clipboard"
-alias cat="bat"
-alias l="lsd -l -a"
-alias ll="lsd -l"
-alias ls="lsd"
-alias du="dust"
-alias grep="rg"
-alias man="tldr"
-alias top="gtop"
-alias ps="procs"
-alias cd="z"
-alias szsh="source ~/.zshrc"
-alias sysoff="sudo shutdown now"
-alias lg="lazygit"
-alias rr="ranger"
-alias wh="which"
-
-#config file
-alias cfgbspwm="ce ~/.config/bspwm/bspwmrc"
-alias cfgsxhkd="ce ~/.config/sxhkd/sxhkdrc"
-alias cfgzsh="ce ~/.zshrc"
-
-alias cfgvim="cd ~/.config/nvim"
-alias cfgnvim=cfgvim
-
-# chezmoi
-alias cc="chezmoi cd"
-alias ca="chezmoi apply"
-alias cadd="chezmoi add"
-alias ce="chezmoi edit"
-
-# python
-alias vd="deactivate"
-alias vds="source ~/study/DS/venv/bin/activate"
-alias vs="source venv/bin/activate"
-alias spr="sudo python3 -m pip uninstall $1 --break-system-packages"
-alias spi="sudo python3 -m pip install $1 --break-system-packages"
-
-#c++
-alias g++='g++ -std=c++23'
-
-# cleaner
-alias clean="~/.config/scripts/archclean.sh"
-
-# Lock screen settings
+# --------------------
+# Настройки приложений
+# --------------------
 export XSECURELOCK_AUTH=auth_x11
 export XSECURELOCK_AUTHPROTO=authproto_pam
-export XSECURELOCK_AUTH_BACKGROUND_COLOR=#000000
-export XSECURELOCK_AUTH_FOREGROUND_COLOR=#FFFFFF
-export XSECURELOCK_BACKGROUND_COLOR=#000000
 export XSECURELOCK_SHOW_DATETIME=1
 export XSECURELOCK_PASSWORD_PROMPT=emoji
-export XSECURELOCK_DIM_COLOR=#000000
+export XSECURELOCK_BACKGROUND_COLOR="#000000"
+export XSECURELOCK_AUTH_BACKGROUND_COLOR="#000000"
+export XSECURELOCK_AUTH_FOREGROUND_COLOR="#FFFFFF"
+export XSECURELOCK_DIM_COLOR="#000000"
 export XSECURELOCK_DIM_ALPHA=0.5
 export XSECURELOCK_DIM_FPS=60
 
-eval "$(zoxide init zsh)"
+# --------------------
+# Сторонние инструменты
+# --------------------
+eval "$(zoxide init zsh --cmd cd)"
+alias csync="chezmoi apply && chezmoi cd && git add . && git commit -m 'Update config' && git push"
+[ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
 
-export XDG_CONFIG_HOME=$HOME/.config
+export PATH="$HOME/.local/bin:$PATH"
+# --------------------
+# Финальная инициализация
+# --------------------
+zinit cdreplay -q
+zinit snippet OMZ::themes/ys.zsh-theme
+# При необходимости можно принудительно активировать тему:
+# autoload -U promptinit && promptinit
+# prompt ys
 
+# ================================================================
+# Конец файла .zshrc
+# ================================================================
