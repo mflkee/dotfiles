@@ -109,8 +109,29 @@ export XSECURELOCK_DIM_FPS=60
 # Сторонние инструменты
 # --------------------
 eval "$(zoxide init zsh --cmd cd)"
+# Интеграция zoxide с fzf
+#
+function zoxide-fzf() {
+  local dir
+  dir=$(zoxide query -l | fzf --height 40% --reverse --preview 'tree -C {} | head -n 50')
+  if [[ -n "$dir" ]]; then
+    cd "$dir"
+  fi
+}
+
 alias csync="chezmoi apply && chezmoi cd && git add . && git commit -m 'Update config' && git push"
 [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
+
+if [[ -z "$TMUX" ]]; then
+  # Проверяем, есть ли сессия с именем "main"
+  if tmux has-session -t main 2>/dev/null; then
+    # Подключаемся к сессии "main"
+    tmux attach-session -t main
+  else
+    # Создаем новую сессию с именем "main"
+    tmux new-session -s main
+  fi
+fi
 
 export PATH="$HOME/.local/bin:$PATH"
 # --------------------
