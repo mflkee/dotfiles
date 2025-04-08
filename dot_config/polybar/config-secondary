@@ -58,7 +58,7 @@ alert = #FF5555
 # │═╩╝┴└─┘╚═╝│
 # ╚──────────╝
 [bar/example]
-monitor = ${env:MONITOR:}
+monitor = HDMI-1
 width = 100%
 height = 20pt
 radius = 1
@@ -96,8 +96,8 @@ font-13 = "Symbols Nerd Font:size=16;4"
 
 # MODULES
 
-modules-left = bspwm_icons bspwm_layout crypto_prices
-modules-right = recorder network vpn wifi bluetooth ssd-stat ram_stat cpu_stat sensor pulseaudio xkeyboard battery
+modules-left = bspwm_icons bspwm_layout
+modules-right = xkeyboard
 
 modules-center =  date 
 cursor-click = pointer
@@ -229,7 +229,7 @@ click-right = pavucontrol
 [module/crypto_prices]
 type = custom/script
 exec = ~/.config/polybar/scripts/crypto_prices.sh
-interval = 300
+interval = 100
 label = %output%
 
 # ╔──────────────────╗

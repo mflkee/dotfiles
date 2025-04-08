@@ -3,18 +3,35 @@
 # Запуск sxhkd, если ещё не запущен
 pgrep -x sxhkd > /dev/null || sxhkd &
 
-# Настройка экрана
-xrandr --output DP-0 --mode 1920x1080 --rate 143.85
+# Автоматическое определение мониторов
+MONITORS=$(xrandr --query | grep " connected" | cut -d" " -f1)
+
+
+# Настройка мониторов через xrandr (пример для вашей конфигурации)
+xrandr --output eDP-1 --primary --mode 1920x1080 --rate 60 \
+       --output HDMI-1 --mode 1920x1080 --rate 60 --right-of eDP-1
+
+# Небольшая задержка для применения изменений
+sleep 1
+
+# Сброс предыдущих настроек
+bspc wm --reset-monitors
+
+# Распределение рабочих столов между мониторами
+if xrandr | grep -q "HDMI-1 connected"; then
+    bspc monitor eDP-1 -d 1 2 3 4 5
+    bspc monitor HDMI-1 -d 6 7 8 9
+else
+    # Если второй монитор отключен, назначаем все рабочие столы на основной
+    bspc monitor eDP-1 -d 1 2 3 4 5 6 7 8 9
+fi
+
+# Запуск Polybar
+$HOME/.config/polybar/launch.sh &
 
 # Установка курсора
 xsetroot -cursor_name left_ptr
 
-## #gif
-## {{ if eq .chezmoi.hostname "arch-desktop" }}
-## mpv --loop=inf --no-audio --wid=0x21c /home/mflkee/pictures/berserk.gif &
-## {{ else if eq .chezmoi.hostname "arch-thinkpad" }}
-## mpv --loop=inf --no-audio --wid=0x4da /home/mflkee/pictures/berserk.gif &
-## {{ end }}
 (sleep 2 && feh --bg-scale --randomize ~/.config/wallpaper/*) &
 
 # Запуск xscreensaver и других утилит
@@ -25,14 +42,11 @@ dunst &
 # Задержка для стабильности
 sleep 2  # Увеличил задержку перед запуском Polybar
 
-# Запуск Polybar
-$HOME/.config/polybar/launch.sh &
 
 # Запуск других скриптов
 (sleep 5 && ~/.config/bspwm/scripts/download_manager.sh) &
 
 # Настройки bspwm
-bspc monitor -d 1 2 3 4 5 6 7 8 9
 bspc config border_width 2
 bspc config window_gap 5
 bspc config split_ratio 0.50
@@ -40,8 +54,7 @@ bspc config borderless_monocle false
 bspc config gapless_monocle true
 
 # Правила для окон
-bspc rule -a obsidian desktop='^9'
-bspc rule -a firefox desktop='^1'
+bspc rule -a \* -d any
 
 # Цвета для окон
 bspc config normal_border_color "#282A36"
