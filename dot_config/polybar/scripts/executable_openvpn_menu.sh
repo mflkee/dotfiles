@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFIG_DIR="/etc/openvpn/other os"
+CONFIG_DIR="/etc/openvpn/configs"
 CURRENT_LINK="/etc/openvpn/client.conf"
 
 # Список конфигураций

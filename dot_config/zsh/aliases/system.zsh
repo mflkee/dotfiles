@@ -12,5 +12,5 @@ alias top="gtop"
 alias ps="procs"
 alias wh="which"
 alias clean="~/.config/scripts/archclean.sh"
-alias sudo="doas"
 alias zf="zoxide-fzf"
+alias xc='xclip -selection clipboard'

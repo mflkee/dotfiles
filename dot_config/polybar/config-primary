@@ -362,7 +362,7 @@ interval = 0.5
 [module/vpn]
 type = custom/script
 exec = /home/mflkee/.config/polybar/scripts/vpn-status.sh
-click-left = /home/mflkee/.config/polybar/scripts/vpn-toggle.sh
+click-left = ~/.config/polybar/scripts/vpn-control
 click-right = /home/mflkee/.config/polybar/scripts/openvpn_menu.sh
 
 

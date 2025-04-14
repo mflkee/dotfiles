@@ -9,7 +9,7 @@ MONITORS=$(xrandr --query | grep " connected" | cut -d" " -f1)
 
 # Настройка мониторов через xrandr (пример для вашей конфигурации)
 xrandr --output eDP-1 --primary --mode 1920x1080 --rate 60 \
-       --output HDMI-1 --mode 1920x1080 --rate 60 --right-of eDP-1
+       --output HDMI-1 --mode 1920x1080 --rate 74.99 --right-of eDP-1
 
 # Небольшая задержка для применения изменений
 sleep 1
@@ -20,10 +20,10 @@ bspc wm --reset-monitors
 # Распределение рабочих столов между мониторами
 if xrandr | grep -q "HDMI-1 connected"; then
     bspc monitor eDP-1 -d 1 2 3 4 5
-    bspc monitor HDMI-1 -d 6 7 8 9
+    bspc monitor HDMI-1 -d 6 7 8 9 10
 else
     # Если второй монитор отключен, назначаем все рабочие столы на основной
-    bspc monitor eDP-1 -d 1 2 3 4 5 6 7 8 9
+    bspc monitor eDP-1 -d 1 2 3 4 5 6 7 8 9 10
 fi
 
 # Запуск Polybar
@@ -35,7 +35,7 @@ xsetroot -cursor_name left_ptr
 (sleep 2 && feh --bg-scale --randomize ~/.config/wallpaper/*) &
 
 # Запуск xscreensaver и других утилит
-#xscreensaver -no-splash &
+xscreensaver -no-splash &
 udiskie &
 dunst &
 

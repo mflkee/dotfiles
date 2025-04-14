@@ -1,14 +1,42 @@
 #!/bin/bash
+# vpn-toggle.sh
 
-# Проверяем, есть ли процесс OpenVPN
-vpn_pid=$(pgrep -o openvpn)
+# Конфигурация
+CONFIG_FILE="/etc/openvpn/client.conf"
+LOG_FILE="/var/log/openvpn.log"
+LOCK_FILE="/tmp/vpn.lock"
 
-if [[ -n $vpn_pid ]]; then
-    # Если процесс найден, VPN включен, выключаем его
-    sudo killall openvpn
-    # Ждем некоторое время, чтобы процесс успел завершиться
-    sleep 2
-else
-    # Если процесс не найден, VPN выключен, запускаем его
-    sudo openvpn --config /etc/openvpn/client.conf > /dev/null 2>&1 &
-fi
+# Инициализация логов
+init_logs() {
+    touch "$LOG_FILE" 2>/dev/null || touch "$LOG_FILE"
+    chmod 666 "$LOG_FILE" 2>/dev/null || chmod 666 "$LOG_FILE"
+}
+
+# Логирование
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+# Основная логика
+main() {
+    init_logs
+    log "Скрипт запущен"
+    
+    if pgrep -x openvpn >/dev/null; then
+        log "Остановка VPN..."
+        pkill -x openvpn
+        sleep 2
+        log "Статус: VPN остановлен"
+    else
+        log "Запуск VPN..."
+        openvpn \
+            --config "$CONFIG_FILE" \
+            --daemon \
+            --log "$LOG_FILE"
+        sleep 3
+        log "Статус: VPN запущен"
+    fi
+}
+
+# Запуск
+main
