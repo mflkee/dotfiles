@@ -1,11 +1,9 @@
 #!/bin/bash
 
-SERVICE="openvpn-client@client.service"
-
-if systemctl is-active "$SERVICE" >/dev/null; then
-    systemctl stop "$SERVICE"
+if sudo systemctl is-active "$SERVICE" >/dev/null; then
+    sudo systemctl stop "$SERVICE"
     notify-send "VPN" "Отключен" -t 2000
 else
-    systemctl start "$SERVICE"
+    sudo systemctl start "$SERVICE"
     notify-send "VPN" "Подключен" -t 2000
 fi

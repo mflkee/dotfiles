@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# Проверим статус vpn
-vpn_pid=$(pgrep -o openvpn)
+VPN_NAME="OpenVPN Connection"
 
-active="%{F#8BE9FD}"
-disabled="%{F#FF5555}"
+active="%{F#8BE9FD}%{T11}VPN%{F-}%{T0}"  # Крупный шрифт для активного состояния
+disabled="%{F#FF5555}%{T11}VPN%{F-}%{T0}"  # Крупный шрифт для неактивного состояния
 
-if [[ -n $vpn_pid ]]; then
-    echo "${active}%{T12}VPN%{F-}"
+if nmcli connection show --active | grep -q "$VPN_NAME"; then
+    echo "$active"
 else
-    echo "${disabled}%{T12}VPN%{F-}"
+    echo "$disabled"
 fi
