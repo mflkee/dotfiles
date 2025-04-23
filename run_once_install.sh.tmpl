@@ -1,0 +1,102 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+set -euo pipefail
+
+LOGFILE="/tmp/run_once_install_done.log"
+
+if [ -f "$LOGFILE" ]; then
+    echo "✅ Установка уже была выполнена ранее. Пропускаем."
+    exit 0
+fi
+
+exec > >(tee -i "/tmp/run_once_install_$(date +%Y%m%d_%H%M%S).log")
+exec 2>&1
+
+echo "🔄 [$(date +%T)] Обновление системы..."
+yay -Syu --noconfirm || {
+    echo "❌ Ошибка при обновлении системы"
+    exit 1
+}
+
+install_yay() {
+    if ! command -v yay &>/dev/null; then
+        echo "🛠️ [$(date +%T)] Установка yay..."
+        tmp_dir=$(mktemp -d)
+        git clone https://aur.archlinux.org/yay.git "$tmp_dir"
+        (cd "$tmp_dir" && makepkg -si --noconfirm)
+        rm -rf "$tmp_dir"
+    fi
+}
+install_yay
+
+install_all() {
+    echo "📦 [$(date +%T)] Установка пакетов: $*"
+    yay -S --noconfirm --needed "$@" || {
+        echo "❌ Ошибка установки пакетов: $*"
+        exit 1
+    }
+}
+
+if [[ -f ./extra_packages.txt ]]; then
+    mapfile -t extra_pkgs < ./extra_packages.txt
+    install_all "${extra_pkgs[@]}"
+fi
+
+if [[ -f ./aur_packages.txt ]]; then
+    mapfile -t aur_pkgs < ./aur_packages.txt
+    install_all "${aur_pkgs[@]}"
+fi
+
+setup_keyboard() {
+    echo "⌨️ [$(date +%T)] Настройка раскладки клавиатуры..."
+    sudo localectl set-x11-keymap --no-convert us,ru pc105 "" grp:alt_shift_toggle
+}
+setup_keyboard
+
+setup_tmux() {
+    echo "🧵 [$(date +%T)] Установка tmux..."
+    install_all tmux
+    [ -d ~/.tmux/plugins/tpm ] || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+}
+setup_tmux
+
+setup_zsh() {
+    echo "💻 [$(date +%T)] Настройка Zsh..."
+    ZSH="${ZSH:-$HOME/.oh-my-zsh}"
+    if [ ! -d "$ZSH" ]; then
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    fi
+
+    ZSH_CUSTOM="${ZSH_CUSTOM:-$ZSH/custom}"
+    plugins=(
+        https://github.com/zsh-users/zsh-syntax-highlighting.git
+    )
+
+    for plugin in "${plugins[@]}"; do
+        repo_name=$(basename "$plugin" .git)
+        if [ ! -d "$ZSH_CUSTOM/plugins/$repo_name" ]; then
+            git clone "$plugin" "$ZSH_CUSTOM/plugins/$repo_name"
+        fi
+    done
+
+    if ! grep -q "zsh-syntax-highlighting.zsh" ~/.zshrc; then
+        echo 'source $ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> ~/.zshrc
+    fi
+}
+setup_zsh
+
+setup_sudo() {
+    echo "🔒 [$(date +%T)] Настройка sudo для Wi-Fi..."
+    echo '%network ALL=(ALL) NOPASSWD: /sbin/nmcli radio wifi off, /sbin/nmcli radio wifi on' | \
+        sudo tee /etc/sudoers.d/network-wifi >/dev/null
+    sudo chmod 440 /etc/sudoers.d/network-wifi
+}
+setup_sudo
+
+echo "🎨 [$(date +%T)] Обновление шрифтов..."
+sudo fc-cache -fv
+
+touch "$LOGFILE"
+
+echo "✅ [$(date +%T)] Установка завершена!"
+{{- end -}}

@@ -1,6 +1,7 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
+
 -- [[configs]]
 require("mflkee.config.options")
 require("mflkee.config.keymaps")

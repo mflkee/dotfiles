@@ -91,14 +91,21 @@ fi
 # --------------------
 # Переменные окружения
 # --------------------
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 export EDITOR="nvim"
 export MANPAGER="nvim +Man!"
 export XDG_CONFIG_HOME="$HOME/.config"
 
+# Lua
 export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
 export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
+
+# Python
 export PYTHONSTARTUP="$HOME/.config/python/pythonrc.py"
+export PYTHONPYCACHEPREFIX="$HOME/.cache/python/__pycache__"  # Для организации pycache
+
+# Дополнительные пути
+export PATH="$HOME/bin:$PATH"  # Пользовательские бинарники
 
 # --------------------
 # Настройки приложений

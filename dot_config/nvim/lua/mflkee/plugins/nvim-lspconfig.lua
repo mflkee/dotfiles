@@ -210,9 +210,10 @@ return {
 						".git"
 					),
 				},
-				pyright = {}, -- Python Language Server
+				pyright = {},
 				rust_analyzer = {}, -- Rust Language Server
 				bashls = {}, -- Bash Language Server
+				ruff = {},
 				yamlls = {}, -- YAML Language Server
 				taplo = {}, -- TOML Language Server
 				lua_ls = { -- Lua Language Server
@@ -243,18 +244,19 @@ return {
 			local ensure_installed = vim.tbl_keys(servers or {})
 			vim.list_extend(ensure_installed, {
 				"stylua", -- Used to format Lua code
-				"black",
 				"clang-format",
 				"clangd",  -- Добавляем clangd явно
 				"typescript-language-server",
 				"css-lsp",
-				"ast-grep"
+				"ast-grep",
+				"ruff-lsp"
 
 			})
 			require("conform").setup({
 				formatters_by_ft = {
 					cpp = { "clang_format" }, -- Использовать clang-format для C++
 					c = { "clang_format" }, -- Использовать clang-format для C
+					python = {"ruff"}
 				},
 				format_on_save = false, -- Автоматическое форматирование при сохранении
 			})
