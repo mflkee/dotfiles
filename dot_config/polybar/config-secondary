@@ -97,7 +97,7 @@ font-13 = "Symbols Nerd Font:size=16;4"
 # MODULES
 
 modules-left = bspwm_icons bspwm_layout
-modules-right = xkeyboard
+modules-right = recorder network vpn wifi bluetooth ssd-stat ram_stat cpu_stat sensor pulseaudio xkeyboard battery
 
 modules-center =  date 
 cursor-click = pointer

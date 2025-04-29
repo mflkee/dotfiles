@@ -104,6 +104,9 @@ export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
 export PYTHONSTARTUP="$HOME/.config/python/pythonrc.py"
 export PYTHONPYCACHEPREFIX="$HOME/.cache/python/__pycache__"  # Для организации pycache
 
+#plantuml
+export PLANTUML_INCLUDE_PATH="$HOME/.config/plantuml/config.puml"
+
 # Дополнительные пути
 export PATH="$HOME/bin:$PATH"  # Пользовательские бинарники
 

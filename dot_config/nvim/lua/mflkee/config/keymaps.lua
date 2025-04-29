@@ -95,3 +95,8 @@ vim.api.nvim_set_keymap("n", "<A-Down>", '<cmd>lua MoveLine("down")<CR>', { nore
 
 -- hex
 vim.keymap.set("n", "<leader>hx", ":HexToggle<CR>", { desc = "Toggle hex view" })
+
+--plantuml
+-- Для PlantUML Previewer
+vim.api.nvim_set_keymap('n', '<leader>pu', ':PlantumlOpen<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>ps', ':PlantumlSave<CR>', { noremap = true, silent = true })

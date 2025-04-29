@@ -66,6 +66,10 @@ super + shift + n
 super + shift + o
 	/bin/obsidian
 
+#todoist
+super + shift + i
+	/bin/todoist
+
 # telegram 
 super + shift + t
 	/bin/telegram-desktop
@@ -206,3 +210,28 @@ super + shift + s
 super + shift + r
 	~/.config/sxhkd/scripts/record.sh
 
+# перейти на 11-й рабочий стол (super + -)
+super + minus
+    bspc desktop -f 11
+
+# перейти на 12-й рабочий стол (super + =)
+super + equal
+    bspc desktop -f 12
+
+
+
+# переместить текущее окно на 11-й стол и перейти (super + shift + -)
+super + shift + minus
+    bspc node -d 11 --follow
+
+# переместить текущее окно на 12-й стол и перейти (super + shift + =)
+super + shift + equal
+    bspc node -d 12 --follow
+
+# Перейти на 13-й рабочий стол (super + backspace)
+super + BackSpace
+    bspc desktop -f 13
+
+# Переместить текущее окно на 13-й стол и перейти (super + shift + backspace)
+super + shift + BackSpace
+    bspc node -d 13 --follow

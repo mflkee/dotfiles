@@ -24,3 +24,12 @@ alias cupdate="chezmoi update"
 
 # Синхронизация изменений: применение, переход в директорию, добавление в git, коммит и push
 alias csync="chezmoi apply && chezmoi cd && git add . && git commit -m 'Update config' && git push"
+
+# Удаление из .local/chezmoi
+alias cforget="chezmoi forget"
+
+# Удаление из .local/chezmoi и самого файла
+alias cdestroy="chezmoi destroy"
+
+
+

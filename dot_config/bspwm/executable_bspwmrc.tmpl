@@ -19,11 +19,11 @@ bspc wm --reset-monitors
 
 # Распределение рабочих столов между мониторами
 if xrandr | grep -q "HDMI-1 connected"; then
-    bspc monitor eDP-1 -d 1 2 3 4 5
-    bspc monitor HDMI-1 -d 6 7 8 9 10
+    bspc monitor eDP-1 -d 1 2 3 4 5 6
+    bspc monitor HDMI-1 -d 7 8 9 10 11 12 13
 else
     # Если второй монитор отключен, назначаем все рабочие столы на основной
-    bspc monitor eDP-1 -d 1 2 3 4 5 6 7 8 9 10
+    bspc monitor eDP-1 -d 1 2 3 4 5 6 7 8 9 10 11 12 13
 fi
 
 # Запуск Polybar
@@ -55,6 +55,8 @@ bspc config gapless_monocle true
 
 # Правила для окон
 bspc rule -a \* -d any
+bspc rule -a Todoist  desktop='^11' follow=on
+bspc rule -a obsidian desktop='^12' follow=on
 
 # Цвета для окон
 bspc config normal_border_color "#282A36"

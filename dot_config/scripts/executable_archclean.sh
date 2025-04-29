@@ -1,68 +1,152 @@
 #!/bin/bash
-echo "Starting Arch Linux cleanup with Yay..."
+set -euo pipefail
+IFS=$'\n\t'
 
-# Update the package database and upgrade installed packages
-yay -Syu --noconfirm
+info() {
+  echo -e "🔹 $1"
+}
 
-# Clean the Yay cache
-if yay -Yc --noconfirm; then
-    echo "Yay cache cleaned."
+success() {
+  echo -e "✅ $1"
+}
+
+warn() {
+  echo -e "⚠️  $1"
+}
+
+echo "🚀 Full System Cleanup for Arch + Btrfs"
+
+# 0) Установка pacman-contrib
+info "Проверка pacman-contrib..."
+if ! pacman -Qi pacman-contrib &>/dev/null; then
+  info "Устанавливаю pacman-contrib..."
+  if sudo pacman -Sy --noconfirm pacman-contrib; then
+    success "pacman-contrib установлен."
+  else
+    warn "Не удалось установить pacman-contrib!"
+  fi
 else
-    echo "No packages to clean in Yay cache."
+  success "pacman-contrib уже установлен."
 fi
 
-# Remove unused packages (orphans)
-if yay -Rns $(yay -Qtdq) --noconfirm; then
-    echo "Unused packages removed."
+# 1) Обновление системы
+info "Обновление системы..."
+if updates=$(yay -Qu 2>/dev/null) && [[ -n "$updates" ]]; then
+  echo "$updates"
+  if yay -Syu --noconfirm; then
+    success "Система успешно обновлена."
+  else
+    warn "Ошибка обновления системы."
+  fi
 else
-    echo "No unused packages to remove."
+  success "Обновлений нет."
 fi
 
-# Remove unused dependencies
-if yay -Rns $(pacman -Qdtq) --noconfirm; then
-    echo "Unused dependencies removed."
+# 2) Очистка кэша yay
+info "Очистка кэша yay..."
+if yay -Yc --noconfirm --answerclean None; then
+  success "Кэш yay очищен."
 else
-    echo "No unused dependencies to remove."
+  warn "Ошибка очистки кэша yay."
 fi
 
-# Clean system package cache
-sudo pacman -Sc --noconfirm
-echo "System package cache cleaned."
-
-# Remove old logs
-sudo journalctl --vacuum-time=7d
-echo "Old logs removed."
-
-# Clean temporary files
-sudo rm -rf /tmp/* /var/tmp/*
-echo "Temporary files cleared."
-
-# Check disk usage before cleanup
-echo "Disk usage before cleanup:"
-df -h
-
-# Clean home directory cache (optional)
-rm -rf ~/.cache/*
-echo "Home directory cache cleared."
-
-# Remove old kernels
-CURRENT_KERNEL=$(uname -r)
-sudo pacman -Rns $(pacman -Q | grep linux | grep -v "$CURRENT_KERNEL" | awk '{print $1}') --noconfirm || echo "No old kernels to remove."
-echo "Old kernels removed."
-
-# Remove empty directories in home directory
-find /home/$USER -type d -empty -delete
-echo "Empty directories in home directory removed."
-
-# Update mlocate database (ensure mlocate is installed)
-if command -v updatedb &> /dev/null; then
-    sudo updatedb
+# 3) Удаление orphan-пакетов
+info "Удаление orphan-пакетов..."
+orphans=$(yay -Qtdq 2>/dev/null || true)
+if [[ -n "$orphans" ]]; then
+  echo "$orphans"
+  if yay -Rns $orphans --noconfirm; then
+    success "Orphan-пакеты удалены."
+  else
+    warn "Ошибка удаления orphan-пакетов."
+  fi
 else
-    echo "mlocate is not installed. Skipping updatedb."
+  success "Нет orphan-пакетов."
 fi
 
-# Check disk usage after cleanup
-echo "Disk usage after cleanup:"
-df -h
+# 4) Удаление неиспользуемых зависимостей
+info "Удаление неиспользуемых зависимостей..."
+deps=$(pacman -Qdtq 2>/dev/null || true)
+if [[ -n "$deps" ]]; then
+  echo "$deps"
+  if sudo pacman -Rns $deps --noconfirm; then
+    success "Неиспользуемые зависимости удалены."
+  else
+    warn "Ошибка удаления зависимостей."
+  fi
+else
+  success "Нет неиспользуемых зависимостей."
+fi
 
-echo "Cleanup complete!"
+# 5) Глубокая очистка кэша pacman
+info "Глубокая очистка кэша pacman..."
+if command -v paccache &>/dev/null; then
+  if sudo paccache -rvk0; then
+    success "Кэш pacman очищен (paccache)."
+  else
+    warn "Ошибка очистки кэша через paccache."
+  fi
+else
+  if sudo pacman --noconfirm -Scc; then
+    success "Кэш pacman очищен (Scc fallback)."
+  else
+    warn "Ошибка очистки кэша через pacman -Scc."
+  fi
+fi
+
+# 6) Очистка логов старше 7 дней
+info "Очистка логов старше 7 дней..."
+if sudo journalctl --vacuum-time=7d; then
+  success "Логи очищены."
+else
+  warn "Ошибка очистки логов."
+fi
+
+# 7) Очистка временных файлов (>1 день)
+info "Очистка /tmp и /var/tmp..."
+{
+  sudo find /tmp -mindepth 1 -mtime +1 -exec rm -rf {} + 2>/dev/null
+  sudo find /var/tmp -mindepth 1 -mtime +1 -exec rm -rf {} + 2>/dev/null
+  success "Временные файлы очищены."
+} || {
+  warn "Ошибка очистки временных файлов."
+}
+
+# 8) Очистка пользовательского кэша
+info "Очистка ~/.cache..."
+if [[ -d "$HOME/.cache" ]]; then
+  for entry in "$HOME"/.cache/* "$HOME"/.cache/.*; do
+    [[ "$(basename "$entry")" =~ ^\.\.?$ ]] && continue
+    [[ ! -e "$entry" ]] && continue
+    if [[ -O "$entry" ]]; then
+      rm -rf "$entry"
+    else
+      warn "Пропущено (не ваш файл): $entry"
+    fi
+  done
+  success "Очистка ~/.cache завершена."
+else
+  warn "~/.cache не найден."
+fi
+
+# 9) Удаление пустых директорий в $HOME
+info "Удаление пустых директорий в $HOME..."
+if find "$HOME" -maxdepth 2 -type d -user "$USER" -empty -delete 2>/dev/null; then
+  success "Пустые директории удалены."
+else
+  warn "Ошибка удаления пустых директорий."
+fi
+
+# 10) Обновление базы mlocate
+info "Обновление базы mlocate..."
+if command -v updatedb &>/dev/null; then
+  if sudo updatedb; then
+    success "База mlocate обновлена."
+  else
+    warn "Ошибка обновления базы mlocate."
+  fi
+else
+  warn "updatedb не установлен."
+fi
+
+echo "🎉 Полная очистка системы завершена!"

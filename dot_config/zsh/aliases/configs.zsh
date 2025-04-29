@@ -1,6 +1,6 @@
 # Config files
-alias cfgbspwm="ce ~/.config/bspwm/bspwmrc"
-alias cfgsxhkd="ce ~/.config/sxhkd/sxhkdrc"
-alias cfgzsh="ce ~/.zshrc"
-alias cfgvim="ce ~/.config/nvim"
+alias cfgbspwm="cedit ~/.config/bspwm/bspwmrc"
+alias cfgsxhkd="cedit ~/.config/sxhkd/sxhkdrc"
+alias cfgzsh="cedit ~/.zshrc"
+alias cfgvim="cedit ~/.config/nvim"
 alias cfgnvim=cfgvim

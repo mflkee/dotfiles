@@ -26,6 +26,7 @@ return {
         c          = { "clang_format", stop_after_first = true },
         cpp        = { "clang_format", stop_after_first = true },
         go         = { "gofmt", "goimports", stop_after_first = true },
+        plantuml  = {},
       },
 
       -- Custom formatter definitions (stdin and filename handling)

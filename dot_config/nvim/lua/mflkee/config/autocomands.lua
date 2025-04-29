@@ -39,7 +39,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.tabstop = 2 -- Размер табуляции
 		vim.opt_local.shiftwidth = 2 -- Размер отступа
 		vim.opt_local.expandtab = true -- Преобразовывать Tab в пробелы
-		vim.opt_local.smartindent = false  -- Отключить умные отступы
+		vim.opt_local.smartindent = false -- Отключить умные отступы
 		vim.opt_local.autoindent = false -- Отключить автоиндентацию
 		vim.opt_local.cinoptions = {
 			":0", -- Не добавлять дополнительные отступы после `{`
@@ -56,5 +56,19 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.expandtab = true -- Преобразовывать Tab в пробелы
 		vim.opt_local.smartindent = false -- Отключить умные отступы
 		vim.opt_local.autoindent = false -- Отключить автоиндентацию
+	end,
+})
+
+vim.api.nvim_create_autocmd("BufNewFile", {
+	pattern = "*.puml",
+	callback = function()
+		local lines = {
+			"@startuml",
+			"!include /home/mflkee/.config/plantuml/dracula.puml",
+			"",
+			"@enduml",
+		}
+		vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+		vim.api.nvim_win_set_cursor(0, { 3, 0 }) -- курсор на пустую строку
 	end,
 })

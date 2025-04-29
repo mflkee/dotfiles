@@ -249,14 +249,14 @@ return {
 				"typescript-language-server",
 				"css-lsp",
 				"ast-grep",
-				"ruff-lsp"
+				"ruff-lsp",
 
 			})
 			require("conform").setup({
 				formatters_by_ft = {
 					cpp = { "clang_format" }, -- Использовать clang-format для C++
 					c = { "clang_format" }, -- Использовать clang-format для C
-					python = {"ruff"}
+					python = {"ruff"},
 				},
 				format_on_save = false, -- Автоматическое форматирование при сохранении
 			})
