@@ -134,16 +134,20 @@ FFMPEG_CMD=(
     -i "$DISPLAY+$SCREEN_OFFSET"
 )
 
-# Добавление аудиоисточников
+# Добавление аудиоисточников с динамическими индексами
 AUDIO_SOURCES=()
+AUDIO_INDEX=1  # Начинаем с индекса 1 после видео (индекс 0)
+
 if $USE_MIC; then
     FFMPEG_CMD+=(-f pulse -i "$MIC_DEVICE")
-    AUDIO_SOURCES+=("1:a")
+    AUDIO_SOURCES+=("$AUDIO_INDEX:a")
+    ((AUDIO_INDEX++))
 fi
 
 if $USE_SYS; then
     FFMPEG_CMD+=(-f pulse -i "$SYS_DEVICE")
-    AUDIO_SOURCES+=("2:a")
+    AUDIO_SOURCES+=("$AUDIO_INDEX:a")
+    ((AUDIO_INDEX++))
 fi
 
 # Микширование аудио
@@ -157,6 +161,7 @@ if [ ${#AUDIO_SOURCES[@]} -gt 0 ]; then
             -map 0:v -map "[a]"
         )
     else
+        # Если только один аудиоисточник, маппим его напрямую
         FFMPEG_CMD+=(-map 0:v -map "${AUDIO_SOURCES[0]}")
     fi
     FFMPEG_CMD+=(-c:a libopus -b:a "$AUDIO_BITRATE" -vbr on)

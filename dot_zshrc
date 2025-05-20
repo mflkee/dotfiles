@@ -95,6 +95,7 @@ export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 export EDITOR="nvim"
 export MANPAGER="nvim +Man!"
 export XDG_CONFIG_HOME="$HOME/.config"
+export BROWSER=firefox
 
 # Lua
 export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
@@ -109,7 +110,7 @@ export PLANTUML_INCLUDE_PATH="$HOME/.config/plantuml/config.puml"
 
 # Дополнительные пути
 export PATH="$HOME/bin:$PATH"  # Пользовательские бинарники
-
+export PATH="/home/mflkee/.cache/yay/quarto-cli/src/quarto-1.6.42/bin:$PATH"
 # --------------------
 # Настройки приложений
 # --------------------

@@ -38,7 +38,13 @@ return {
         },
         ruff = {
           command = "ruff",
-          args = { "format", "--stdin-filename", vim.api.nvim_buf_get_name(0), "-" },
+          args = function()
+            local filename = vim.api.nvim_buf_get_name(0)
+            if filename == "" then
+              filename = "untitled.py" -- Используем временное имя файла
+            end
+            return { "format", "--stdin-filename", filename, "-" }
+          end,
           stdin = true,
         },
         rustfmt = {

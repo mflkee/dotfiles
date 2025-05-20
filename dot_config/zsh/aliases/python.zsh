@@ -1,4 +1,5 @@
 # Python
+alias vc="python -m venv venv"
 alias vd="deactivate"
 alias vs="source venv/bin/activate"
 alias vds="source ~/study/DS/venv/bin/activate"
