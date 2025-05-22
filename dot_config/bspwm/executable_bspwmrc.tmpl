@@ -3,29 +3,24 @@
 # Запуск sxhkd, если ещё не запущен
 pgrep -x sxhkd > /dev/null || sxhkd &
 
-# Автоматическое определение мониторов
-MONITORS=$(xrandr --query | grep " connected" | cut -d" " -f1)
 
+# Получаем список всех подключённых мониторов
+monitors=($(xrandr --query | grep " connected" | cut -d" " -f1))
+mon_count=${#monitors[@]}
 
-# Настройка мониторов через xrandr (пример для вашей конфигурации)
-xrandr --output eDP-1 --primary --mode 1920x1080 --rate 60 \
-       --output HDMI-1 --mode 1920x1080 --rate 74.99 --right-of eDP-1
-
-# Небольшая задержка для применения изменений
-sleep 1
-
-# Сброс предыдущих настроек
+# Сброс настроек BSPWM
 bspc wm --reset-monitors
 
-# Распределение рабочих столов между мониторами
-if xrandr | grep -q "HDMI-1 connected"; then
-    bspc monitor eDP-1 -d 1 2 3 4 5 6
-    bspc monitor HDMI-1 -d 7 8 9 10 11 12 13
+if [ "$mon_count" -eq 1 ]; then
+    # Если только один монитор — назначаем все 13 рабочих столов на него
+    bspc monitor "${monitors[0]}" -d 1 2 3 4 5 6 7 8 9 10 11 12 13
+elif [ "$mon_count" -eq 2 ]; then
+    # Если два монитора — распределяем: 5 на первый, 8 на второй
+    bspc monitor "${monitors[0]}" -d 1 2 3 4 5
+    bspc monitor "${monitors[1]}" -d 6 7 8 9 10 11 12 13
 else
-    # Если второй монитор отключен, назначаем все рабочие столы на основной
-    bspc monitor eDP-1 -d 1 2 3 4 5 6 7 8 9 10 11 12 13
+    echo "Поддерживаются только до 2 мониторов" >&2
 fi
-
 # Запуск Polybar
 $HOME/.config/polybar/launch.sh &
 

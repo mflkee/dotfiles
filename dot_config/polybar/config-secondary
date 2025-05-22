@@ -58,7 +58,7 @@ alert = #FF5555
 # │═╩╝┴└─┘╚═╝│
 # ╚──────────╝
 [bar/example]
-monitor = HDMI-1
+monitor = ${env:MONITOR}
 width = 100%
 height = 20pt
 radius = 1
