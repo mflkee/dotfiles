@@ -13,8 +13,8 @@ state=$(bluetoothctl show | grep 'Powered:' | awk '{print $2}')
 echo "Bluetooth state: $state" >> "$log_file"
 
 # Прямо укажем цвета для теста
-active="%{F#8BE9FD}"
-disabled="%{F#FF5555}"
+active="%{F#80a0ff}"
+disabled="%{F#ff5d5d}"
 
 if [[ "$state" == "yes" ]]; then
     echo "Bluetooth is on" >> "$log_file"

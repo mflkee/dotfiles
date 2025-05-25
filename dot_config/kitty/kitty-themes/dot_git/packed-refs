@@ -1,0 +1,6 @@
+# pack-refs with: peeled fully-peeled sorted 
+147860e03d180f04cfe6c2a2729e2474dfcd4a3a refs/remotes/origin/all-contributors/add-scopatz
+e4909deb56719edc6aea72933b385d9c63bfd317 refs/remotes/origin/lfs-testing
+b1abdd54ba655ef34f75a568d78625981bf1722c refs/remotes/origin/master
+369eddeb119b917c5c827c35d5717c6e9087f88e refs/remotes/origin/no-lfs
+1289706736fab1050a260c93aa718e88067bbfb0 refs/tags/1.0.0

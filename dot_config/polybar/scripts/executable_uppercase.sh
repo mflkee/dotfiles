@@ -5,9 +5,9 @@ current_layout=$(xkb-switch)
 
 # Определяем отображение на основе раскладки
 if [ "$current_layout" == "us" ]; then
-  lang="%{F#8BE9FD}US"
+  lang="%{F#79dac8}US"
 else
-  lang="%{F#FF5555}RU"
+  lang="%{F#ff5d5d}RU"
 fi
 
 # Используем %{T2} для указания шрифта font-2

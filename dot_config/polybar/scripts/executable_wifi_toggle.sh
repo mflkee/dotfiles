@@ -13,8 +13,8 @@ state=$(nmcli radio wifi)
 echo "WiFi state: $state" >> "$log_file"
 
 # Прямо укажем цвета для теста
-active="%{F#8BE9FD}"
-disabled="%{F#FF5555}"
+active="%{F#80a0ff}"
+disabled="%{F#ff5d5d}"
 
 if [[ "$state" == "enabled" ]]; then
     echo "WiFi is on" >> "$log_file"

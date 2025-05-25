@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Цвета
-color_floating="#FFB86C"   # Цвет для floating
-color_pseudo_tiled="#F1FA8C" # Цвет для pseudo_tiled
-color_fullscreen="#44475A"  # Цвет для fullscreen
-color_monocle="#FF79C6"     # Цвет для monocle
-color_tiled="#BD93F9"       # Цвет для tiled
-color_unknown="#87A987"     # Цвет для неизвестного layout
+color_floating="#e3c78a"       # Color 4 (Yellow normal)
+color_pseudo_tiled="#c6c684"   # Color 12 (Yellow bright)
+color_fullscreen="#323437"     # Color 1 (Black normal)
+color_monocle="#ff5189"       # Color 10 (Red bright)
+color_tiled="#ae81ff"         # Color 14 (Purple bright)
+color_unknown="#79dac8"       # Color 7 (Cyan normal)
 
 # Размер шрифта
 font_size="%{T13}"
