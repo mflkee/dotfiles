@@ -97,6 +97,9 @@ export MANPAGER="nvim +Man!"
 export XDG_CONFIG_HOME="$HOME/.config"
 export BROWSER=firefox
 
+# Rust
+source "$HOME/.cargo/env"
+
 # Lua
 export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
 export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
@@ -163,3 +166,27 @@ eval "$(starship init zsh)"
 # ================================================================
 # Конец файла .zshrc
 # ================================================================
+# ~/.zshrc
+
+# Функция-заместитель для nvim
+nvim() {
+  # Если нет аргументов — просто запускаем
+  if [ $# -eq 0 ]; then
+    command nvim
+    return
+  fi
+
+  # Проверяем первый аргумент (файл)
+  local file="$1"
+  # Если файл не существует или у нас есть на него право на запись — нормальный запуск
+  if [ ! -e "$file" ] || [ -w "$file" ]; then
+    command nvim "$@"
+  else
+    # Иначе запускаем под sudo, сохраняя окружение (-E) для того,
+    # чтобы vim взял вашу конфигурацию из $HOME/.config/nvim
+    sudo -E nvim "$@"
+  fi
+}
+
+# API
+export OPENROUTER_API_KEY="sk-0ec9218a15fc414a9da7cd17a70ce493"
