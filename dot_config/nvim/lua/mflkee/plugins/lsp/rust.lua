@@ -1,5 +1,3 @@
--- lua/mflkee/plugins/lsp/rust.lua
-
 local M = {}
 
 function M.setup(_, _) -- lspconfig и capabilities не нужны здесь

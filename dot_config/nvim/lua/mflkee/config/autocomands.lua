@@ -72,3 +72,10 @@ vim.api.nvim_create_autocmd("BufNewFile", {
 		vim.api.nvim_win_set_cursor(0, { 3, 0 }) -- курсор на пустую строку
 	end,
 })
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "*",
+	callback = function()
+		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
+	end,
+})
