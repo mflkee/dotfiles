@@ -1,5 +1,3 @@
--- lua/mflkee/plugins/lsp.lua
-
 return {
   'neovim/nvim-lspconfig',
   dependencies = {
@@ -9,23 +7,19 @@ return {
     'j-hui/fidget.nvim',
     'folke/neodev.nvim',
     'hrsh7th/nvim-cmp',
-    { 'mrcjkb/rustaceanvim', version = '^4', ft = 'rust' },
   },
   config = function()
-    local lspconfig = require 'lspconfig'
-    local mason_lspconfig = require 'mason-lspconfig'
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
     require('mason').setup()
+    require('fidget').setup({})
+    require('neodev').setup({})
 
     require('mason-tool-installer').setup {
       ensure_installed = {
-        -- LSP
         'lua-language-server',
         'pyright',
         'ruff',
-        'rust-analyzer',
-        -- Formatters, linters, debuggers
         'black',
         'isort',
         'mypy',
@@ -33,41 +27,36 @@ return {
       },
     }
 
-    -- Загружаем пользовательские конфиги из lua/mflkee/plugins/lsp/
-    local lsp_dir = vim.fn.stdpath 'config' .. '/lua/mflkee/plugins/lsp'
-    local custom_servers = {}
+    -- Явная загрузка LSP-конфигов вместо динамического сканирования
+    local lsp_servers = {
+      'lua_ls',
+      'python',
+      'rust' -- rustaceanvim обрабатывает Rust отдельно
+    }
 
-    local fd = vim.loop.fs_scandir(lsp_dir)
-    if fd then
-      while true do
-        local file = vim.loop.fs_scandir_next(fd)
-        if not file then
-          break
-        end
-        local name = file:match '(.+)%.lua$'
-        if name and name ~= 'init' then
-          local ok, config = pcall(require, 'mflkee.plugins.lsp.' .. name)
-          if ok and type(config.setup) == 'function' then
-            config.setup(lspconfig, capabilities)
-            table.insert(custom_servers, name)
-          else
-            vim.notify('Не удалось загрузить LSP конфиг: ' .. name, vim.log.levels.WARN)
-          end
-        end
+    -- Загрузка конфигов
+    for _, server in ipairs(lsp_servers) do
+      local ok, config = pcall(require, 'mflkee.plugins.lsp.' .. server)
+      if ok and type(config.setup) == 'function' then
+        config.setup(capabilities)
+      else
+        vim.notify('LSP config error: ' .. server, vim.log.levels.ERROR)
       end
     end
 
-    -- Обработка остальных серверов по умолчанию
-    mason_lspconfig.setup {
+    -- Базовые настройки для остальных LSP
+    require('mason-lspconfig').setup({
+      ensure_installed = {}, -- оставляем пустым, т.к. уже установили через tool-installer
       handlers = {
         function(server_name)
-          if not vim.tbl_contains(custom_servers, server_name) then
-            lspconfig[server_name].setup {
-              capabilities = capabilities,
-            }
+          -- Пропускаем уже настроенные серверы
+          if not vim.tbl_contains(lsp_servers, server_name) then
+            require('lspconfig')[server_name].setup({
+              capabilities = capabilities
+            })
           end
         end,
-      },
-    }
+      }
+    })
   end,
 }

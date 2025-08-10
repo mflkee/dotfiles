@@ -14,7 +14,7 @@ return {
     },
     opts = {
       notify_on_error = false,
-      format_on_save = true,
+      format_on_save = false,
 
       -- Specify which formatters run per filetype (flat list; stop after first success)
       formatters_by_ft = {

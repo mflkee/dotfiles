@@ -1,9 +1,7 @@
--- lua/mflkee/plugins/lsp/python.lua
+local M = {}
 
-M = {}
-
-function M.setup(lspconfig, capabilities)
-  lspconfig.pyright.setup {
+function M.setup(capabilities)
+  require('lspconfig').pyright.setup {
     capabilities = capabilities,
     settings = {
       python = {
@@ -16,18 +14,11 @@ function M.setup(lspconfig, capabilities)
     },
   }
 
-  -- Новый официальный LSP-сервер от ruff
-  lspconfig.ruff.setup {
+  require('lspconfig').ruff.setup {
     capabilities = capabilities,
-    on_attach = function(client, _)
-      -- Ruff не форматирует — только диагностика
+    on_attach = function(client)
       client.server_capabilities.documentFormattingProvider = false
     end,
-    init_options = {
-      settings = {
-        args = {}, -- можно добавить аргументы для ruff здесь, если нужно
-      },
-    },
   }
 end
 

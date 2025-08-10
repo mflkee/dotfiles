@@ -13,4 +13,4 @@ alias ps="procs"
 alias wh="which"
 alias clean="~/.config/scripts/archclean.sh"
 alias zf="zoxide-fzf"
-alias xc='xclip -selection clipboard'
+alias wcopy='wl-copy'

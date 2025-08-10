@@ -1,5 +1,15 @@
 #!/bin/bash
 
+#удаляем стандартные директории
+rm -rf $HOME/Desktop
+rm -rf $HOME/Downloads
+rm -rf $HOME/Templates
+rm -rf $HOME/Public
+rm -rf $HOME/Documents
+rm -rf $HOME/Music
+rm -rf $HOME/Pictures
+rm -rf $HOME/Videos
+
 # Объявляем переменные для директорий
 XDG_DESKTOP_DIR="$HOME/desktop"
 XDG_DOWNLOAD_DIR="$HOME/downloads"
