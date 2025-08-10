@@ -19,15 +19,15 @@
 ################
 ### MONITORS ###
 ################
-
 # See https://wiki.hyprland.org/Configuring/Monitors/
-# для одного моника
 # monitor=,preferred,auto,auto
+{{ if eq .chezmoi hostname "archlinux-laptop"}}
 # Основной монитор (eDP-1) - справа
 monitor = eDP-1, 1920x1080@60, 1920x0, 1
 
 # Вторичный монитор (HDMI-A-1) - слева
 monitor = HDMI-A-1, 1920x1080@60, 0x0, 1
+{{ end }}
 
 # Привязка воркспейсов к мониторам
 workspace = 1, monitor:HDMI-A-1  # Левый монитор (вторичный)
