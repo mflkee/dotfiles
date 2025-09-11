@@ -1,12 +1,14 @@
 /* Minimal lemonbar-like style: flat black bar, simple text */
 * {
   font-family: "Lilex Nerd Font Mono", "Lilex Nerd Font", "Lilex", monospace;
-  font-size: 11px;
+  font-size: 14px;
+  min-height: 0;
 }
 
 window#waybar {
   background: #000000;
   color: #ffffff;
+  min-height: 0;
 }
 
 .modules-left,
@@ -34,6 +36,15 @@ window#waybar {
   border-right: 1px solid #333;
 }
 
+/* Screen recording indicator: red dot when active */
+#custom-rec {
+  padding: 0 4px;
+  min-width: 10px;
+}
+#custom-rec.recording {
+  color: #ff3b30; /* red */
+}
+
 #custom-sysstat.warning {
   color: #ffbf00; /* amber */
 }
@@ -54,6 +65,7 @@ window#waybar {
   padding: 0 6px;
   margin: 0;
   box-shadow: none;
+  min-height: 0;
 }
 
 /* Active/focused workspace: just cyan text, no shapes */

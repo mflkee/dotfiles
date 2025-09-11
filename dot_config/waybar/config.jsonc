@@ -2,7 +2,7 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 14,
+  "height": 8,
   "spacing": 8,
 
   // Order: minimal, lemonbar-like
@@ -13,6 +13,7 @@
     "hyprland/window"
   ],
   "modules-right": [
+    "custom/rec",
     "custom/sysstat",
     "network",
     "pulseaudio",
@@ -91,6 +92,16 @@
     "exec": "bash -lc \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/scripts/sysstat.sh\"",
     "return-type": "json",
     "interval": 3,
+    "format": "{}",
+    "tooltip": false
+  }
+  ,
+
+  // Screen recording status indicator (red dot when recording)
+  "custom/rec": {
+    "exec": "bash -lc \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/scripts/rec_status.sh\"",
+    "return-type": "json",
+    "interval": 1,
     "format": "{}",
     "tooltip": false
   }
