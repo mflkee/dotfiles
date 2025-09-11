@@ -1,0 +1,97 @@
+// -*- mode: jsonc -*-
+{
+  "layer": "top",
+  "position": "top",
+  "height": 14,
+  "spacing": 8,
+
+  // Order: minimal, lemonbar-like
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
+  "modules-center": [
+    "hyprland/window"
+  ],
+  "modules-right": [
+    "custom/sysstat",
+    "network",
+    "pulseaudio",
+    "battery",
+    "hyprland/language",
+    "clock"
+  ],
+
+  // Modules configuration (inline, no external include)
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true,
+    "sort-by-number": true,
+    "active-only": false,
+    "format": "{name}",
+    "on-click": "activate",
+    "show-special": false,
+    "persistent-workspaces": {
+      "*": [1,2,3,4,5,6,7,8,9,10]
+    }
+  },
+
+  "hyprland/window": {
+    "max-length": 60,
+    "separate-outputs": false,
+    "rewrite": {
+      "(.*) - .*": "$1"
+    },
+    "format": "{title}"
+  },
+
+  "network": {
+    "interval": 5,
+    "format-wifi": "WIFI {essid} {signalStrength}%",
+    "format-ethernet": "ETH {ipaddr}",
+    "format-disconnected": "OFFLINE"
+  },
+
+  "pulseaudio": {
+    "format": "VOL {volume}%",
+    "format-muted": "MUTE",
+    "scroll-step": 2
+  },
+
+  "temperature": {
+    "interval": 10,
+    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon4/temp1_input",
+    "format": "TEMP {temperatureC}°",
+    "format-critical": "HOT {temperatureC}°"
+  },
+
+  "battery": {
+    "states": { "warning": 20, "critical": 10 },
+    "format": "BAT {capacity}%",
+    "format-full": "BAT {capacity}%",
+    "format-charging": "CHR {capacity}%",
+    "format-plugged": "AC  {capacity}%"
+  },
+
+  "clock": {
+    "format": "{:%H:%M}",
+    "tooltip": false
+  }
+  ,
+
+  // Keyboard layout indicator via Hyprland (shows EN/RU)
+  "hyprland/language": {
+    "format": "{}",
+    "format-en": "EN",
+    "format-ru": "RU"
+  }
+  ,
+
+  // Custom system stats block: RAM% / CPU% / free disk
+  "custom/sysstat": {
+    "exec": "bash -lc \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/scripts/sysstat.sh\"",
+    "return-type": "json",
+    "interval": 3,
+    "format": "{}",
+    "tooltip": false
+  }
+}

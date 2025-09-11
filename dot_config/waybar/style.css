@@ -1,0 +1,84 @@
+/* Minimal lemonbar-like style: flat black bar, simple text */
+* {
+  font-family: "Lilex Nerd Font Mono", "Lilex Nerd Font", "Lilex", monospace;
+  font-size: 11px;
+}
+
+window#waybar {
+  background: #000000;
+  color: #ffffff;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+  margin: 0;
+  padding: 0 6px;
+}
+
+/* Remove rounded pills and backgrounds entirely */
+#clock,
+#battery,
+#network,
+#pulseaudio,
+#temperature {
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+}
+
+/* Custom sysstat block: left separator + subtle state colors */
+#custom-sysstat {
+  padding: 0 8px;
+  margin-right: 8px;
+  border-right: 1px solid #333;
+}
+
+#custom-sysstat.warning {
+  color: #ffbf00; /* amber */
+}
+
+#custom-sysstat.critical {
+  color: #ff5f5f; /* red */
+}
+
+/* Workspaces: simple text with subtle inactive, highlighted active */
+#workspaces {
+  padding: 0 4px;
+}
+
+#workspaces button {
+  background: transparent;
+  color: #bbbbbb;
+  border: 0;
+  padding: 0 6px;
+  margin: 0;
+  box-shadow: none;
+}
+
+/* Active/focused workspace: just cyan text, no shapes */
+#workspaces button.active,
+#workspaces button.focused {
+  color: #00d8d8; /* turquoise */
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Urgent workspace (if any) */
+#workspaces button.urgent {
+  color: #ff5f5f;
+}
+
+#workspaces button:hover {
+  color: #ffffff;
+  background: transparent;
+}
+
+/* Trim any spacing Waybar might add */
+tooltip {
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+}
