@@ -20,10 +20,12 @@ vim.api.nvim_create_autocmd("TermOpen", {
 
 -- Переключение на английскую раскладку при выходе из режима вставки
 vim.api.nvim_create_autocmd("InsertLeave", {
-	pattern = "*",
-	callback = function()
-		os.execute("xkb-switch -s us")
-	end,
+    pattern = "*",
+    callback = function()
+        if vim.fn.executable("xkb-switch") == 1 then
+            vim.system({ "xkb-switch", "-s", "us" }, { text = true }, function() end)
+        end
+    end,
 })
 
 vim.api.nvim_create_autocmd("BufWritePre", {
@@ -34,8 +36,8 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 })
 
 vim.api.nvim_create_autocmd("FileType", {
-	pattern = { "cpp", "c", "h", "hpp" }, -- Файлы C++
-	callback = function()
+    pattern = { "cpp", "c", "h", "hpp" }, -- Файлы C++
+    callback = function()
 		vim.opt_local.tabstop = 2 -- Размер табуляции
 		vim.opt_local.shiftwidth = 2 -- Размер отступа
 		vim.opt_local.expandtab = true -- Преобразовывать Tab в пробелы
@@ -45,7 +47,7 @@ vim.api.nvim_create_autocmd("FileType", {
 			":0", -- Не добавлять дополнительные отступы после `{`
 			"l1", -- Уровень отступа для `{` и `}`
 		}
-	end,
+    end,
 })
 
 vim.api.nvim_create_autocmd("FileType", {
@@ -56,8 +58,33 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.expandtab = true -- Преобразовывать Tab в пробелы
 		vim.opt_local.smartindent = false -- Отключить умные отступы
 		vim.opt_local.autoindent = false -- Отключить автоиндентацию
-	end,
+    end,
 })
+
+-- Автовключение vim-dadbod-completion + nvim-cmp в SQL буферах
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "sql", "mysql", "plsql", "pgsql", "psql" },
+  group = vim.api.nvim_create_augroup("dadbod_completion_sql", { clear = true }),
+  callback = function()
+    -- omnifunc для built-in completion и источника cmp-omni
+    vim.bo.omnifunc = "vim_dadbod_completion#omni"
+
+    -- nvim-cmp: источник vim-dadbod-completion для текущего буфера
+    local ok, cmp = pcall(require, "cmp")
+    if ok then
+      cmp.setup.buffer({
+        sources = cmp.config.sources({
+          { name = "vim-dadbod-completion" },
+        }, {
+          { name = "buffer" },
+          { name = "path" },
+        }),
+      })
+    end
+  end,
+})
+
+
 
 vim.api.nvim_create_autocmd("BufNewFile", {
 	pattern = "*.puml",

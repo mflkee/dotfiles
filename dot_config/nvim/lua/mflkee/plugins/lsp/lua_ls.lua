@@ -1,7 +1,16 @@
 local M = {}
 
+local function configure(server, cfg)
+  if vim.lsp and vim.lsp.config then
+    vim.lsp.config(server, cfg)
+    vim.lsp.enable(server)
+  else
+    require('lspconfig')[server].setup(cfg)
+  end
+end
+
 function M.setup(capabilities)
-  require('lspconfig').lua_ls.setup {
+  configure('lua_ls', {
     capabilities = capabilities,
     settings = {
       Lua = {
@@ -14,7 +23,7 @@ function M.setup(capabilities)
         telemetry = { enable = false },
       },
     },
-  }
+  })
 end
 
 return M

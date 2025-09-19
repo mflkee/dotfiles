@@ -5,16 +5,17 @@ return {
 		dependencies = {
 			"hrsh7th/cmp-nvim-lsp",
 			"hrsh7th/cmp-path",
+			"hrsh7th/cmp-buffer",
 			"L3MON4D3/LuaSnip",
 			"saadparwaiz1/cmp_luasnip",
 			"onsails/lspkind.nvim",
 		},
 		config = function()
-			local cmp = require("cmp")
+            local cmp = require("cmp")
 			local luasnip = require("luasnip")
 			local lspkind = require("lspkind")
 
-			cmp.setup({
+            cmp.setup({
 				snippet = {
 					expand = function(args)
 						luasnip.lsp_expand(args.body)
@@ -26,11 +27,12 @@ return {
 					["<C-y>"] = cmp.mapping.confirm({ select = true }),
 					["<C-Space>"] = cmp.mapping.complete({}),
 				}),
-				sources = {
-					{ name = "nvim_lsp" },
-					{ name = "luasnip" },
-					{ name = "path" },
-				},
+                sources = {
+                    { name = "nvim_lsp" },
+                    { name = "luasnip" },
+                    { name = "path" },
+                    { name = "buffer" },
+                },
 				formatting = {
 					format = function(entry, vim_item)
 						local max_label_width = 30
@@ -55,7 +57,9 @@ return {
 						col_offset = 40,
 					}),
 				},
-			})
-		end,
-	},
+            })
+
+            -- Для SQL используем те же источники; при желании omni можно включить вручную в буфере
+        end,
+    },
 }

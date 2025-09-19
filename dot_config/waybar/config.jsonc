@@ -1,108 +1,98 @@
 // -*- mode: jsonc -*-
 {
-  "layer": "top",
-  "position": "top",
-  "height": 8,
-  "spacing": 8,
-
-  // Order: minimal, lemonbar-like
-  "modules-left": [
-    "hyprland/workspaces"
-  ],
-  "modules-center": [
-    "hyprland/window"
-  ],
-  "modules-right": [
-    "custom/rec",
-    "custom/sysstat",
-    "network",
-    "pulseaudio",
-    "battery",
-    "hyprland/language",
-    "clock"
-  ],
-
-  // Modules configuration (inline, no external include)
-  "hyprland/workspaces": {
-    "disable-scroll": true,
-    "all-outputs": true,
-    "sort-by-number": true,
-    "active-only": false,
-    "format": "{name}",
-    "on-click": "activate",
-    "show-special": false,
-    "persistent-workspaces": {
-      "*": [1,2,3,4,5,6,7,8,9,10]
-    }
-  },
-
-  "hyprland/window": {
-    "max-length": 60,
-    "separate-outputs": false,
-    "rewrite": {
-      "(.*) - .*": "$1"
+    "layer": "top",
+    "position": "top",
+    "height": 22,
+    "spacing": 1,
+    "modules-left": [
+        "hyprland/workspaces"
+    ],
+    "modules-center": [
+        "clock#date"
+    ],
+    "modules-right": [
+        "cpu",
+        "temperature#cpu",
+        "memory",
+        "disk#root",
+        "network",
+        "hyprland/language",
+        "battery",
+        "clock"
+    ],
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "sort-by": "number",
+        "show-special": false,
+        "persistent-workspaces": {
+            "*": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        }
     },
-    "format": "{title}"
-  },
-
-  "network": {
-    "interval": 5,
-    "format-wifi": "WIFI {essid} {signalStrength}%",
-    "format-ethernet": "ETH {ipaddr}",
-    "format-disconnected": "OFFLINE"
-  },
-
-  "pulseaudio": {
-    "format": "VOL {volume}%",
-    "format-muted": "MUTE",
-    "scroll-step": 2
-  },
-
-  "temperature": {
-    "interval": 10,
-    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon4/temp1_input",
-    "format": "TEMP {temperatureC}°",
-    "format-critical": "HOT {temperatureC}°"
-  },
-
-  "battery": {
-    "states": { "warning": 20, "critical": 10 },
-    "format": "BAT {capacity}%",
-    "format-full": "BAT {capacity}%",
-    "format-charging": "CHR {capacity}%",
-    "format-plugged": "AC  {capacity}%"
-  },
-
-  "clock": {
-    "format": "{:%H:%M}",
-    "tooltip": false
-  }
-  ,
-
-  // Keyboard layout indicator via Hyprland (shows EN/RU)
-  "hyprland/language": {
-    "format": "{}",
-    "format-en": "EN",
-    "format-ru": "RU"
-  }
-  ,
-
-  // Custom system stats block: RAM% / CPU% / free disk
-  "custom/sysstat": {
-    "exec": "bash -lc \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/scripts/sysstat.sh\"",
-    "return-type": "json",
-    "interval": 3,
-    "format": "{}",
-    "tooltip": false
-  }
-  ,
-
-  // Screen recording status indicator (red dot when recording)
-  "custom/rec": {
-    "exec": "bash -lc \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/scripts/rec_status.sh\"",
-    "return-type": "json",
-    "interval": 1,
-    "format": "{}",
-    "tooltip": false
-  }
+    "cpu": {
+        "interval": 3,
+        "format": "{usage}%",
+        "states": {
+            "warning": 60
+        },
+        "tooltip": false
+    },
+    "temperature#cpu": {
+        "format": "{temperatureC}°",
+        "input-filename": "temp1_input",
+        "hwmon-path-abs": [
+            "/sys/devices/platform/coretemp.0/hwmon"
+        ],
+        "warning-threshold": 60,
+        "critical-threshold": 85,
+        "tooltip": false
+    },
+    "memory": {
+        "interval": 3,
+        "format": "{percentage}%",
+        "states": {
+            "warning": 60
+        },
+        "tooltip": false
+    },
+    "disk#root": {
+        "interval": 30,
+        "path": "/",
+        "format": "{free}",
+        "tooltip": false
+    },
+    "network": {
+        "interval": 2,
+        "markup": true,
+        "format-ethernet": "<span color='#7dcfff'>{ifname} {ipaddr}</span> <span color='#9ece6a'>↓{bandwidthDownBytes}</span> <span color='#f7768e'>↑{bandwidthUpBytes}</span>",
+        "format-wifi": "<span color='#7dcfff'>{ifname} {ipaddr}</span> <span color='#9ece6a'>↓{bandwidthDownBytes}</span> <span color='#f7768e'>↑{bandwidthUpBytes}</span>",
+        "format-disconnected": "<span color='#f7768e'>↓0 ↑0</span>",
+        "tooltip": false
+    },
+    "hyprland/language": {
+        "format": "{shortDescription}",
+        "format-en": "en",
+        "format-ru": "ru",
+        "tooltip": false
+    },
+    "battery": {
+        "interval": 30,
+        "states": {
+            "warning": 20,
+            "critical": 10
+        },
+        "format": "{capacity}%",
+        "format-charging": "{capacity}%+",
+        "format-plugged": "{capacity}%+",
+        "tooltip": false
+    },
+    "clock": {
+        "interval": 1,
+        "format": "{:%H:%M:%S}",
+        "tooltip": false
+    },
+    "clock#date": {
+        "interval": 60,
+        "format": "{:%d.%m.%Y}",
+        "tooltip": false
+    }
 }

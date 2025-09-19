@@ -1,96 +1,76 @@
-/* Minimal lemonbar-like style: flat black bar, simple text */
 * {
-  font-family: "Lilex Nerd Font Mono", "Lilex Nerd Font", "Lilex", monospace;
-  font-size: 14px;
+  border: 0;
+  border-radius: 0;
+  font-family: "Lilex Nerd Font Mono";
+  font-size: 10pt;
   min-height: 0;
+  padding: 0;
 }
 
 window#waybar {
-  background: #000000;
-  color: #ffffff;
-  min-height: 0;
+  background: #000;
+  color: #fff;
 }
 
-.modules-left,
-.modules-center,
-.modules-right {
-  margin: 0;
-  padding: 0 6px;
-}
-
-/* Remove rounded pills and backgrounds entirely */
-#clock,
-#battery,
-#network,
-#pulseaudio,
-#temperature {
-  padding: 0 6px;
-  background: transparent;
-  border: none;
-}
-
-/* Custom sysstat block: left separator + subtle state colors */
-#custom-sysstat {
-  padding: 0 8px;
-  margin-right: 8px;
-  border-right: 1px solid #333;
-}
-
-/* Screen recording indicator: red dot when active */
-#custom-rec {
-  padding: 0 4px;
-  min-width: 10px;
-}
-#custom-rec.recording {
-  color: #ff3b30; /* red */
-}
-
-#custom-sysstat.warning {
-  color: #ffbf00; /* amber */
-}
-
-#custom-sysstat.critical {
-  color: #ff5f5f; /* red */
-}
-
-/* Workspaces: simple text with subtle inactive, highlighted active */
 #workspaces {
-  padding: 0 4px;
+  margin: 0 4px;
 }
 
 #workspaces button {
   background: transparent;
-  color: #bbbbbb;
-  border: 0;
-  padding: 0 6px;
-  margin: 0;
-  box-shadow: none;
-  min-height: 0;
-}
-
-/* Active/focused workspace: just cyan text, no shapes */
-#workspaces button.active,
-#workspaces button.focused {
-  color: #00d8d8; /* turquoise */
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* Urgent workspace (if any) */
-#workspaces button.urgent {
-  color: #ff5f5f;
+  color: #7f7f7f;
+  margin: 0 1px;
+  padding: 0 3px;
 }
 
 #workspaces button:hover {
-  color: #ffffff;
-  background: transparent;
+  color: #e6782e;
 }
 
-/* Trim any spacing Waybar might add */
-tooltip {
-  background: #111;
+#workspaces button.urgent {
+  color: #ff5555;
+}
+
+#workspaces button.active {
+  color: #e6782e;
+}
+
+#workspaces button.empty:not(.active) {
+  color: #ffffff;
+}
+
+#cpu,
+#temperature,
+#memory,
+#network,
+#disk,
+#language,
+#battery,
+#clock {
+  padding: 0 4px;
   color: #fff;
-  border: 1px solid #333;
+}
+
+#clock.date {
+  padding: 0 4px;
+  color: #fff;
+}
+
+#clock:not(.date) {
+  color: #e6782e;
+}
+
+#cpu.warning,
+#cpu.critical,
+#memory.warning,
+#memory.critical,
+#temperature.warning,
+#temperature.critical {
+  color: #e6782e;
+}
+
+tooltip {
+  border: 1px solid #fff;
+  background: #000;
+  color: #fff;
 }

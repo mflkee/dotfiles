@@ -100,3 +100,11 @@ vim.keymap.set("n", "<leader>hx", ":HexToggle<CR>", { desc = "Toggle hex view" }
 -- Для PlantUML Previewer
 vim.api.nvim_set_keymap('n', '<leader>pu', ':PlantumlOpen<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>ps', ':PlantumlSave<CR>', { noremap = true, silent = true })
+
+-- DBUI / dadbod: быстрые команды (leader + db*)
+vim.keymap.set('n', '<leader>dbu', ':DBUI<CR>', { desc = '[DB] Open UI' })
+vim.keymap.set('n', '<leader>dbt', ':DBUIToggle<CR>', { desc = '[DB] Toggle UI' })
+vim.keymap.set('n', '<leader>dba', ':DBUIAddConnection<CR>', { desc = '[DB] Add connection' })
+vim.keymap.set('n', '<leader>dbb', ':DBUIFindBuffer<CR>', { desc = '[DB] Find buffer' })
+vim.keymap.set('n', '<leader>dbn', DBNewQuery, { desc = '[DB] New SQL buffer' })
+vim.keymap.set('n', '<leader>dbc', DBSetConnection, { desc = '[DB] Set buffer connection' })

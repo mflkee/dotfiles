@@ -2,7 +2,6 @@ return {
   'neovim/nvim-lspconfig',
   dependencies = {
     { 'williamboman/mason.nvim', config = true },
-    'williamboman/mason-lspconfig.nvim',
     'WhoIsSethDaniel/mason-tool-installer.nvim',
     'j-hui/fidget.nvim',
     'folke/neodev.nvim',
@@ -11,7 +10,10 @@ return {
   config = function()
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-    require('mason').setup()
+    require('mason').setup({
+      -- Ensure Mason bin dir is in PATH so servers launch
+      PATH = 'prepend',
+    })
     require('fidget').setup({})
     require('neodev').setup({})
 
@@ -27,36 +29,20 @@ return {
       },
     }
 
-    -- Явная загрузка LSP-конфигов вместо динамического сканирования
-    local lsp_servers = {
+    -- Явная загрузка LSP-конфигов через vim.lsp.config/vim.lsp.enable
+    local lsp_modules = {
       'lua_ls',
       'python',
-      'rust' -- rustaceanvim обрабатывает Rust отдельно
+      'rust',   -- rustaceanvim обрабатывает Rust отдельно
     }
 
-    -- Загрузка конфигов
-    for _, server in ipairs(lsp_servers) do
-      local ok, config = pcall(require, 'mflkee.plugins.lsp.' .. server)
-      if ok and type(config.setup) == 'function' then
-        config.setup(capabilities)
+    for _, mod in ipairs(lsp_modules) do
+      local ok, m = pcall(require, 'mflkee.plugins.lsp.' .. mod)
+      if ok and type(m.setup) == 'function' then
+        m.setup(capabilities)
       else
-        vim.notify('LSP config error: ' .. server, vim.log.levels.ERROR)
+        vim.notify('LSP config error: ' .. mod, vim.log.levels.ERROR)
       end
     end
-
-    -- Базовые настройки для остальных LSP
-    require('mason-lspconfig').setup({
-      ensure_installed = {}, -- оставляем пустым, т.к. уже установили через tool-installer
-      handlers = {
-        function(server_name)
-          -- Пропускаем уже настроенные серверы
-          if not vim.tbl_contains(lsp_servers, server_name) then
-            require('lspconfig')[server_name].setup({
-              capabilities = capabilities
-            })
-          end
-        end,
-      }
-    })
   end,
 }

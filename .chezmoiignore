@@ -1,5 +1,7 @@
 ~/.config/nvim/lazy-lock.json
 ~/.config/mimeapps.list
-
-
+# Do not deploy Wayland-specific configs anymore
+~/.config/hypr
+~/.config/hyprpanel
+~/.config/tofi
 

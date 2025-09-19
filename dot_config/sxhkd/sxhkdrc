@@ -202,13 +202,15 @@ super + alt + shift + {h,j,k,l}
 super + {Left,Down,Up,Right}
 	bspc node -v {-20 0,0 20,0 -20,20 0}
 
-# screanshot
-super + shift + s
+# screenshot (PrintScreen)
+Print
 	~/.config/scripts/screenshot.sh
 
-# record
-super + shift + r
+# record (BSPWM/X11) — Shift+PrintScreen
+shift + Print
 	~/.config/sxhkd/scripts/record.sh
+
+# unified hotkey: Shift+PrintScreen (kept only one to avoid conflicts)
 
 # перейти на 11-й рабочий стол (super + -)
 super + minus

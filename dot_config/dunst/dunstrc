@@ -4,8 +4,8 @@
     follow = mouse
 
     ### Geometry ###
-    width = (0, 300)
-    height = (0, 100)
+    width = (0, 260)
+    height = (0, 90)
     origin = top-right
     offset = (10, 50)  # Новый синтаксис для offset
     scale = 0
@@ -21,8 +21,8 @@
     indicate_hidden = yes
     transparency = 15
     separator_height = 1
-    padding = 8
-    horizontal_padding = 10
+    padding = 6
+    horizontal_padding = 8
     text_icon_padding = 0
     frame_width = 2
     frame_color = "#BD93F9"  # Фиолетовый цвет рамки
@@ -32,7 +32,7 @@
     idle_threshold = 120
 
     ### Text ###
-    font = Monospace 10
+    font = Monospace 9
     line_height = 0
     markup = full
     format = "<b>%s</b>\n%b"  # Жирный заголовок

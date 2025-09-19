@@ -12,3 +12,7 @@ font-size = 14
 
 # Note: If Ghostty still errors, comment options one-by-one to isolate.
 # Some builds may not support extra keys like selection/cursor tweaks yet.
+
+# Disable the "confirm on close" prompt
+# In Ghostty the setting is named "confirm-close-surface".
+confirm-close-surface = false

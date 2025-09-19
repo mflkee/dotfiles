@@ -24,7 +24,9 @@ vim.opt.termguicolors = true
 vim.opt.smartindent = false
 vim.opt.autoindent = false -- Метод сворачивания, например, по отступам
 vim.opt.foldmethod = "indent"
-vim.opt.inccommand = ""
+-- оставляем превью замен включенным через split-окно
 -- Начальный уровень сворачивания
 vim.opt.foldlevelstart = 99 -- Открыть все блоки при открытии файла
 vim.opt.colorcolumn = "80"
+-- Рекомендуемые опции для nvim-cmp (popup меню)
+vim.opt.completeopt = { "menu", "menuone", "noselect" }
