@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Install/refresh the Tokyo Night SDDM theme and set it as default.
+
+set -euo pipefail
+
+THEME_NAME="tokyo-night-sddm"
+THEME_REPO="https://github.com/rototrash/tokyo-night-sddm.git"
+THEME_DEST="/usr/share/sddm/themes/${THEME_NAME}"
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "git is required to install ${THEME_NAME}" >&2
+  exit 1
+fi
+
+if ! command -v sudo >/dev/null 2>&1; then
+  echo "sudo is required to write into ${THEME_DEST} and /etc" >&2
+  exit 1
+fi
+
+work_dir="$(mktemp -d)"
+trap 'rm -rf "${work_dir}"' EXIT
+
+echo "Fetching ${THEME_NAME} from ${THEME_REPO}" >&2
+git clone --depth 1 "${THEME_REPO}" "${work_dir}/${THEME_NAME}"
+
+sudo install -d -m 755 /usr/share/sddm/themes
+
+# Replace the existing theme directory atomically.
+if sudo test -d "${THEME_DEST}"; then
+  sudo rm -rf "${THEME_DEST}"
+fi
+sudo cp -a "${work_dir}/${THEME_NAME}" "${THEME_DEST}"
+sudo chown -R root:root "${THEME_DEST}"
+sudo chmod -R go-w "${THEME_DEST}"
+
+# Ensure SDDM uses the theme via /etc/sddm.conf.d override.
+config_dir="/etc/sddm.conf.d"
+theme_config="${config_dir}/10-theme.conf"
+sudo install -d -m 755 "${config_dir}"
+sudo tee "${theme_config}" >/dev/null <<'CONF'
+[Theme]
+Current=tokyo-night-sddm
+CONF
+
+echo "Installed ${THEME_NAME} into ${THEME_DEST} and wrote ${theme_config}." >&2
