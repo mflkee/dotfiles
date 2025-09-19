@@ -1,4 +1,5 @@
 // -*- mode: jsonc -*-
+{{- $host := .chezmoi.hostname }}
 {
     "layer": "top",
     "position": "top",
@@ -36,7 +37,16 @@
         },
         "tooltip": false
     },
-    "temperature#cpu": {
+    "temperature#cpu": {{- if eq $host "archlinux-desktop" }} {
+        "format": "{temperatureC}°",
+        "input-filename": "temp1_input",
+        "hwmon-path-abs": [
+            "/sys/devices/pci0000:00/0000:00:18.3/hwmon"
+        ],
+        "warning-threshold": 75,
+        "critical-threshold": 90,
+        "tooltip": false
+    } {{- else if eq $host "archlinux-laptop" }} {
         "format": "{temperatureC}°",
         "input-filename": "temp1_input",
         "hwmon-path-abs": [
@@ -45,7 +55,10 @@
         "warning-threshold": 60,
         "critical-threshold": 85,
         "tooltip": false
-    },
+    } {{- else }} {
+        "format": "{temperatureC}°",
+        "tooltip": false
+    } {{- end }},
     "memory": {
         "interval": 3,
         "format": "{percentage}%",
