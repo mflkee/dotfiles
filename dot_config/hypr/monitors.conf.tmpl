@@ -1,0 +1,16 @@
+# Monitors layout managed via chezmoi (templated by hostname).
+{{- $host := .chezmoi.hostname }}
+{{- if eq $host "archlinux-desktop" }}
+# Desktop: single high refresh display on DP-4.
+monitor=DP-4,1920x1080@143,0x0,1
+monitor=DP-5,disable
+monitor=DP-6,disable
+monitor=HDMI-A-2,disable
+{{- else if eq $host "archlinux-laptop" }}
+# Laptop + ultrawide: HDMI ultrawide left, internal eDP panel right.
+monitor=HDMI-A-1,2560x1080@180,0x0,1
+monitor=eDP-1,preferred,2560x0,1.25
+{{- else }}
+# Fallback: auto-detect.
+monitor=,preferred,auto,auto
+{{- end }}
