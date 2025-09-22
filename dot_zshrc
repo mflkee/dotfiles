@@ -61,11 +61,6 @@ zinit light Aloxaf/fzf-tab
 zinit light jeffreytse/zsh-vi-mode
 zinit light hlissner/zsh-autopair
 
-# Подключаем тёмно-оранжевую тему для fast-syntax-highlighting
-if (( $+functions[fast-theme] )); then
-  fast-theme q-jmnemonic >/dev/null 2>&1
-fi
-
 # --------------------
 # Основные настройки Zsh
 # --------------------
