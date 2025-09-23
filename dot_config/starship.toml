@@ -37,8 +37,11 @@ style = "bold fg:accent"
 read_only = " 󰌾"
 read_only_style = "bold fg:warn"
 format = "[$path]($style)[$read_only]($read_only_style)"
-truncation_length = 3
+truncation_length = 8
 truncation_symbol = "…/"
+# Добавьте эти строки:
+truncate_to_repo = false  # Не обрезать до корня репозитория
+repo_root_format = ""     # Отключить специальное форматирование для корня репо
 
 [docker_context]
 symbol = " "
@@ -57,7 +60,7 @@ symbol = " "
 
 [git_branch]
 symbol = " "
-style = "bold fg:accent_alt"
+format = '[$symbol $branch ]($style)'
 
 [git_status]
 style = "fg:accent"
