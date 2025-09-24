@@ -106,3 +106,31 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
 	end,
 })
+
+-- Автокоманда для выполнения SQL-запроса через F7
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "sql",
+  group = vim.api.nvim_create_augroup("sql_f7_mapping", { clear = true }),
+  callback = function()
+    -- Нормальный режим: выделяет блок и выполняет запрос
+    vim.keymap.set('n', '<F7>', 'vip<Plug>(DBUI_ExecuteQuery)', { 
+      buffer = true, 
+      desc = 'Execute SQL block with dbui',
+      silent = true
+    })
+    
+    -- Визуальный режим: выполняет выделенное
+    vim.keymap.set('v', '<F7>', '<Plug>(DBUI_ExecuteQuery)', { 
+      buffer = true, 
+      desc = 'Execute selected SQL with dbui',
+      silent = true
+    })
+    
+    -- Режим вставки: выходит в нормальный режим и выполняет блок
+    vim.keymap.set('i', '<F7>', '<Esc>vip<Plug>(DBUI_ExecuteQuery)', { 
+      buffer = true, 
+      desc = 'Execute SQL block with dbui',
+      silent = true
+    })
+  end,
+})
