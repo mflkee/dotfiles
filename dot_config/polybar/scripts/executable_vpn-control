@@ -1,9 +1,0 @@
-#!/bin/bash
-
-if sudo systemctl is-active "$SERVICE" >/dev/null; then
-    sudo systemctl stop "$SERVICE"
-    notify-send "VPN" "Отключен" -t 2000
-else
-    sudo systemctl start "$SERVICE"
-    notify-send "VPN" "Подключен" -t 2000
-fi
