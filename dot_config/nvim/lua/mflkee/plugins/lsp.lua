@@ -26,14 +26,16 @@ return {
         'isort',
         'mypy',
         'codelldb',
+        'rust-analyzer',  -- Add rust-analyzer for rustaceanvim
       },
     }
 
-    -- Явная загрузка LSP-конфигов через vim.lsp.config/vim.lsp.enable
+    -- Явная загрузка LSP-конфигов 
     local lsp_modules = {
       'lua_ls',
       'python',
-      'rust',   -- rustaceanvim обрабатывает Rust отдельно
+      -- Note: Rust is handled by rustaceanvim, so we don't load rust.lua here
+      -- to avoid conflicts, but we keep the file in case it's needed for settings
     }
 
     for _, mod in ipairs(lsp_modules) do

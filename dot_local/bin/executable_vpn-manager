@@ -1,0 +1,199 @@
+#!/bin/bash
+set -euo pipefail
+
+CONFIG_INDEX="/etc/vpn-manager/configs/index.json"
+STATE_DIR="$HOME/.config/vpn-manager"
+SELECTED_FILE="$STATE_DIR/selected"
+WAYBAR_SIGNAL=5
+ROFI_CMD=(rofi -dmenu -i -p "VPN")
+
+if [[ ! -r "$CONFIG_INDEX" ]]; then
+  echo "Config index not found: $CONFIG_INDEX" >&2
+  exit 1
+fi
+
+mkdir -p "$STATE_DIR"
+
+default_slug() {
+  jq -r '.[0].slug // empty' "$CONFIG_INDEX"
+}
+
+slug_exists() {
+  local slug=$1
+  jq -e --arg slug "$slug" 'map(.slug == $slug) | any' "$CONFIG_INDEX" >/dev/null
+}
+
+current_slug() {
+  local slug=""
+  if [[ -f "$SELECTED_FILE" ]]; then
+    slug=$(<"$SELECTED_FILE")
+  fi
+  if [[ -z "$slug" ]] || ! slug_exists "$slug"; then
+    slug=$(default_slug)
+    if [[ -z "$slug" ]]; then
+      echo "" >&2
+      return 1
+    fi
+    printf '%s\n' "$slug" > "$SELECTED_FILE"
+  fi
+  printf '%s\n' "$slug"
+}
+
+slug_to_name() {
+  local slug=$1
+  jq -r --arg slug "$slug" '.[] | select(.slug==$slug) | .name' "$CONFIG_INDEX"
+}
+
+list_entries() {
+  jq -r '.[] | "\(.slug)\t\(.name)"' "$CONFIG_INDEX"
+}
+
+refresh_waybar() {
+  pkill -RTMIN+$WAYBAR_SIGNAL waybar 2>/dev/null || true
+}
+
+active_unit() {
+  systemctl list-units 'vpn-manager@*.service' --state=active --no-legend --no-pager | awk '{print $1}'
+}
+
+is_active() {
+  local slug=$1
+  systemctl --quiet is-active "vpn-manager@${slug}.service"
+}
+
+connect() {
+  local slug=$(current_slug)
+  if [[ -z "$slug" ]]; then
+    echo "No VPN configuration selected" >&2
+    exit 1
+  fi
+  if is_active "$slug"; then
+    refresh_waybar
+    return
+  fi
+  mapfile -t units < <(active_unit)
+  for unit in "${units[@]:-}"; do
+    [[ -z "$unit" ]] && continue
+    if [[ "$unit" != "vpn-manager@${slug}.service" ]]; then
+      sudo systemctl stop "$unit"
+    fi
+  done
+  sudo systemctl start "vpn-manager@${slug}.service"
+  refresh_waybar
+}
+
+disconnect() {
+  local slug=$(current_slug)
+  local unit="vpn-manager@${slug}.service"
+  if is_active "$slug"; then
+    sudo systemctl stop "$unit"
+  else
+    mapfile -t units < <(active_unit)
+    for current_unit in "${units[@]:-}"; do
+      [[ -z "$current_unit" ]] && continue
+      sudo systemctl stop "$current_unit"
+    done
+  fi
+  refresh_waybar
+}
+
+status() {
+  local slug=$(current_slug)
+  local name=$(slug_to_name "$slug")
+  if is_active "$slug"; then
+    printf 'connected\t%s\t%s\n' "$slug" "$name"
+  else
+    printf 'disconnected\t%s\t%s\n' "$slug" "$name"
+  fi
+}
+
+waybar() {
+  local info
+  IFS=$'\t' read -r state slug name < <(status)
+  local icon class tooltip
+  if [[ "$state" == "connected" ]]; then
+    icon=""
+    class="connected"
+    tooltip="VPN connected: $name"
+  else
+    icon=""
+    class="disconnected"
+    tooltip="VPN disconnected"
+  fi
+  printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' "$icon" "$tooltip" "$class"
+}
+
+select_config() {
+  if ! command -v "${ROFI_CMD[0]}" >/dev/null 2>&1; then
+    echo "Missing launcher: ${ROFI_CMD[0]}" >&2
+    return 1
+  fi
+  local slug=$(current_slug)
+  local menu=""
+  while IFS=$'\t' read -r entry_slug entry_name; do
+    if [[ "$entry_slug" == "$slug" ]]; then
+      menu+="* $entry_name\n"
+    else
+      menu+="$entry_name\n"
+    fi
+  done < <(list_entries)
+  local choice
+  choice=$(printf '%b' "$menu" | "${ROFI_CMD[@]}") || return 1
+  if [[ "$choice" == \** ]]; then
+    choice=${choice#* }
+  fi
+  if [[ -z "$choice" ]]; then
+    return 0
+  fi
+  local new_slug
+  new_slug=$(jq -r --arg name "$choice" '.[] | select(.name==$name) | .slug' "$CONFIG_INDEX")
+  if [[ -z "$new_slug" || "$new_slug" == "null" ]]; then
+    return 1
+  fi
+  if [[ "$new_slug" == "$slug" ]]; then
+    printf '%s\n' "$new_slug" > "$SELECTED_FILE"
+    refresh_waybar
+    return 0
+  fi
+  printf '%s\n' "$new_slug" > "$SELECTED_FILE"
+  if is_active "$slug"; then
+    sudo systemctl stop "vpn-manager@${slug}.service"
+    sudo systemctl start "vpn-manager@${new_slug}.service"
+  fi
+  refresh_waybar
+}
+
+case "${1:-}" in
+  connect)
+    connect
+    ;;
+  disconnect)
+    disconnect
+    ;;
+  toggle)
+    if is_active "$(current_slug)"; then
+      disconnect
+    else
+      connect
+    fi
+    ;;
+  status)
+    status
+    ;;
+  waybar)
+    waybar
+    ;;
+  select)
+    select_config
+    ;;
+  list)
+    list_entries
+    ;;
+  current)
+    current_slug
+    ;;
+  *)
+    echo "Usage: vpn-manager {connect|disconnect|toggle|status|waybar|select|list|current}" >&2
+    exit 1
+    ;;
+esac

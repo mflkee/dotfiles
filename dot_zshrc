@@ -187,6 +187,3 @@ nvim() {
     sudo -E nvim "$@"
   fi
 }
-
-# API
-export OPENROUTER_API_KEY="sk-0ec9218a15fc414a9da7cd17a70ce493"

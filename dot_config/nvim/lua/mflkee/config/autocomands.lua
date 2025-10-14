@@ -29,9 +29,12 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 })
 
 vim.api.nvim_create_autocmd("BufWritePre", {
-	pattern = "*.cpp",
+	pattern = {"*.cpp", "*.c", "*.h", "*.hpp"},
 	callback = function()
-		require("conform").format({ async = true, lsp_fallback = true })
+		local ok, conform = pcall(require, "conform")
+		if ok then
+			conform.format({ async = true, lsp_fallback = true })
+		end
 	end,
 })
 
@@ -100,8 +103,9 @@ vim.api.nvim_create_autocmd("BufNewFile", {
 	end,
 })
 
+-- Only remove formatoptions for specific filetypes where it's causing issues
 vim.api.nvim_create_autocmd("FileType", {
-	pattern = "*",
+	pattern = { "lua", "python", "rust", "cpp", "c" }, -- Add more filetypes as needed
 	callback = function()
 		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
 	end,
