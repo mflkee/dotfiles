@@ -26,7 +26,7 @@ require("lazy").setup({
 	require("kickstart.plugins.neo-tree"),
 	require("kickstart.plugins.gitsigns"), -- adds gitsigns recommend keymaps
 	{ import = "mflkee.plugins" },
-	{ import = "mflkee.colorscheme.moonfly" },
+	{ import = "mflkee.colorscheme.tokyonight" },
 }, {
   -- Move lockfile out of config so chezmoi can ignore it easily
   lockfile = vim.fn.stdpath("data") .. "/lazy/lazy-lock.json",
