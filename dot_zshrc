@@ -21,7 +21,7 @@ autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 
 # --------------------
-# Инициализация автодополнений
+# Инициализация автодополнений и подсветки синтаксиса
 # --------------------
 autoload -Uz compinit && compinit -u
 
@@ -53,7 +53,7 @@ zinit snippet OMZ::plugins/git/git.plugin.zsh
 # --------------------
 # Загрузка дополнительных плагинов
 # --------------------
-zinit light zdharma-continuum/fast-syntax-highlighting
+zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-autosuggestions
 zinit light agkozak/zsh-z
 zinit light MichaelAquilina/zsh-you-should-use
