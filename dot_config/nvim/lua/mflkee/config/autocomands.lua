@@ -1,26 +1,38 @@
--- [[ Basic Autocommands ]]
---  See `:help lua-guide-autocommands` Highlight when yanking (copying) text
---  Try it with `yap` in normal mode
---  See `:help vim.highlight.on_yank()`
+-- More organized autocommands with better grouping:
+
+-- Create specific groups for better organization
+local augroups = {
+    general = vim.api.nvim_create_augroup("General", { clear = true }),
+    terminal = vim.api.nvim_create_augroup("Terminal", { clear = true }),
+    language = vim.api.nvim_create_augroup("LanguageSpecific", { clear = true }),
+    sql = vim.api.nvim_create_augroup("SQL", { clear = true }),
+    plantuml = vim.api.nvim_create_augroup("PlantUML", { clear = true }),
+    format = vim.api.nvim_create_augroup("Format", { clear = true }),
+}
+
+-- General autocommands
 vim.api.nvim_create_autocmd("TextYankPost", {
-	desc = "Highlight when yanking (copying) text",
-	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
-	callback = function()
-		vim.highlight.on_yank()
-	end,
+    desc = "Highlight when yanking (copying) text",
+    group = augroups.general,
+    callback = function()
+        vim.highlight.on_yank()
+    end,
 })
 
+-- Terminal autocommands
 vim.api.nvim_create_autocmd("TermOpen", {
-	desc = "remove numbers line in terminal",
-	group = vim.api.nvim_create_augroup("kickstart-term", { clear = true }),
-	callback = function()
-		vim.wo.number = false
-	end,
+    desc = "Remove numbers in terminal",
+    group = augroups.terminal,
+    callback = function()
+        vim.wo.number = false
+        vim.wo.relativenumber = false
+    end,
 })
 
--- Переключение на английскую раскладку при выходе из режима вставки
+-- Keyboard layout switching
 vim.api.nvim_create_autocmd("InsertLeave", {
     pattern = "*",
+    group = augroups.general,
     callback = function()
         if vim.fn.executable("xkb-switch") == 1 then
             vim.system({ "xkb-switch", "-s", "us" }, { text = true }, function() end)
@@ -28,113 +40,114 @@ vim.api.nvim_create_autocmd("InsertLeave", {
     end,
 })
 
+-- Format on save for specific filetypes
 vim.api.nvim_create_autocmd("BufWritePre", {
-	pattern = {"*.cpp", "*.c", "*.h", "*.hpp"},
-	callback = function()
-		local ok, conform = pcall(require, "conform")
-		if ok then
-			conform.format({ async = true, lsp_fallback = true })
-		end
-	end,
-})
-
-vim.api.nvim_create_autocmd("FileType", {
-    pattern = { "cpp", "c", "h", "hpp" }, -- Файлы C++
+    pattern = {"*.cpp", "*.c", "*.h", "*.hpp"},
+    group = augroups.format,
     callback = function()
-		vim.opt_local.tabstop = 2 -- Размер табуляции
-		vim.opt_local.shiftwidth = 2 -- Размер отступа
-		vim.opt_local.expandtab = true -- Преобразовывать Tab в пробелы
-		vim.opt_local.smartindent = false -- Отключить умные отступы
-		vim.opt_local.autoindent = false -- Отключить автоиндентацию
-		vim.opt_local.cinoptions = {
-			":0", -- Не добавлять дополнительные отступы после `{`
-			"l1", -- Уровень отступа для `{` и `}`
-		}
+        local ok, conform = pcall(require, "conform")
+        if ok then
+            conform.format({ async = true, lsp_fallback = true })
+        end
+    end,
+})
+
+-- Language-specific indentation settings
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = { "cpp", "c", "h", "hpp" },
+    group = augroups.language,
+    callback = function()
+        vim.opt_local.tabstop = 2
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.expandtab = true
+        vim.opt_local.smartindent = false
+        vim.opt_local.autoindent = true
+        vim.opt_local.cinoptions = {
+            ":0",
+            "l1",
+        }
     end,
 })
 
 vim.api.nvim_create_autocmd("FileType", {
-	pattern = { "lua" }, -- Файлы Lua
-	callback = function()
-		vim.opt_local.tabstop = 2 -- Размер табуляции
-		vim.opt_local.shiftwidth = 2 -- Размер отступа
-		vim.opt_local.expandtab = true -- Преобразовывать Tab в пробелы
-		vim.opt_local.smartindent = false -- Отключить умные отступы
-		vim.opt_local.autoindent = false -- Отключить автоиндентацию
+    pattern = { "lua" },
+    group = augroups.language,
+    callback = function()
+        vim.opt_local.tabstop = 2
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.expandtab = true
+        vim.opt_local.smartindent = false
+        vim.opt_local.autoindent = true
     end,
 })
 
--- Автовключение vim-dadbod-completion + nvim-cmp в SQL буферах
+-- SQL-specific autocommands
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "sql", "mysql", "plsql", "pgsql", "psql" },
-  group = vim.api.nvim_create_augroup("dadbod_completion_sql", { clear = true }),
-  callback = function()
-    -- omnifunc для built-in completion и источника cmp-omni
-    vim.bo.omnifunc = "vim_dadbod_completion#omni"
+    pattern = { "sql", "mysql", "plsql", "pgsql", "psql" },
+    group = augroups.sql,
+    callback = function()
+        vim.bo.omnifunc = "vim_dadbod_completion#omni"
 
-    -- nvim-cmp: источник vim-dadbod-completion для текущего буфера
-    local ok, cmp = pcall(require, "cmp")
-    if ok then
-      cmp.setup.buffer({
-        sources = cmp.config.sources({
-          { name = "vim-dadbod-completion" },
-        }, {
-          { name = "buffer" },
-          { name = "path" },
-        }),
-      })
-    end
-  end,
+        local ok, cmp = pcall(require, "cmp")
+        if ok then
+            cmp.setup.buffer({
+                sources = cmp.config.sources({
+                    { name = "vim_dadbod-completion" },
+                }, {
+                    { name = "buffer" },
+                    { name = "path" },
+                }),
+            })
+        end
+    end,
 })
 
-
-
+-- PlantUML template
 vim.api.nvim_create_autocmd("BufNewFile", {
-	pattern = "*.puml",
-	callback = function()
-		local lines = {
-			"@startuml",
-			"!include /home/mflkee/.config/plantuml/dracula.puml",
-			"",
-			"@enduml",
-		}
-		vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-		vim.api.nvim_win_set_cursor(0, { 3, 0 }) -- курсор на пустую строку
-	end,
+    pattern = "*.puml",
+    group = augroups.plantuml,
+    callback = function()
+        local lines = {
+            "@startuml",
+            "!include /home/mflkee/.config/plantuml/dracula.puml",
+            "",
+            "@enduml",
+        }
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+        vim.api.nvim_win_set_cursor(0, { 3, 0 })
+    end,
 })
 
--- Only remove formatoptions for specific filetypes where it's causing issues
+-- Format options for specific file types
 vim.api.nvim_create_autocmd("FileType", {
-	pattern = { "lua", "python", "rust", "cpp", "c" }, -- Add more filetypes as needed
-	callback = function()
-		vim.opt_local.formatoptions:remove({ "c", "r", "o" })
-	end,
+    pattern = { "lua", "python", "rust", "cpp", "c" },
+    group = augroups.language,
+    callback = function()
+        vim.opt_local.formatoptions:remove({ "c", "r", "o" })
+    end,
 })
 
--- Автокоманда для выполнения SQL-запроса через F7
+-- SQL F7 mapping
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = "sql",
-  group = vim.api.nvim_create_augroup("sql_f7_mapping", { clear = true }),
-  callback = function()
-    -- Нормальный режим: выделяет блок и выполняет запрос
-    vim.keymap.set('n', '<F7>', 'vip<Plug>(DBUI_ExecuteQuery)', { 
-      buffer = true, 
-      desc = 'Execute SQL block with dbui',
-      silent = true
-    })
-    
-    -- Визуальный режим: выполняет выделенное
-    vim.keymap.set('v', '<F7>', '<Plug>(DBUI_ExecuteQuery)', { 
-      buffer = true, 
-      desc = 'Execute selected SQL with dbui',
-      silent = true
-    })
-    
-    -- Режим вставки: выходит в нормальный режим и выполняет блок
-    vim.keymap.set('i', '<F7>', '<Esc>vip<Plug>(DBUI_ExecuteQuery)', { 
-      buffer = true, 
-      desc = 'Execute SQL block with dbui',
-      silent = true
-    })
-  end,
+    pattern = "sql",
+    group = augroups.sql,
+    callback = function()
+        vim.keymap.set('n', '<F7>', 'vip<Plug>(DBUI_ExecuteQuery)', {
+            buffer = true,
+            desc = 'Execute SQL block with dbui',
+            silent = true
+        })
+
+        vim.keymap.set('v', '<F7>', '<Plug>(DBUI_ExecuteQuery)', {
+            buffer = true,
+            desc = 'Execute selected SQL with dbui',
+            silent = true
+        })
+
+        vim.keymap.set('i', '<F7>', '<Esc>vip<Plug>(DBUI_ExecuteQuery)', {
+            buffer = true,
+            desc = 'Execute SQL block with dbui',
+            silent = true
+        })
+    end,
 })

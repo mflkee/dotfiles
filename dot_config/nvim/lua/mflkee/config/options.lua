@@ -1,32 +1,34 @@
-vim.opt.hlsearch = true -- подсветка поиска / highlight search
-vim.opt.relativenumber = true -- включение относительной нумерации строк / relative number
-vim.opt.shiftwidth = 2 -- Размер отступа для GNU стиля
-vim.g.have_nerd_font = true -- наличие шрифта Nerd Font / have nerd font
-vim.opt.number = true -- включение нумерации строк / number
-vim.opt.mouse = "a" -- включение поддержки мыши во всех режимах / mouse
-vim.opt.showmode = false -- не показывать режим ввода, поскольку он уже присутствует в строке состояния / show mode
-vim.opt.clipboard = "unnamedplus" -- синхронизация буфера обмена между ОС и Neovim / clipboard
-vim.opt.breakindent = true -- включение отступов при переносе строк / break indent
-vim.opt.undofile = true -- сохранение истории изменений / undo file
-vim.opt.ignorecase = true -- нечувствительный к регистру поиск / ignore case
-vim.opt.smartcase = true -- умное переключение чувствительности к регистру / smart case
-vim.opt.signcolumn = "yes" -- постоянное отображение столбца знаков / sign column
-vim.opt.updatetime = 250 -- уменьшение времени обновления / update time
-vim.opt.timeoutlen = 300 -- уменьшение времени ожидания комбинации клавиш / timeout length
-vim.opt.splitright = true -- открытие новых вертикальных разделов справа / split right
-vim.opt.splitbelow = true -- открытие новых горизонтальных разделов снизу / split below
-vim.opt.list = false
-vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" } -- настройка отображения символов табуляции, пробелов и неразрывных пробелов / list characters
-vim.opt.inccommand = "split" -- превью изменений по мере ввода / incremental command
-vim.opt.cursorline = true -- подсветка строки, на которой находится курсор / cursor line
-vim.opt.scrolloff = 10 -- минимальное число строк над и под курсором / scroll offset
-vim.opt.termguicolors = true
-vim.opt.smartindent = false
-vim.opt.autoindent = false -- Метод сворачивания, например, по отступам
-vim.opt.foldmethod = "indent"
--- оставляем превью замен включенным через split-окно
--- Начальный уровень сворачивания
-vim.opt.foldlevelstart = 99 -- Открыть все блоки при открытии файла
-vim.opt.colorcolumn = "80"
--- Рекомендуемые опции для nvim-cmp (popup меню)
-vim.opt.completeopt = { "menu", "menuone", "noselect" }
+vim.opt.hlsearch = true           -- highlight search
+vim.opt.number = true             -- line numbers
+vim.opt.relativenumber = true     -- relative line numbers
+vim.opt.mouse = "a"               -- mouse in all modes
+vim.opt.clipboard = "unnamedplus" -- system clipboard
+vim.opt.tabstop = 2               -- tab width
+vim.opt.shiftwidth = 2            -- indentation amount
+vim.opt.expandtab = true          -- convert tabs to spaces
+vim.opt.smartindent = false       -- disable smartindent (use treesitter instead)
+vim.opt.autoindent = true         -- standard autoindent
+vim.opt.breakindent = true        -- wrap indent
+vim.opt.undofile = true           -- persistent undo
+vim.opt.ignorecase = true         -- case insensitive search
+vim.opt.smartcase = true          -- case sensitive if uppercase used
+vim.opt.signcolumn = "yes"        -- always show sign column
+vim.opt.updatetime = 250          -- faster update time
+vim.opt.timeoutlen = 300          -- faster key sequences
+vim.opt.splitright = true         -- vertical split to the right
+vim.opt.splitbelow = true         -- horizontal split below
+vim.opt.inccommand = "split"      -- show substitution preview
+vim.opt.cursorline = true         -- highlight current line
+vim.opt.scrolloff = 10            -- scroll offset
+vim.opt.termguicolors = true      -- enable 24-bit colors
+vim.opt.foldmethod = "indent"     -- fold by indent
+vim.opt.foldlevelstart = 99       -- start with all folds open
+vim.opt.colorcolumn = "80"        -- show 80 char limit
+vim.opt.list = false              -- don't show whitespace by default
+vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }  -- whitespace chars
+vim.opt.completeopt = { "menu", "menuone", "noselect" }      -- completion options
+vim.opt.showmode = false          -- don't show mode since statusline shows it
+
+-- Consolidated indentation settings
+vim.opt.smartindent = false       -- disable both indent options to use treesitter
+vim.opt.autoindent = true         -- keep autoindent for basic functionality

@@ -31,9 +31,13 @@ vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move focus to the right win
 vim.keymap.set("n", "<C-j>", "<C-w><C-j>", { desc = "Move focus to the lower window" })
 vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper window" })
 
-vim.keymap.set({ "i", "n" }, "<m-i>", "<esc>i```{python}<cr>```<esc>O", { desc = "[i]nser code chunk" })
-vim.keymap.set({ "n" }, "<leader>ci", ":split term://ipython<cr>", { desc = "split terminal" })
+-- Window resizing (using vim.keymap.set consistently)
+vim.keymap.set("n", "<A-h>", ":vertical resize -2<CR>", { desc = "Decrease window width", silent = true })
+vim.keymap.set("n", "<A-l>", ":vertical resize +2<CR>", { desc = "Increase window width", silent = true })
+vim.keymap.set("n", "<A-j>", ":resize +2<CR>", { desc = "Increase window height", silent = true })
+vim.keymap.set("n", "<A-k>", ":resize -2<CR>", { desc = "Decrease window height", silent = true })
 
+-- Buffer navigation
 vim.keymap.set("n", "<leader>bp", ":bprev<CR>", { desc = "[B]uffer: previous" })
 vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "[B]uffer: next" })
 vim.keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "[B]uffer: delete" })
@@ -44,66 +48,56 @@ vim.keymap.set("n", "<leader>bc", function()
         end
 end, { desc = "[B]uffer: create new file" })
 
--- Настройка сочетаний клавиш для изменения размера окон
-vim.api.nvim_set_keymap("n", "<A-h>", ":vertical resize -2<CR>", { noremap = true, silent = true }) -- Уменьшение ширины
-vim.api.nvim_set_keymap("n", "<A-l>", ":vertical resize +2<CR>", { noremap = true, silent = true }) -- Увеличение ширины
-vim.api.nvim_set_keymap("n", "<A-j>", ":resize +2<CR>", { noremap = true, silent = true }) -- Увеличение высоты
-vim.api.nvim_set_keymap("n", "<A-k>", ":resize -2<CR>", { noremap = true, silent = true }) -- Уменьшение высоты
+-- Code chunk insertion
+vim.keymap.set({ "i", "n" }, "<m-i>", "<esc>i```{python}<cr>```<esc>O", { desc = "[i]nser code chunk" })
+vim.keymap.set({ "n" }, "<leader>ci", ":split term://ipython<cr>", { desc = "split terminal" })
 
+-- Run code function (improved)
 vim.keymap.set("n", "<leader>R", function()
-	local filetype = vim.bo.filetype
-	local current_file = vim.fn.expand("%:p") -- Полный путь к текущему файлу
-	local dir = vim.fn.expand("%:p:h") -- Директория текущего файла
+    local filetype = vim.bo.filetype
+    local current_file = vim.fn.expand("%:p")
+    local dir = vim.fn.expand("%:p:h")
 
-	if filetype == "rust" then
-		-- Запуск Rust-кода через cargo run
-		vim.cmd("TermExec cmd='cargo run' dir=" .. dir)
-	elseif filetype == "python" then
-		-- Запуск Python-кода
-		vim.cmd("TermExec cmd='python " .. current_file .. "'")
-	elseif filetype == "quarto" then
-		-- Предпросмотр Quarto
-		vim.cmd("QuartoPreview")
-	elseif filetype == "cpp" then
-		-- Компиляция и запуск C++ кода
-		local output_file = vim.fn.expand("%:p:r") -- Убираем расширение файла
-		local executable = vim.fn.fnamemodify(output_file, ":t") -- Только имя исполняемого файла (без пути)
-		vim.cmd(
-			"TermExec cmd='cd "
-				.. dir
-				.. " && g++ -o "
-				.. executable
-				.. " "
-				.. current_file
-				.. " && ./"
-				.. executable
-				.. "'"
-		)
-	else
-		-- Если тип файла не поддерживается
-		vim.notify("Unsupported filetype: " .. filetype, vim.log.levels.WARN)
-	end
+    local runners = {
+        rust = function() vim.cmd("TermExec cmd='cargo run' dir=" .. dir) end,
+        python = function() vim.cmd("TermExec cmd='python " .. current_file .. "'") end,
+        quarto = function() vim.cmd("QuartoPreview") end,
+        cpp = function()
+            local output_file = vim.fn.expand("%:p:r")
+            local executable = vim.fn.fnamemodify(output_file, ":t")
+            vim.cmd("TermExec cmd='cd " .. dir .. " && g++ -o " .. executable .. " " .. current_file .. " && ./" .. executable .. "'")
+        end
+    }
+
+    local runner = runners[filetype]
+    if runner then
+        runner()
+    else
+        vim.notify("Unsupported filetype: " .. filetype, vim.log.levels.WARN)
+    end
 end, { desc = "[R]un code based on filetype" })
 
--- открыть файл под курсором
-vim.api.nvim_set_keymap("n", "<leader>o", ":lua OpenFileUnderCursor()<CR>", { noremap = true, silent = true })
+-- File under cursor
+vim.keymap.set("n", "<leader>o", function() 
+    local filepath = vim.fn.expand("<cfile>")
+    vim.cmd("edit " .. filepath)
+end, { desc = "Open file under cursor", silent = true })
 
--- поменять метсами строчки
-vim.api.nvim_set_keymap("n", "<A-Up>", '<cmd>lua MoveLine("up")<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap("n", "<A-Down>", '<cmd>lua MoveLine("down")<CR>', { noremap = true, silent = true })
+-- Line movement
+vim.keymap.set("n", "<A-Up>", function() MoveLine("up") end, { desc = "Move line up", silent = true })
+vim.keymap.set("n", "<A-Down>", function() MoveLine("down") end, { desc = "Move line down", silent = true })
 
--- hex
+-- Hex view
 vim.keymap.set("n", "<leader>hx", ":HexToggle<CR>", { desc = "Toggle hex view" })
 
---plantuml
--- Для PlantUML Previewer
-vim.api.nvim_set_keymap('n', '<leader>pu', ':PlantumlOpen<CR>', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('n', '<leader>ps', ':PlantumlSave<CR>', { noremap = true, silent = true })
+-- PlantUML
+vim.keymap.set("n", "<leader>pu", ":PlantumlOpen<CR>", { desc = "Open PlantUML" })
+vim.keymap.set("n", "<leader>ps", ":PlantumlSave<CR>", { desc = "Save PlantUML" })
 
--- DBUI / dadbod: быстрые команды (leader + db*)
-vim.keymap.set('n', '<leader>dbu', ':DBUI<CR>', { desc = '[DB] Open UI' })
-vim.keymap.set('n', '<leader>dbt', ':DBUIToggle<CR>', { desc = '[DB] Toggle UI' })
-vim.keymap.set('n', '<leader>dba', ':DBUIAddConnection<CR>', { desc = '[DB] Add connection' })
-vim.keymap.set('n', '<leader>dbb', ':DBUIFindBuffer<CR>', { desc = '[DB] Find buffer' })
-vim.keymap.set('n', '<leader>dbn', DBNewQuery, { desc = '[DB] New SQL buffer' })
-vim.keymap.set('n', '<leader>dbc', DBSetConnection, { desc = '[DB] Set buffer connection' })
+-- DBUI
+vim.keymap.set("n", "<leader>dbu", ":DBUI<CR>", { desc = "[DB] Open UI" })
+vim.keymap.set("n", "<leader>dbt", ":DBUIToggle<CR>", { desc = "[DB] Toggle UI" })
+vim.keymap.set("n", "<leader>dba", ":DBUIAddConnection<CR>", { desc = "[DB] Add connection" })
+vim.keymap.set("n", "<leader>dbb", ":DBUIFindBuffer<CR>", { desc = "[DB] Find buffer" })
+vim.keymap.set("n", "<leader>dbn", DBNewQuery, { desc = "[DB] New SQL buffer" })
+vim.keymap.set("n", "<leader>dbc", DBSetConnection, { desc = "[DB] Set buffer connection" })
