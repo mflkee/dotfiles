@@ -1,3 +1,5 @@
+local fn = require('mflkee.config.functions')
+
 -- [[ Basic Keymaps ]]
 -- Diagnostic keymaps
 vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous [D]iagnostic message" })
@@ -84,8 +86,8 @@ vim.keymap.set("n", "<leader>o", function()
 end, { desc = "Open file under cursor", silent = true })
 
 -- Line movement
-vim.keymap.set("n", "<A-Up>", function() MoveLine("up") end, { desc = "Move line up", silent = true })
-vim.keymap.set("n", "<A-Down>", function() MoveLine("down") end, { desc = "Move line down", silent = true })
+vim.keymap.set("n", "<A-Up>", function() fn.move_line("up") end, { desc = "Move line up", silent = true })
+vim.keymap.set("n", "<A-Down>", function() fn.move_line("down") end, { desc = "Move line down", silent = true })
 
 -- Hex view
 vim.keymap.set("n", "<leader>hx", ":HexToggle<CR>", { desc = "Toggle hex view" })
@@ -99,5 +101,5 @@ vim.keymap.set("n", "<leader>dbu", ":DBUI<CR>", { desc = "[DB] Open UI" })
 vim.keymap.set("n", "<leader>dbt", ":DBUIToggle<CR>", { desc = "[DB] Toggle UI" })
 vim.keymap.set("n", "<leader>dba", ":DBUIAddConnection<CR>", { desc = "[DB] Add connection" })
 vim.keymap.set("n", "<leader>dbb", ":DBUIFindBuffer<CR>", { desc = "[DB] Find buffer" })
-vim.keymap.set("n", "<leader>dbn", DBNewQuery, { desc = "[DB] New SQL buffer" })
-vim.keymap.set("n", "<leader>dbc", DBSetConnection, { desc = "[DB] Set buffer connection" })
+vim.keymap.set("n", "<leader>dbn", fn.db_new_query, { desc = "[DB] New SQL buffer" })
+vim.keymap.set("n", "<leader>dbc", fn.db_set_connection, { desc = "[DB] Set buffer connection" })

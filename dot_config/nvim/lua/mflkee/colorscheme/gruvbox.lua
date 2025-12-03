@@ -1,11 +1,9 @@
 return {
   'sainnhe/gruvbox-material',
+  lazy = false,
+  priority = 1000,
   config = function()
-    --Установите тему
-    vim.cmd 'colorscheme gruvbox-material'
-
-    -- Дополнительные настройки (необязательно)
-    vim.g.gruvbox_material_background = 'medium' -- Опции: soft, medium, hard
-    vim.g.gruvbox_material_foreground = 'original' -- Опции: mix, original
+    vim.g.gruvbox_material_background = 'medium' -- soft, medium, hard
+    vim.g.gruvbox_material_foreground = 'original' -- mix, original
   end,
 }

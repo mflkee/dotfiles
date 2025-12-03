@@ -28,7 +28,3 @@ vim.opt.list = false              -- don't show whitespace by default
 vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }  -- whitespace chars
 vim.opt.completeopt = { "menu", "menuone", "noselect" }      -- completion options
 vim.opt.showmode = false          -- don't show mode since statusline shows it
-
--- Consolidated indentation settings
-vim.opt.smartindent = false       -- disable both indent options to use treesitter
-vim.opt.autoindent = true         -- keep autoindent for basic functionality
