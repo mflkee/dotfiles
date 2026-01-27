@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+NS="vpnns"
+CFG="/etc/amneziawg/nl.conf"
+
+ip netns exec "$NS" awg-quick down "$CFG" 2>/dev/null || true
+ip netns del "$NS" 2>/dev/null || true
+ip link del veth-vpn 2>/dev/null || true
