@@ -15,3 +15,11 @@ alias clean="~/.config/scripts/archclean.sh"
 alias zf="zoxide-fzf"
 alias wcopy='wl-copy'
 alias dt='~/.config/scripts/utils/dt.sh'
+
+# codex-vpn
+alias codex-vpn='sudo ip netns exec vpnns env -i \
+HOME="$HOME" USER="$USER" \
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+XDG_RUNTIME_DIR="/run/user/$(id -u)" \
+codex'
+
