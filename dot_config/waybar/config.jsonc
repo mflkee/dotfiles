@@ -116,7 +116,7 @@
     "interval": 10,
     "signal": 5,
     "on-click": "/home/mflkee/.local/bin/vpn-manager toggle",
-    "on-click-right": "/home/mflkee/.local/bin/vpn-manager select"
+    "on-click-right": "/home/mflkee/.local/bin/vpn-manager menu"
   },
   "pulseaudio": {
     "format": "{icon}",

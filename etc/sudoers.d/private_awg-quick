@@ -1,0 +1,3 @@
+Cmnd_Alias AWG_UP = /usr/bin/awg-quick up /home/mflkee/.config/scripts/vpn-split-codex/*.conf, /usr/bin/awg-quick up /home/mflkee/.config/amneziawg/full/*.conf
+Cmnd_Alias AWG_DOWN = /usr/bin/awg-quick down /home/mflkee/.config/scripts/vpn-split-codex/*.conf, /usr/bin/awg-quick down /home/mflkee/.config/amneziawg/full/*.conf
+mflkee ALL=(root) NOPASSWD: AWG_UP, AWG_DOWN

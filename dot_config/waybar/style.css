@@ -89,3 +89,11 @@ tooltip {
   min-width: 12px;
   padding: 2px;
 }
+
+#custom-vpn.connected {
+  color: #4fc3f7;
+}
+
+#custom-vpn.disconnected {
+  color: #ef5350;
+}
