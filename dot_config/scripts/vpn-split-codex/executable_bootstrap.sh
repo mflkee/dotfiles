@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # === где лежит конфиг в твоих dotfiles (в рабочей системе, после chezmoi apply) ===
-SRC_CONF="${SRC_CONF:-$HOME/.config/scripts/vpn-split-codex/nl.conf}"
+SRC_CONF="${SRC_CONF:-$HOME/.config/amneziawg/full/nl.conf}"
 
 # === куда ставим в систему ===
 DST_DIR="/etc/amneziawg"
@@ -130,4 +130,3 @@ echo "== smoke test (should be VPN IP) =="
 sudo ip netns exec vpnns curl -4 --max-time 12 https://api.ipify.org
 echo
 echo "✅ done"
-

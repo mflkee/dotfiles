@@ -5,8 +5,16 @@ STATE_DIR="$HOME/.config/vpn-manager"
 SELECTED_FILE="$STATE_DIR/selected"
 WAYBAR_SIGNAL=5
 MENU_PROMPT="${VPN_MENU_PROMPT:-VPN}"
-CONF_DIR_DEFAULT="$HOME/.config/scripts/vpn-split-codex"
-CONF_DIR_FALLBACK="$HOME/.config/amneziawg/full"
+CONF_DIR_PRIMARY="${VPN_CONF_DIR_PRIMARY:-$HOME/.config/amneziawg/full}"
+CONF_DIR_SECONDARY="${VPN_CONF_DIR_SECONDARY:-$HOME/.config/scripts/vpn-split-codex}"
+AWG_QUICK_BIN="${AWG_QUICK_BIN:-/usr/bin/awg-quick}"
+
+CONF_DIRS=()
+if [[ -n "${VPN_CONF_DIR:-}" ]]; then
+  CONF_DIRS+=("$VPN_CONF_DIR")
+else
+  CONF_DIRS+=("$CONF_DIR_PRIMARY" "$CONF_DIR_SECONDARY")
+fi
 
 mkdir -p "$STATE_DIR"
 
@@ -27,23 +35,6 @@ menu_cmd() {
   return 1
 }
 
-pick_conf_dir() {
-  if [[ -n "${VPN_CONF_DIR:-}" ]]; then
-    echo "$VPN_CONF_DIR"
-    return
-  fi
-  if [[ -d "$CONF_DIR_DEFAULT" ]] && ls "$CONF_DIR_DEFAULT"/*.conf >/dev/null 2>&1; then
-    echo "$CONF_DIR_DEFAULT"
-    return
-  fi
-  if [[ -d "$CONF_DIR_FALLBACK" ]] && ls "$CONF_DIR_FALLBACK"/*.conf >/dev/null 2>&1; then
-    echo "$CONF_DIR_FALLBACK"
-    return
-  fi
-  echo "$CONF_DIR_DEFAULT"
-}
-
-CONF_DIR="$(pick_conf_dir)"
 
 normalize_name() {
   local name="$1"
@@ -53,16 +44,35 @@ normalize_name() {
 
 list_configs() {
   shopt -s nullglob
-  local f
-  for f in "$CONF_DIR"/*.conf; do
-    basename "${f%.conf}"
+  local dir f name
+  declare -A seen=()
+  for dir in "${CONF_DIRS[@]}"; do
+    [[ -d "$dir" ]] || continue
+    for f in "$dir"/*.conf; do
+      name="$(basename "${f%.conf}")"
+      [[ -n "${seen[$name]:-}" ]] && continue
+      seen[$name]=1
+      printf '%s\n' "$name"
+    done
   done
+}
+
+conf_dir_for() {
+  local name="$1"
+  local dir
+  for dir in "${CONF_DIRS[@]}"; do
+    if [[ -f "$dir/$name.conf" ]]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+  done
+  return 1
 }
 
 name_exists() {
   local name
   name="$(normalize_name "$1")"
-  [[ -f "$CONF_DIR/$name.conf" ]]
+  conf_dir_for "$name" >/dev/null 2>&1
 }
 
 default_name() {
@@ -88,18 +98,80 @@ refresh_waybar() {
   pkill -RTMIN+$WAYBAR_SIGNAL waybar 2>/dev/null || true
 }
 
-ensure_sudo() {
-  if sudo -n true 2>/dev/null; then
+ensure_askpass() {
+  local askpass="$STATE_DIR/askpass.sh"
+  if ! command -v rofi >/dev/null 2>&1 && \
+     ! command -v dmenu >/dev/null 2>&1 && \
+     ! command -v zenity >/dev/null 2>&1 && \
+     ! command -v kdialog >/dev/null 2>&1; then
+    return 1
+  fi
+  if [[ ! -x "$askpass" ]]; then
+    cat > "$askpass" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if command -v rofi >/dev/null 2>&1; then
+  rofi -dmenu -password -p "sudo"
+elif command -v dmenu >/dev/null 2>&1; then
+  dmenu -P -p "sudo"
+elif command -v zenity >/dev/null 2>&1; then
+  zenity --password
+elif command -v kdialog >/dev/null 2>&1; then
+  kdialog --password "sudo"
+else
+  echo "No askpass UI found" >&2
+  exit 1
+fi
+EOF
+    chmod 700 "$askpass"
+  fi
+  export SUDO_ASKPASS="$askpass"
+  return 0
+}
+
+build_priv_cmd() {
+  if [[ -n "${VPN_PRIV_CMD:-}" ]]; then
+    read -r -a PRIV_CMD <<<"$VPN_PRIV_CMD"
     return 0
   fi
-  if sudo -n -l >/dev/null 2>&1; then
+
+  if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+    PRIV_CMD=(sudo)
     return 0
   fi
-  if command -v notify-send >/dev/null 2>&1; then
-    notify-send "VPN" "sudo password required for awg-quick. Apply sudoers via sudo chezmoi apply -D / ..." >/dev/null 2>&1 || true
+
+  if command -v pkexec >/dev/null 2>&1 && [[ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ]]; then
+    PRIV_CMD=(pkexec)
+    return 0
   fi
-  echo "sudo password required for awg-quick. Apply sudoers via sudo chezmoi apply -D / ..." >&2
+
+  if command -v sudo >/dev/null 2>&1; then
+    if ensure_askpass; then
+      PRIV_CMD=(sudo -A)
+      return 0
+    fi
+  fi
+
+  if command -v pkexec >/dev/null 2>&1; then
+    PRIV_CMD=(pkexec)
+    return 0
+  fi
+
   return 1
+}
+
+run_awg_quick() {
+  local action="$1"
+  local conf="$2"
+  local -a PRIV_CMD
+  if ! build_priv_cmd; then
+    if command -v notify-send >/dev/null 2>&1; then
+      notify-send "VPN" "Need privileges to run awg-quick. Install sudoers in /etc/sudoers.d/awg-quick or set VPN_PRIV_CMD." >/dev/null 2>&1 || true
+    fi
+    echo "Need privileges to run awg-quick. Install sudoers in /etc/sudoers.d/awg-quick or set VPN_PRIV_CMD." >&2
+    return 1
+  fi
+  "${PRIV_CMD[@]}" "$AWG_QUICK_BIN" "$action" "$conf"
 }
 
 active_iface() {
@@ -116,17 +188,23 @@ active_iface() {
 conf_path() {
   local name
   name="$(normalize_name "$1")"
-  printf '%s/%s.conf\n' "$CONF_DIR" "$name"
+  local dir
+  dir="$(conf_dir_for "$name" || true)"
+  if [[ -z "$dir" ]]; then
+    dir="$CONF_DIR_PRIMARY"
+  fi
+  printf '%s/%s.conf\n' "$dir" "$name"
 }
 
 down_iface() {
   local iface="$1"
-  local conf="$CONF_DIR/$iface.conf"
+  local conf
+  conf="$(conf_path "$iface")"
   if [[ ! -f "$conf" ]]; then
     echo "Config not found: $conf" >&2
     return 1
   fi
-  sudo awg-quick down "$conf" || true
+  run_awg_quick down "$conf" || true
 }
 
 connect() {
@@ -141,17 +219,15 @@ connect() {
     exit 1
   fi
   if ! name_exists "$name"; then
-    echo "Config not found: $CONF_DIR/$name.conf" >&2
+    echo "Config not found: $(conf_path "$name")" >&2
     exit 1
   fi
   local active
   active=$(active_iface || true)
   if [[ -n "${active:-}" && "$active" != "$name" ]]; then
-    ensure_sudo || return 1
     down_iface "$active"
   fi
-  ensure_sudo || return 1
-  sudo awg-quick up "$(conf_path "$name")"
+  run_awg_quick up "$(conf_path "$name")"
   refresh_waybar
 }
 
@@ -159,7 +235,6 @@ disconnect() {
   local active
   active=$(active_iface || true)
   if [[ -n "${active:-}" ]]; then
-    ensure_sudo || return 1
     down_iface "$active"
   fi
   refresh_waybar
