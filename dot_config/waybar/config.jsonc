@@ -9,7 +9,6 @@
   "modules-right": [
     "group/tray-expander",
     "bluetooth",
-    "custom/vpn",
     "network",
     "pulseaudio",
     "cpu",
@@ -108,15 +107,7 @@
     "format-disabled": "󰂲",
     "format-connected": "",
     "tooltip-format": "Devices connected: {num_connections}",
-    "on-click": "blueberry"
-  },
-  "custom/vpn": {
-    "exec": "/home/mflkee/.local/bin/vpn-manager waybar",
-    "return-type": "json",
-    "interval": 10,
-    "signal": 5,
-    "on-click": "/home/mflkee/.local/bin/vpn-manager toggle",
-    "on-click-right": "/home/mflkee/.local/bin/vpn-manager menu"
+    "on-click": "alacritty -e bluetui"
   },
   "pulseaudio": {
     "format": "{icon}",

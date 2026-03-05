@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+uri="${1:-}"
+
+if [[ -z "$uri" ]]; then
+  printf 'usage: nvim-open nvim:///absolute/path[#[L]line]\n' >&2
+  exit 1
+fi
+
+if [[ "$uri" != nvim://* ]]; then
+  printf 'nvim-open: expected nvim:// URI, got: %s\n' "$uri" >&2
+  exit 1
+fi
+
+urldecode() {
+  local value="${1//+/ }"
+  printf '%b' "${value//%/\\x}"
+}
+
+# Keep raw URI for fragment parsing.
+raw="${uri#nvim://}"
+raw_path="${raw%%[\?#]*}"
+
+# nvim:///home/user/file -> /home/user/file
+# nvim://home/user/file  -> /home/user/file
+if [[ "$raw_path" == /* ]]; then
+  path="$raw_path"
+else
+  path="/$raw_path"
+fi
+
+path="$(urldecode "$path")"
+
+line=""
+if [[ "$uri" == *"#"* ]]; then
+  fragment="${uri#*#}"
+  if [[ "$fragment" =~ ^L([0-9]+)$ ]]; then
+    line="${BASH_REMATCH[1]}"
+  elif [[ "$fragment" =~ ^([0-9]+)$ ]]; then
+    line="${BASH_REMATCH[1]}"
+  fi
+fi
+
+if [[ -n "$line" ]]; then
+  exec alacritty -e nvim "+${line}" -- "$path"
+fi
+
+exec alacritty -e nvim -- "$path"
