@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOST="hp"
+TUNNEL_PORT_LOCAL="${TUNNEL_PORT_LOCAL:-9999}"
+TUNNEL_DESC="Syncthing GUI → http://127.0.0.1:${TUNNEL_PORT_LOCAL}"
+PIDFILE="${XDG_CACHE_HOME:-$HOME/.cache}/hp_tunnel.pid"
+
+usage() {
+  cat <<EOF
+hp — быстрые команды для HP mini
+
+Использование:
+  hp ssh         — обычное ssh-подключение (интерактивная сессия)
+  hp gui         — запустить SSH-туннель на порт ${TUNNEL_PORT_LOCAL} и открыть GUI
+  hp status      — показать статус: монтирование и сервис syncthing
+  hp logs        — последние строки лога syncthing на HP
+  hp restart     — перезапустить сервис syncthing на HP
+  hp mount       — пересмонтировать по fstab (mount -a) на HP
+  hp kill        — убить локальный туннель (если висит)
+  hp help        — эта справка
+EOF
+}
+
+open_browser() {
+  # Открыть браузер к GUI (без ошибки, если xdg-open недоступен)
+  command -v xdg-open >/dev/null 2>&1 && xdg-open "http://127.0.0.1:${TUNNEL_PORT_LOCAL}" >/dev/null 2>&1 || true
+}
+
+ensure_cache_dir() {
+  mkdir -p "$(dirname "$PIDFILE")"
+}
+
+start_tunnel() {
+  ensure_cache_dir
+  # Если порт уже слушается — не плодим туннели
+  if ss -lnt 2>/dev/null | grep -q ":${TUNNEL_PORT_LOCAL} "; then
+    echo "Локальный порт ${TUNNEL_PORT_LOCAL} уже занят. Возможно, туннель уже запущен."
+  else
+    # -fN: в фон, только туннель; -L: проброс; -o ExitOnForwardFailure=yes — упасть, если не вышло
+    ssh -fN -L ${TUNNEL_PORT_LOCAL}:127.0.0.1:8384 -o ExitOnForwardFailure=yes "${HOST}"
+    # сохраним PID последнего ssh в фоне (приблизительно)
+    pgrep -f "ssh -fN -L ${TUNNEL_PORT_LOCAL}:127.0.0.1:8384" | head -n1 > "$PIDFILE" || true
+  fi
+  echo "Туннель запущен. ${TUNNEL_DESC}"
+}
+
+kill_tunnel() {
+  if [[ -f "$PIDFILE" ]]; then
+    PID="$(cat "$PIDFILE" || true)"
+    if [[ -n "${PID:-}" ]] && kill -0 "$PID" 2>/dev/null; then
+      kill "$PID" || true
+      sleep 0.2
+    fi
+    rm -f "$PIDFILE"
+  fi
+  # дополнительно: прибьём все подходящие фоны, если остались
+  pkill -f "ssh -fN -L ${TUNNEL_PORT_LOCAL}:127.0.0.1:8384" 2>/dev/null || true
+  echo "Туннель остановлен (если был)."
+}
+
+remote() {
+  ssh "${HOST}" "$@"
+}
+
+case "${1:-help}" in
+  ssh)
+    shift
+    exec ssh "${HOST}" "$@"
+    ;;
+
+  gui)
+    start_tunnel
+    echo "Открой в браузере: http://127.0.0.1:${TUNNEL_PORT_LOCAL}"
+    open_browser
+    ;;
+
+  status)
+    echo "== Диск и монтирование =="
+    remote 'findmnt /srv/syncthing || echo "не смонтировано"'
+    echo
+    echo "== Статус сервиса syncthing =="
+    remote 'sudo service syncthing status || true'
+    echo
+    echo "== Процесс syncthing =="
+    remote 'ps -ef | grep "[s]yncthing" || echo "процесс не найден"'
+    ;;
+
+  logs)
+    echo "== tail /var/log/syncthing/syncthing.log =="
+    remote 'tail -n 80 /var/log/syncthing/syncthing.log 2>/dev/null || echo "лог пока пуст"'
+    ;;
+
+  restart)
+    echo "Перезапуск syncthing…"
+    remote 'sudo service syncthing restart'
+    ;;
+
+  mount)
+    echo "Перемонтирование (mount -a)…"
+    remote 'sudo mount -a && findmnt /srv/syncthing || true'
+    ;;
+
+  kill)
+    kill_tunnel
+    ;;
+
+  help|--help|-h)
+    usage
+    ;;
+
+  *)
+    usage
+    exit 1
+    ;;
+esac
