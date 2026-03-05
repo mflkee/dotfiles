@@ -7,13 +7,25 @@
   "modules-left": ["custom/omarchy", "hyprland/workspaces"],
   "modules-center": ["clock", "custom/update", "custom/screenrecording-indicator"],
   "modules-right": [
+{{ if eq .chezmoi.hostname "omarchy-desktop" }}
+    "cpu",
+    "temperature#cpu",
+    "memory",
+    "disk#root",
+    "group/tray-expander",
+    "bluetooth",
+    "network",
+    "pulseaudio",
+    "hyprland/language"
+{{ else }}
     "group/tray-expander",
     "bluetooth",
     "network",
     "pulseaudio",
     "cpu",
-    "hyprland/language",
-    "battery"
+    "battery",
+    "hyprland/language"
+{{ end }}
   ],
   "hyprland/workspaces": {
     "on-click": "activate",
@@ -61,8 +73,40 @@
 
   "cpu": {
     "interval": 5,
+{{ if eq .chezmoi.hostname "omarchy-desktop" }}
+    "format": "󰍛 {usage}%",
+    "states": {
+      "warning": 60,
+      "critical": 85
+    },
+    "tooltip": false,
+{{ else }}
     "format": "󰍛",
+{{ end }}
     "on-click": "$TERMINAL -e btop"
+  },
+  "temperature#cpu": {
+    "interval": 5,
+    "format": " {temperatureC}°",
+    "format-critical": " {temperatureC}°",
+    "critical-threshold": 85,
+    "tooltip": false
+  },
+  "memory": {
+    "interval": 5,
+    "format": "󰓅 {percentage}%",
+    "tooltip": false,
+    "states": {
+      "warning": 70,
+      "critical": 90
+    }
+  },
+  "disk#root": {
+    "interval": 30,
+    "path": "/",
+    "format": " {free}",
+    "tooltip-format": "/ free: {free}",
+    "tooltip": true
   },
   "clock": {
     "format": "{:L%A %H:%M}",

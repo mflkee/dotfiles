@@ -44,6 +44,12 @@
 
 #tray,
 #cpu,
+#temperature,
+#memory,
+#disk,
+#disk.root,
+#language,
+#hyprland-language,
 #battery,
 #network,
 #bluetooth,
