@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SRC_DIR="${1:-$HOME/buffer/zen}"
+DST_DIR="${2:-$HOME/.config/zen}"
+BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/zen-profile-backups"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+
+is_zen_running() {
+  local pid stat
+  while IFS= read -r pid; do
+    [[ -n "$pid" ]] || continue
+    stat="$(ps -o stat= -p "$pid" 2>/dev/null | tr -d '[:space:]' || true)"
+    [[ -n "$stat" ]] || continue
+    case "$stat" in
+      Z*|X*)
+        continue
+        ;;
+      *)
+        return 0
+        ;;
+    esac
+  done < <(pgrep -f '/opt/zen-browser-bin/zen-bin|/usr/sbin/zen-browser|zen-bin' 2>/dev/null || true)
+  return 1
+}
+
+remove_locks() {
+  local root="$1"
+  find "$root" \( -name 'lock' -o -name '.parentlock' -o -name 'parent.lock' \) -delete 2>/dev/null || true
+}
+
+if [[ ! -d "$SRC_DIR" ]]; then
+  printf 'Source Zen profile dir not found: %s\n' "$SRC_DIR" >&2
+  exit 1
+fi
+
+if is_zen_running; then
+  printf 'Zen is running. Close it before importing the profile.\n' >&2
+  exit 1
+fi
+
+mkdir -p "$BACKUP_ROOT"
+
+if [[ -e "$DST_DIR" ]]; then
+  mv "$DST_DIR" "$BACKUP_ROOT/config-$TIMESTAMP"
+fi
+
+mkdir -p "$DST_DIR"
+rsync -a --delete \
+  --exclude 'lock' \
+  --exclude '.parentlock' \
+  --exclude 'parent.lock' \
+  "$SRC_DIR"/ "$DST_DIR"/
+
+remove_locks "$DST_DIR"
+chmod 700 "$DST_DIR"
+
+printf 'Imported Zen profile from %s\n' "$SRC_DIR"
+printf 'Backup saved to %s\n' "$BACKUP_ROOT/config-$TIMESTAMP"

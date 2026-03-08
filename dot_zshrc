@@ -95,10 +95,15 @@ export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 export EDITOR="nvim"
 export MANPAGER="nvim +Man!"
 export XDG_CONFIG_HOME="$HOME/.config"
-export BROWSER=firefox
+export BROWSER=zen-browser
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.socket"
+export GPG_TTY="$(tty)"
+gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
 
 # Rust
-source "$HOME/.cargo/env"
+if [[ -f "$HOME/.cargo/env" ]]; then
+  source "$HOME/.cargo/env"
+fi
 
 # Lua
 export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
@@ -190,4 +195,3 @@ nvim() {
 # HP Mini Syncthing Server
 alias hpssh="ssh mflkee@192.168.1.124"
 alias hpgui="ssh -N -L 9999:127.0.0.1:8384 mflkee@192.168.1.124"
-
