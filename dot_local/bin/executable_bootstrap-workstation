@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v paru >/dev/null 2>&1; then
+  printf 'paru is required. Install paru first, then rerun this script.\n' >&2
+  exit 1
+fi
+
+REPO_PACKAGES=(
+  alacritty
+  atool
+  age
+  bat
+  bc
+  chezmoi
+  clang
+  dosfstools
+  dust
+  fd
+  ffmpegthumbnailer
+  fzf
+  git
+  go
+  gtop
+  hurl
+  ipython
+  jq
+  jre-openjdk
+  lazygit
+  lsd
+  luarocks
+  neovim
+  niri
+  noto-fonts
+  ntfs-3g
+  obsidian
+  openssh
+  plantuml
+  prettier
+  prettierd
+  procs
+  ruff
+  rust-analyzer
+  stylua
+  syncthing
+  tldr
+  telegram-desktop
+  tmux
+  udiskie
+  unrar
+  wl-clipboard
+  zsh
+  lua-language-server
+)
+
+AUR_PACKAGES=(
+  noctalia-shell
+  quarto-cli-bin
+  ttf-iosevka-nerd
+  zen-browser-bin
+)
+
+paru -S --needed "${REPO_PACKAGES[@]}" "${AUR_PACKAGES[@]}"
+
+mkdir -p \
+  "$HOME/Pictures/Wallpapers" \
+  "$HOME/Pictures/Screenshots" \
+  "$HOME/.local/state" \
+  "$HOME/buffer"
+
+fc-cache -f "$HOME/.local/share/fonts" 2>/dev/null || true
+systemctl --user enable --now ssh-agent.socket syncthing.service || true
+
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/zsh" ]]; then
+  printf 'Login shell is not /bin/zsh yet. Run: chsh -s /bin/zsh\n'
+fi
+
+printf '\nBootstrap complete.\n'
+printf 'Next steps:\n'
+printf '1. Restore secrets (SSH/GPG/chezmoi key).\n'
+printf '2. Run chezmoi apply.\n'
+printf '3. Import Zen and Noctalia from buffer if needed.\n'
+printf '4. Restart the session or reload niri.\n'

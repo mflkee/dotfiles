@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SRC_DIR="${1:-$HOME/buffer/noctalia}"
+DST_DIR="${2:-$HOME/.config/noctalia}"
+BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia-config-backups"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+
+is_noctalia_running() {
+  local pid stat
+  while IFS= read -r pid; do
+    [[ -n "$pid" ]] || continue
+    stat="$(ps -o stat= -p "$pid" 2>/dev/null | tr -d '[:space:]' || true)"
+    [[ -n "$stat" ]] || continue
+    case "$stat" in
+      Z*|X*) continue ;;
+      *) return 0 ;;
+    esac
+  done < <(pgrep -f '/usr/sbin/qs -c noctalia-shell|qs -c noctalia-shell' 2>/dev/null || true)
+  return 1
+}
+
+if [[ ! -d "$SRC_DIR" ]]; then
+  printf 'Source Noctalia config dir not found: %s\n' "$SRC_DIR" >&2
+  exit 1
+fi
+
+if is_noctalia_running; then
+  printf 'Noctalia is running. Close it before importing the config.\n' >&2
+  exit 1
+fi
+
+mkdir -p "$BACKUP_ROOT"
+
+if [[ -e "$DST_DIR" ]]; then
+  mv "$DST_DIR" "$BACKUP_ROOT/config-$TIMESTAMP"
+fi
+
+mkdir -p "$DST_DIR"
+rsync -a --delete \
+  --exclude 'settings.json.bak-*' \
+  "$SRC_DIR"/ "$DST_DIR"/
+
+printf 'Imported Noctalia config from %s\n' "$SRC_DIR"
+printf 'Backup saved to %s\n' "$BACKUP_ROOT/config-$TIMESTAMP"

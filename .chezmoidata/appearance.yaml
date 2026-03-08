@@ -1,0 +1,26 @@
+appearance:
+  profiles:
+    archlinux-notebook:
+      niri:
+        gaps: 28
+        centerFocusedColumn: on-overflow
+        borderWidth: 1
+        borderActiveColor: '#70757d'
+        borderInactiveColor: '#43484f'
+        shadowSoftness: 56
+        shadowSpread: 2
+        shadowOffsetY: 8
+        shadowColor: '#00000028'
+        cornerRadius: 16
+    archlinux-desktop:
+      niri:
+        gaps: 34
+        centerFocusedColumn: on-overflow
+        borderWidth: 1
+        borderActiveColor: '#70757d'
+        borderInactiveColor: '#43484f'
+        shadowSoftness: 64
+        shadowSpread: 3
+        shadowOffsetY: 10
+        shadowColor: '#00000024'
+        cornerRadius: 18
