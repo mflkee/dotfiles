@@ -11,8 +11,8 @@ return {
   },
   cmd = 'Neotree',
   keys = {
-    { '\\', ':Neotree position=left<CR>', { desc = 'NeoTree reveal' } },
-    { '<leader>\\', ':Neotree float<CR>', { desc = 'NeoTree reveal' } },
+    { '\\', ':Neotree position=left<CR>', desc = 'NeoTree reveal' },
+    { '<leader>\\', ':Neotree float<CR>', desc = 'NeoTree float' },
   },
   opts = {
     filesystem = {

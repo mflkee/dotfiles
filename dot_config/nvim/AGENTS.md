@@ -2,9 +2,11 @@
 
 ## Project Structure & Module Organization
 - `init.lua`: entry point; configures `lazy.nvim` and loads modules.
-- `lua/mflkee/config/`: core config (`options.lua`, `keymaps.lua`, `autocomands.lua`, helpers).
-- `lua/mflkee/plugins/`: Lazy plugin specs; one plugin per file. Language servers in `plugins/lsp/`.
-- `lua/mflkee/colorscheme/`: theme selections and settings.
+- `lua/mflkee/config/`: core config (`options.lua`, `keymaps.lua`, `autocmds.lua`, helpers). Legacy shim: `autocomands.lua`.
+- `lua/kickstart/plugins/`: kickstart plugin specs grouped by domain (`coding/`, `editor/`, `git/`, `navigation/`).
+- `lua/mflkee/plugins/specs/`: Lazy plugin specs grouped by domain (`ui/`, `lsp/`, `lang/`, `tools/`).
+- `lua/mflkee/plugins/lsp/`: language server runtime settings loaded by the LSP plugin spec.
+- `lua/mflkee/colorscheme/themes/`: colorscheme plugin specs and settings.
 - `after/` and `ftplugin/`: plugin/filetype-specific tweaks.
 - `doc/`: help docs (e.g., `:h kickstart.txt`).
 - `lazy-lock.json`: plugin versions lockfile; commit when plugin updates change it.

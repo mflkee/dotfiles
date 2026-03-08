@@ -1,105 +1,11 @@
-local fn = require('mflkee.config.functions')
+local modules = {
+  'mflkee.config.keymaps.diagnostics',
+  'mflkee.config.keymaps.navigation',
+  'mflkee.config.keymaps.buffers',
+  'mflkee.config.keymaps.coding',
+  'mflkee.config.keymaps.tools',
+}
 
--- [[ Basic Keymaps ]]
--- Diagnostic keymaps
-vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous [D]iagnostic message" })
-vim.keymap.set("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next [D]iagnostic message" })
-vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic [E]rror messages" })
-vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Open diagnostic [Q]uickfix list" })
-
--- Set highlight on search, but clear on pressing <Esc> in normal mode
-vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
-
--- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
--- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
--- is not what someone will guess without a bit more experience.
---
--- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
--- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-
--- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
-
--- Keybinds to make split navigation easier.
---  Use CTRL+<hjkl> to switch between windows
---
---  See `:help wincmd` for a list of all window commands
-vim.keymap.set("n", "<C-h>", "<C-w><C-h>", { desc = "Move focus to the left window" })
-vim.keymap.set("n", "<C-l>", "<C-w><C-l>", { desc = "Move focus to the right window" })
-vim.keymap.set("n", "<C-j>", "<C-w><C-j>", { desc = "Move focus to the lower window" })
-vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper window" })
-
--- Window resizing (using vim.keymap.set consistently)
-vim.keymap.set("n", "<A-h>", ":vertical resize -2<CR>", { desc = "Decrease window width", silent = true })
-vim.keymap.set("n", "<A-l>", ":vertical resize +2<CR>", { desc = "Increase window width", silent = true })
-vim.keymap.set("n", "<A-j>", ":resize +2<CR>", { desc = "Increase window height", silent = true })
-vim.keymap.set("n", "<A-k>", ":resize -2<CR>", { desc = "Decrease window height", silent = true })
-
--- Buffer navigation
-vim.keymap.set("n", "<leader>bp", ":bprev<CR>", { desc = "[B]uffer: previous" })
-vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = "[B]uffer: next" })
-vim.keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "[B]uffer: delete" })
-vim.keymap.set("n", "<leader>bc", function()
-        local input = vim.fn.input("Enter file name: ")
-        if input ~= "" then
-                vim.cmd("edit " .. input)
-        end
-end, { desc = "[B]uffer: create new file" })
-
--- Code chunk insertion
-vim.keymap.set({ "i", "n" }, "<m-i>", "<esc>i```{python}<cr>```<esc>O", { desc = "[i]nser code chunk" })
-vim.keymap.set({ "n" }, "<leader>ci", ":split term://ipython<cr>", { desc = "split terminal" })
-
--- Run code function (improved)
-vim.keymap.set("n", "<leader>R", function()
-    local filetype = vim.bo.filetype
-    local current_file = vim.fn.expand("%:p")
-    local dir = vim.fn.expand("%:p:h")
-
-    local runners = {
-        rust = function() vim.cmd("TermExec cmd='cargo run' dir=" .. dir) end,
-        python = function() vim.cmd("TermExec cmd='python " .. current_file .. "'") end,
-        quarto = function() vim.cmd("QuartoPreview") end,
-        cpp = function()
-            local output_file = vim.fn.expand("%:p:r")
-            local executable = vim.fn.fnamemodify(output_file, ":t")
-            vim.cmd("TermExec cmd='cd " .. dir .. " && g++ -o " .. executable .. " " .. current_file .. " && ./" .. executable .. "'")
-        end
-    }
-
-    local runner = runners[filetype]
-    if runner then
-        runner()
-    else
-        vim.notify("Unsupported filetype: " .. filetype, vim.log.levels.WARN)
-    end
-end, { desc = "[R]un code based on filetype" })
-
--- File under cursor
-vim.keymap.set("n", "<leader>o", function() 
-    local filepath = vim.fn.expand("<cfile>")
-    vim.cmd("edit " .. filepath)
-end, { desc = "Open file under cursor", silent = true })
-
--- Line movement
-vim.keymap.set("n", "<A-Up>", function() fn.move_line("up") end, { desc = "Move line up", silent = true })
-vim.keymap.set("n", "<A-Down>", function() fn.move_line("down") end, { desc = "Move line down", silent = true })
-
--- Hex view
-vim.keymap.set("n", "<leader>hx", ":HexToggle<CR>", { desc = "Toggle hex view" })
-
--- PlantUML
-vim.keymap.set("n", "<leader>pu", ":PlantumlOpen<CR>", { desc = "Open PlantUML" })
-vim.keymap.set("n", "<leader>ps", ":PlantumlSave<CR>", { desc = "Save PlantUML" })
-
--- DBUI
-vim.keymap.set("n", "<leader>dbu", ":DBUI<CR>", { desc = "[DB] Open UI" })
-vim.keymap.set("n", "<leader>dbt", ":DBUIToggle<CR>", { desc = "[DB] Toggle UI" })
-vim.keymap.set("n", "<leader>dba", ":DBUIAddConnection<CR>", { desc = "[DB] Add connection" })
-vim.keymap.set("n", "<leader>dbb", ":DBUIFindBuffer<CR>", { desc = "[DB] Find buffer" })
-vim.keymap.set("n", "<leader>dbn", fn.db_new_query, { desc = "[DB] New SQL buffer" })
-vim.keymap.set("n", "<leader>dbc", fn.db_set_connection, { desc = "[DB] Set buffer connection" })
+for _, module in ipairs(modules) do
+  require(module)
+end

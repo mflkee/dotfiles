@@ -7,7 +7,7 @@ require("mflkee.config.options")
 -- функции должны грузиться до keymaps, т.к. часть маппингов вызывает их
 require("mflkee.config.functions")
 require("mflkee.config.keymaps")
-require("mflkee.config.autocomands")
+require("mflkee.config.autocmds")
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -19,14 +19,17 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
 
-require("kickstart.plugins.debug"),
-require("kickstart.plugins.indent_line"),
-require("kickstart.plugins.lint"),
-require("kickstart.plugins.autopairs"),
-require("kickstart.plugins.neo-tree"),
-require("kickstart.plugins.gitsigns"), -- adds gitsigns recommend keymaps
-	{ import = "mflkee.plugins" },
-	{ import = "mflkee.colorscheme" },
+require("kickstart.plugins.coding.debug"),
+require("kickstart.plugins.editor.indent_line"),
+require("kickstart.plugins.coding.lint"),
+require("kickstart.plugins.editor.autopairs"),
+require("kickstart.plugins.navigation.neo-tree"),
+require("kickstart.plugins.git.gitsigns"), -- adds gitsigns recommend keymaps
+	{ import = "mflkee.plugins.specs.ui" },
+	{ import = "mflkee.plugins.specs.lsp" },
+	{ import = "mflkee.plugins.specs.lang" },
+	{ import = "mflkee.plugins.specs.tools" },
+	{ import = "mflkee.colorscheme.themes" },
 }, {
   -- Move lockfile out of config so chezmoi can ignore it easily
   lockfile = vim.fn.stdpath("data") .. "/lazy/lazy-lock.json",
