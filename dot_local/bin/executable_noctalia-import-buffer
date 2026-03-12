@@ -5,6 +5,8 @@ SRC_DIR="${1:-$HOME/buffer/noctalia}"
 DST_DIR="${2:-$HOME/.config/noctalia}"
 BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia-config-backups"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+NOCTALIA_PATTERN='/usr/sbin/qs -c noctalia-shell|qs -c noctalia-shell'
+RESTART_NOCTALIA=0
 
 is_noctalia_running() {
   local pid stat
@@ -16,8 +18,55 @@ is_noctalia_running() {
       Z*|X*) continue ;;
       *) return 0 ;;
     esac
-  done < <(pgrep -f '/usr/sbin/qs -c noctalia-shell|qs -c noctalia-shell' 2>/dev/null || true)
+  done < <(pgrep -f "$NOCTALIA_PATTERN" 2>/dev/null || true)
   return 1
+}
+
+stop_noctalia() {
+  local _i
+
+  pkill -TERM -f "$NOCTALIA_PATTERN" 2>/dev/null || true
+
+  for _i in {1..50}; do
+    if ! is_noctalia_running; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  pkill -KILL -f "$NOCTALIA_PATTERN" 2>/dev/null || true
+
+  for _i in {1..25}; do
+    if ! is_noctalia_running; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  printf 'Failed to stop Noctalia.\n' >&2
+  return 1
+}
+
+start_noctalia() {
+  nohup qs -c noctalia-shell >/dev/null 2>&1 &
+}
+
+cleanup() {
+  local status=$?
+  trap - EXIT
+
+  if [[ "$RESTART_NOCTALIA" -eq 1 ]]; then
+    if start_noctalia; then
+      printf 'Restarted Noctalia.\n'
+    else
+      printf 'Failed to restart Noctalia.\n' >&2
+      if [[ "$status" -eq 0 ]]; then
+        status=1
+      fi
+    fi
+  fi
+
+  exit "$status"
 }
 
 if [[ ! -d "$SRC_DIR" ]]; then
@@ -26,8 +75,9 @@ if [[ ! -d "$SRC_DIR" ]]; then
 fi
 
 if is_noctalia_running; then
-  printf 'Noctalia is running. Close it before importing the config.\n' >&2
-  exit 1
+  RESTART_NOCTALIA=1
+  trap cleanup EXIT
+  stop_noctalia
 fi
 
 mkdir -p "$BACKUP_ROOT"

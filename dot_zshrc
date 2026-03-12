@@ -24,6 +24,14 @@ autoload -Uz _zinit
 # Инициализация автодополнений и подсветки синтаксиса
 # --------------------
 autoload -Uz compinit && compinit -u
+setopt COMPLETE_IN_WORD
+
+# Разрешаем completion по подстроке и частям имени файла:
+# `str` сможет матчиться в `about_string.js`.
+zstyle ':completion:*' matcher-list \
+  'm:{a-zA-Z}={A-Za-z}' \
+  'r:|[._-]=* r:|=*' \
+  'l:|=* r:|=*'
 
 # fzf-tab settings
 zstyle ':completion:*' fzf-preview 'bat --style=numbers --color=always --line-range :500 {} 2>/dev/null || tree -C {} | head -100'

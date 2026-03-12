@@ -5,6 +5,8 @@ SRC_DIR="${1:-$HOME/buffer/zen}"
 DST_DIR="${2:-$HOME/.config/zen}"
 BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/zen-profile-backups"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+ZEN_PATTERN='/opt/zen-browser-bin/zen-bin|/usr/sbin/zen-browser|zen-browser|zen-bin'
+RESTART_ZEN=0
 
 is_zen_running() {
   local pid stat
@@ -20,7 +22,7 @@ is_zen_running() {
         return 0
         ;;
     esac
-  done < <(pgrep -f '/opt/zen-browser-bin/zen-bin|/usr/sbin/zen-browser|zen-bin' 2>/dev/null || true)
+  done < <(pgrep -f "$ZEN_PATTERN" 2>/dev/null || true)
   return 1
 }
 
@@ -29,14 +31,62 @@ remove_locks() {
   find "$root" \( -name 'lock' -o -name '.parentlock' -o -name 'parent.lock' \) -delete 2>/dev/null || true
 }
 
+stop_zen() {
+  local _i
+
+  pkill -TERM -f "$ZEN_PATTERN" 2>/dev/null || true
+
+  for _i in {1..50}; do
+    if ! is_zen_running; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  pkill -KILL -f "$ZEN_PATTERN" 2>/dev/null || true
+
+  for _i in {1..25}; do
+    if ! is_zen_running; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  printf 'Failed to stop Zen.\n' >&2
+  return 1
+}
+
+start_zen() {
+  nohup zen-browser >/dev/null 2>&1 &
+}
+
+cleanup() {
+  local status=$?
+  trap - EXIT
+
+  if [[ "$RESTART_ZEN" -eq 1 ]]; then
+    if start_zen; then
+      printf 'Restarted Zen.\n'
+    else
+      printf 'Failed to restart Zen.\n' >&2
+      if [[ "$status" -eq 0 ]]; then
+        status=1
+      fi
+    fi
+  fi
+
+  exit "$status"
+}
+
 if [[ ! -d "$SRC_DIR" ]]; then
   printf 'Source Zen profile dir not found: %s\n' "$SRC_DIR" >&2
   exit 1
 fi
 
 if is_zen_running; then
-  printf 'Zen is running. Close it before importing the profile.\n' >&2
-  exit 1
+  RESTART_ZEN=1
+  trap cleanup EXIT
+  stop_zen
 fi
 
 mkdir -p "$BACKUP_ROOT"

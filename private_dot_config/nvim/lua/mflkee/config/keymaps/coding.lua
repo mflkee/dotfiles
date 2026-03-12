@@ -9,11 +9,13 @@ vim.keymap.set('n', '<leader>R', function()
   local dir = vim.fn.expand '%:p:h'
 
   local function term_exec(cmd, cwd)
-    local args = { 'cmd=' .. cmd }
-    if cwd and cwd ~= '' then
-      table.insert(args, 'dir=' .. cwd)
+    local ok, toggleterm = pcall(require, 'toggleterm')
+    if not ok then
+      vim.notify('toggleterm.nvim is not available', vim.log.levels.ERROR)
+      return
     end
-    vim.api.nvim_cmd({ cmd = 'TermExec', args = args }, {})
+
+    toggleterm.exec(cmd, nil, nil, cwd)
   end
 
   local runners = {

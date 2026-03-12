@@ -1,0 +1,9 @@
+# Ghostty main terminal config
+font-family = "FiraCode Nerd Font Mono"
+font-family = "Iosevka Nerd Font Mono"
+font-feature = "calt"
+font-size = 14
+
+background-opacity = 0.95
+
+confirm-close-surface = false

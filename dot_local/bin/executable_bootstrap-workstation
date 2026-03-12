@@ -7,7 +7,6 @@ if ! command -v paru >/dev/null 2>&1; then
 fi
 
 REPO_PACKAGES=(
-  alacritty
   atool
   age
   bat
@@ -20,6 +19,7 @@ REPO_PACKAGES=(
   ffmpegthumbnailer
   fzf
   git
+  ghostty
   go
   gtop
   hurl
@@ -56,6 +56,7 @@ REPO_PACKAGES=(
 AUR_PACKAGES=(
   noctalia-shell
   quarto-cli-bin
+  ttf-firacode-nerd
   ttf-iosevka-nerd
   zen-browser-bin
 )

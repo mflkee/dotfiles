@@ -43,7 +43,7 @@ if [[ "$uri" == *"#"* ]]; then
 fi
 
 if [[ -n "$line" ]]; then
-  exec alacritty -e nvim "+${line}" -- "$path"
+  exec ghostty -e nvim "+${line}" -- "$path"
 fi
 
-exec alacritty -e nvim -- "$path"
+exec ghostty -e nvim -- "$path"
