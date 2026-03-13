@@ -15,3 +15,4 @@ alias clean="~/.config/scripts/archclean.sh"
 alias zf="zoxide-fzf"
 alias wcopy='wl-copy'
 alias dt='~/.config/scripts/utils/dt.sh'
+alias zb='zen-browser'

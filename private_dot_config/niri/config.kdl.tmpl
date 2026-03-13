@@ -1,4 +1,5 @@
 {{- $cfg := (get .appearance.profiles .chezmoi.hostname) | default (get .appearance.profiles "archlinux-notebook") -}}
+{{- $isDesktop := or (eq .chezmoi.hostname "archlinux-desktop") (eq .chezmoi.hostname "omarchy-desktop") -}}
 // This config is in the KDL format: https://kdl.dev
 // "/-" comments out the following node.
 // Check the wiki for a full description of the configuration:
@@ -74,9 +75,18 @@ input {
 // by running `niri msg outputs` while inside a niri instance.
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Outputs
+{{ if $isDesktop }}
+// Desktop profile for the ASUS VP249 on DisplayPort.
+output "DP-4" {
+    mode "1920x1080@143.855"
+    scale 1.0
+    transform "normal"
+}
+{{ else }}
 output "eDP-1" {
     scale 1.20
 }
+{{ end }}
 
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
@@ -240,7 +250,7 @@ layout {
 // See the binds section below for more spawn examples.
 
 // Start Noctalia Shell instead of waybar.
-spawn-at-startup "qs" "-c" "noctalia-shell"
+spawn-at-startup "qs" "-c" "noctalia-shell" "--no-duplicate"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"

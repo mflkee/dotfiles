@@ -126,7 +126,6 @@ export PLANTUML_INCLUDE_PATH="$HOME/.config/plantuml/config.puml"
 
 # Дополнительные пути
 export PATH="$HOME/bin:$PATH"  # Пользовательские бинарники
-export PATH="/home/mflkee/.cache/yay/quarto-cli/src/quarto-1.6.42/bin:$PATH"
 # --------------------
 # Настройки приложений
 # --------------------
