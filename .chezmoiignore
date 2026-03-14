@@ -1,0 +1,6 @@
+study/**/__pycache__/
+study/**/*.pyc
+study/**/.venv/
+study/**/env/
+study/**/venv/
+study/**/*venv/
