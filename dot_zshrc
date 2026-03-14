@@ -164,6 +164,7 @@ if [[ -z "$TMUX" ]]; then
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
+[ -f /opt/anaconda/etc/profile.d/conda.sh ] && source /opt/anaconda/etc/profile.d/conda.sh
 
 # --------------------
 # Финальная инициализация
