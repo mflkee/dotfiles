@@ -164,6 +164,8 @@ if [[ -z "$TMUX" ]]; then
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
+# Work around a broken Anaconda OpenSSL build path so Conda can load providers.
+[[ -d /opt/anaconda/lib/ossl-modules ]] && export OPENSSL_MODULES=/opt/anaconda/lib/ossl-modules
 [ -f /opt/anaconda/etc/profile.d/conda.sh ] && source /opt/anaconda/etc/profile.d/conda.sh
 
 # --------------------

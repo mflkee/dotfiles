@@ -1,5 +1,4 @@
 format = """
-$time\
 $username\
 $hostname\
 $directory\
@@ -13,62 +12,71 @@ $line_break\
 $character"""
 
 [character]
-success_symbol = "[\\$](bold green)"
-error_symbol = "[\\$](bold red)"
-vimcmd_symbol = "[\\$](bold yellow)"
+success_symbol = "[\\$](bold fg:#fe8019)"
+error_symbol = "[\\$](bold fg:#cc241d)"
+vimcmd_symbol = "[\\$](bold fg:#a89984)"
 
 [username]
-show_always = true
-style_user = "bold green"
-style_root = "bold red"
-format = "[ $user]($style)"
+show_always = false
+style_user = "bold fg:#fe8019"
+style_root = "bold fg:#cc241d"
+format = "[$user]($style)"
 
 [hostname]
-ssh_only = false
-style = "dimmed white"
+ssh_only = true
+style = "fg:#928374"
 format = "[@$hostname]($style) "
 
 [directory]
-style = "bold cyan"
+style = "bold fg:#d5c4a1"
 truncation_length = 3
-truncate_to_repo = false
-read_only = " ro"
-format = "[in $path]($style)[$read_only](bold red) "
+truncate_to_repo = true
+truncation_symbol = "…/"
+read_only = " "
+read_only_style = "fg:#cc241d"
+format = "[$path]($style)[$read_only]($read_only_style) "
 
 [git_branch]
-symbol = "git:"
-style = "bold purple"
-format = "[on $symbol$branch]($style) "
+symbol = " "
+style = "bold fg:#fe8019"
+format = "[$symbol$branch]($style) "
 
 [git_status]
-style = "bold red"
-format = "([$all_status$ahead_behind]($style)) "
+style = "fg:#cc241d"
+format = "[$all_status$ahead_behind]($style) "
+conflicted = "=${count}"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+untracked = "?${count}"
+stashed = "*${count}"
+modified = "!${count}"
+staged = "+${count}"
+renamed = "»${count}"
+deleted = "✘${count}"
 
 [cmd_duration]
-min_time = 500
-style = "yellow"
-format = "[took $duration]($style) "
+min_time = 1000
+style = "fg:#928374"
+format = "[ $duration]($style) "
 
 [time]
-disabled = false
-time_format = "%H:%M"
-style = "dimmed white"
-format = "[$time]($style) "
+disabled = true
 
 [nodejs]
-symbol = "node "
-style = "bold green"
-format = "[via $symbol($version )]($style)"
+symbol = " "
+style = "fg:#d65d0e"
+format = "[$symbol$version]($style) "
 
 [python]
-symbol = "py "
-style = "bold yellow"
-format = "[via $symbol$version( \\($virtualenv\\))]($style)"
+symbol = " "
+style = "fg:#d79921"
+format = "[$symbol$version]($style) "
 
 [rust]
-symbol = "rs "
-style = "bold red"
-format = "[via $symbol$version]($style)"
+symbol = " "
+style = "fg:#cc241d"
+format = "[$symbol$version]($style) "
 
 [package]
 disabled = true
