@@ -28,3 +28,4 @@ vim.opt.list = false              -- don't show whitespace by default
 vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }  -- whitespace chars
 vim.opt.completeopt = { "menu", "menuone", "noselect" }      -- completion options
 vim.opt.showmode = false          -- don't show mode since statusline shows it
+vim.opt.cmdheight = 0             -- don't reserve an always-empty command line row
