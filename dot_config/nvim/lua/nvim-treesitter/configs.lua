@@ -23,6 +23,7 @@ end
 local M = {}
 
 local group = vim.api.nvim_create_augroup('TreesitterCompatConfig', { clear = true })
+local module_opts = {}
 
 local function as_list(value)
   if value == nil then
@@ -62,6 +63,7 @@ end
 
 function M.setup(opts)
   opts = opts or {}
+  module_opts = opts
 
   local ok, treesitter = pcall(require, 'nvim-treesitter')
   if not ok then
@@ -87,6 +89,32 @@ function M.setup(opts)
     enable_for_buffer(bufnr, opts, indent_disabled)
   end
 
+end
+
+function M.get_module(name)
+  return module_opts[name] or {}
+end
+
+function M.is_enabled(name, lang, bufnr)
+  local opts = M.get_module(name)
+  if opts.enable == false then
+    return false
+  end
+
+  local disabled = as_list(opts.disable)
+  local ft = bufnr and vim.bo[bufnr].filetype or nil
+  if vim.tbl_contains(disabled, lang) or (ft and vim.tbl_contains(disabled, ft)) then
+    return false
+  end
+
+  if type(opts.disable) == 'function' then
+    local ok, result = pcall(opts.disable, lang, bufnr)
+    if ok and result then
+      return false
+    end
+  end
+
+  return true
 end
 
 return M

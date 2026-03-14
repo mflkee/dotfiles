@@ -57,6 +57,16 @@ return {
 
     -- Prefer git instead of curl in order to improve connectivity in some environments
     require('nvim-treesitter.install').prefer_git = true
+
+    -- Telescope 0.1.x still calls the legacy `parsers.ft_to_lang()` helper.
+    -- Newer nvim-treesitter versions removed it in favor of Neovim's API.
+    local ok, parsers = pcall(require, 'nvim-treesitter.parsers')
+    if ok and parsers.ft_to_lang == nil then
+      parsers.ft_to_lang = function(ft)
+        return (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
+      end
+    end
+
     ---@diagnostic disable-next-line: missing-fields
     require('nvim-treesitter.configs').setup(opts)
 

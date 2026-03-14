@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -z "${DISPLAY:-}" && -S /tmp/.X11-unix/X0 ]]; then
+  export DISPLAY=:0
+fi
+
+exec /usr/bin/Vial "$@"

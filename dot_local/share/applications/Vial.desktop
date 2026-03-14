@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Vial
+Comment=Keyboard configurator
+Exec=/home/mflkee/.local/bin/vial-wayland
+Terminal=false
+Type=Application
+Icon=Vial
+Categories=Utility;
+StartupNotify=true
