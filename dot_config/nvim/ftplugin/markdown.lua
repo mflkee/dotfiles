@@ -1,6 +1,5 @@
 local fn = require 'mflkee.config.functions'
 
-vim.b.slime_cell_delimiter = '```'
 vim.opt_local.foldmethod = 'expr'
 vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
 vim.opt_local.foldenable = true

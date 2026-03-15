@@ -23,7 +23,7 @@ vim.opt.scrolloff = 2             -- keep a small vertical margin
 vim.opt.termguicolors = true      -- enable 24-bit colors
 vim.opt.foldmethod = "indent"     -- fold by indent
 vim.opt.foldlevelstart = 99       -- start with all folds open
-vim.opt.colorcolumn = "80"        -- show 80 char limit
+vim.opt.colorcolumn = ""          -- the 80-column guide is drawn by virt-column.nvim
 vim.opt.list = false              -- don't show whitespace by default
 vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }  -- whitespace chars
 vim.opt.completeopt = { "menu", "menuone", "noselect" }      -- completion options

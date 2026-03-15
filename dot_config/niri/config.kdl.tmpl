@@ -252,6 +252,9 @@ layout {
 // Start Noctalia Shell instead of waybar.
 spawn-at-startup "qs" "-c" "noctalia-shell" "--no-duplicate"
 
+// Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
+spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'"
+
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
 

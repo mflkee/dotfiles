@@ -109,9 +109,7 @@ export GPG_TTY="$(tty)"
 gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
 
 # Rust
-if [[ -f "$HOME/.cargo/env" ]]; then
-  source "$HOME/.cargo/env"
-fi
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # Lua
 export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
