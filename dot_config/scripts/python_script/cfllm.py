@@ -135,6 +135,12 @@ def lang_for(path):
     ext = ext_of(path)
     return LANG_HINT.get(ext, "")
 
+def count_lines(text: str):
+    lines = text.splitlines()
+    total = len(lines)
+    non_empty = sum(1 for line in lines if line.strip())
+    return total, non_empty
+
 def try_copy_to_clipboard(text: str) -> bool:
     # 1) pyperclip
     try:
@@ -208,7 +214,10 @@ def main():
     all_files = []
     for dirpath, dirnames, filenames in os.walk(root):
         # фильтруем каталоги на месте (ускорение os.walk)
-        dirnames[:] = [d for d in dirnames if d not in exclude_dirs and not match_gitignore(os.path.relpath(os.path.join(dirpath, d), root), gitignore_patterns)]
+        dirnames[:] = [
+            d for d in dirnames
+            if d not in exclude_dirs and not match_gitignore(os.path.relpath(os.path.join(dirpath, d), root), gitignore_patterns)
+        ]
         for fn in filenames:
             rel = os.path.relpath(os.path.join(dirpath, fn), root)
             if match_gitignore(rel, gitignore_patterns):
@@ -230,7 +239,6 @@ def main():
                 selected.append(p)
 
     # Строим дерево только по выбранным файлам
-    # Чтобы дерево выглядело логично, добавим их родительские пути
     paths_for_tree = set()
     for p in selected:
         paths_for_tree.add(os.path.dirname(p))
@@ -239,8 +247,10 @@ def main():
 
     # Сбор Markdown
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    header = f"# Project Export for LLM\n\n- Root: `{root}`\n- Generated: {ts}\n- Files included: {len(selected)}\n- Per-file limit: {args.max_mb} MB\n\n## Project Tree\n\n```\n{tree_text}\n```\n\n## Files\n"
-    parts = [header]
+
+    total_lines_all = 0
+    total_non_empty_all = 0
+    file_entries = []
 
     for i, path in enumerate(sorted(selected), 1):
         rel = os.path.relpath(path, root)
@@ -250,8 +260,32 @@ def main():
                 content = f.read()
         except Exception as e:
             content = f"<<Ошибка чтения: {e}>>"
-        parts.append(f"\n### {i}. `{rel}`\n\n```{lang}\n{content}\n```\n")
 
+        line_count, non_empty_count = count_lines(content)
+        total_lines_all += line_count
+        total_non_empty_all += non_empty_count
+
+        file_entries.append(
+            f"\n### {i}. `{rel}`\n\n"
+            f"- Lines: {line_count}\n"
+            f"- Non-empty lines: {non_empty_count}\n\n"
+            f"```{lang}\n{content}\n```\n"
+        )
+
+    header = (
+        f"# Project Export for LLM\n\n"
+        f"- Root: `{root}`\n"
+        f"- Generated: {ts}\n"
+        f"- Files included: {len(selected)}\n"
+        f"- Per-file limit: {args.max_mb} MB\n"
+        f"- Total lines: {total_lines_all}\n"
+        f"- Total non-empty lines: {total_non_empty_all}\n\n"
+        f"## Project Tree\n\n"
+        f"```\n{tree_text}\n```\n\n"
+        f"## Files\n"
+    )
+
+    parts = [header] + file_entries
     result = "".join(parts)
 
     # Пишем в файл на диске
@@ -274,8 +308,9 @@ def main():
         msg.append("ℹ️ Не удалось скопировать в буфер (нет подходящей утилиты или слишком большой объём).")
     msg.append(f"💾 Результат сохранён в файл: {out_path}")
     msg.append(f"📦 Всего файлов: {len(selected)}")
+    msg.append(f"📏 Всего строк: {total_lines_all}")
+    msg.append(f"🧾 Непустых строк: {total_non_empty_all}")
     print("\n".join(msg))
 
 if __name__ == "__main__":
     main()
-
