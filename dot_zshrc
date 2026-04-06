@@ -210,5 +210,5 @@ dh() {
     return 1
   fi
 
-  python3 /home/mflkee/projects/Domain_Hub/main.py "$1" --with-playwright "${@:2}"
+  python3 /home/mflkee/projects/domainHub/main.py "$1" --with-playwright "${@:2}"
 }
