@@ -54,6 +54,9 @@ return {
   },
   config = function(_, opts)
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+    local parser_install_dir = vim.fn.stdpath('data') .. '/site'
+    vim.opt.runtimepath:prepend(parser_install_dir)
+    opts.parser_install_dir = parser_install_dir
 
     -- Prefer git instead of curl in order to improve connectivity in some environments
     require('nvim-treesitter.install').prefer_git = true

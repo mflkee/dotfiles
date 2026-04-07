@@ -8,12 +8,17 @@ return {
 		"jay-babu/mason-nvim-dap.nvim",
 		"leoluz/nvim-dap-go",
 	},
-	config = function()
-		local dap = require("dap")
-		local dapui = require("dapui")
+		config = function()
+			local dap = require("dap")
+			local dapui = require("dapui")
 
 		-- Setup mason-nvim-dap to install debuggers
-		require("mason").setup()
+		if not vim.g.mason_setup_done then
+			require("mason").setup({
+				PATH = "prepend",
+			})
+			vim.g.mason_setup_done = true
+		end
 		require("mason-nvim-dap").setup({
 			automatic_setup = true,
 			ensure_installed = {

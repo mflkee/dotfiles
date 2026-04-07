@@ -6,6 +6,7 @@ return {
     'j-hui/fidget.nvim',
     'folke/neodev.nvim',
     'hrsh7th/nvim-cmp',
+    'hrsh7th/cmp-nvim-lsp',
   },
   config = function()
     local capabilities = require('cmp_nvim_lsp').default_capabilities()
@@ -34,6 +35,7 @@ return {
       -- Ensure Mason bin dir is in PATH so servers launch
       PATH = 'prepend',
     })
+    vim.g.mason_setup_done = true
     require('fidget').setup({})
     require('neodev').setup({})
 
@@ -45,7 +47,6 @@ return {
       'isort',
       'mypy',
       'codelldb',
-      'rust-analyzer',
     }
 
     if not has_lua_ls() then
@@ -54,6 +55,9 @@ return {
 
     require('mason-tool-installer').setup {
       ensure_installed = ensure_installed,
+      run_on_start = true,
+      start_delay = 3000,
+      debounce_hours = 12,
     }
 
     -- Явная загрузка LSP-конфигов 
