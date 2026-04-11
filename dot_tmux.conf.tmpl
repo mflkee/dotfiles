@@ -1,3 +1,23 @@
+{{- $serverHosts := list "antix1" -}}
+
+{{- if has .chezmoi.hostname $serverHosts }}
+unbind C-a
+unbind C-b
+set -g prefix C-b
+bind C-b send-prefix
+set -g status-left "[{{ .chezmoi.hostname }}] "
+{{- else }}
+unbind C-a
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+{{- end }}
+
+set -g mouse on
+set -g history-limit 100000
+set -g base-index 1
+setw -g pane-base-index 1
+bind r source-file ~/.tmux.conf \; display-message "tmux reloaded"
 set -g @plugin 'tmux-plugins/tpm'
 set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g default-shell '/bin/zsh'
