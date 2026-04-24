@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Ranger
+GenericName=File Manager
+Comment=Open folders in ranger through Ghostty
+Exec=ghostty -e ranger %F
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupNotify=false

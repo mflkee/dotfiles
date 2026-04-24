@@ -1,0 +1,29 @@
+[Default Applications]
+x-scheme-handler/http=userapp-Zen-S9X6L3.desktop
+x-scheme-handler/https=userapp-Zen-S9X6L3.desktop
+x-scheme-handler/chrome=userapp-Zen-S9X6L3.desktop
+text/html=userapp-Zen-S9X6L3.desktop
+application/x-extension-htm=userapp-Zen-S9X6L3.desktop
+application/x-extension-html=userapp-Zen-S9X6L3.desktop
+application/x-extension-shtml=userapp-Zen-S9X6L3.desktop
+application/xhtml+xml=userapp-Zen-S9X6L3.desktop
+application/x-extension-xhtml=userapp-Zen-S9X6L3.desktop
+application/x-extension-xht=userapp-Zen-S9X6L3.desktop
+application/pdf=zen.desktop
+text/plain=nvim.desktop
+inode/directory=ranger.desktop
+
+[Added Associations]
+x-scheme-handler/http=userapp-Zen-S9X6L3.desktop;zen.desktop;
+x-scheme-handler/https=userapp-Zen-S9X6L3.desktop;zen.desktop;
+x-scheme-handler/chrome=userapp-Zen-S9X6L3.desktop;zen.desktop;
+text/html=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/x-extension-htm=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/x-extension-html=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/x-extension-shtml=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/xhtml+xml=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/x-extension-xhtml=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/x-extension-xht=zen.desktop;userapp-Zen-S9X6L3.desktop;
+application/pdf=org.pwmt.zathura-pdf-mupdf.desktop;zen.desktop;
+text/plain=nvim.desktop;
+inode/directory=ranger.desktop;

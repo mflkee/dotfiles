@@ -99,6 +99,8 @@ fi
 # --------------------
 # Переменные окружения
 # --------------------
+#
+# оставить навсегда
 export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 export EDITOR="nvim"
 export MANPAGER="nvim +Man!"

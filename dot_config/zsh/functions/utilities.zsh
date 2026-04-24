@@ -17,6 +17,23 @@ calc() {
   echo "$*" | bc -l
 }
 
+ranger-cd() {
+  local tmpfile
+  local target
+
+  tmpfile="$(mktemp -t ranger-cd.XXXXXX)" || return
+  ranger --choosedir="$tmpfile" "${1:-$PWD}"
+
+  if [[ -s "$tmpfile" ]]; then
+    target="$(<"$tmpfile")"
+    if [[ -d "$target" && "$target" != "$PWD" ]]; then
+      cd -- "$target" || true
+    fi
+  fi
+
+  rm -f -- "$tmpfile"
+}
+
 function csync {
     # ---- 1. Инициализация ----
     echo "🔵 Starting sync process..."

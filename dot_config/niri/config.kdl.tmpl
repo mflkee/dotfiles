@@ -86,6 +86,10 @@ output "DP-4" {
 output "eDP-1" {
     scale 1.20
 }
+
+output "HDMI-A-1" {
+    mode "1920x1080@74.986"
+}
 {{ end }}
 
 // Settings that influence how windows are positioned and sized.
@@ -249,8 +253,8 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// Start Noctalia Shell instead of waybar.
-spawn-at-startup "noctalia-qs" "-c" "noctalia-shell"
+// Start Noctalia Shell under systemd so crashes are restarted.
+spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET; systemctl --user restart noctalia-shell.service"
 
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
 spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'"
