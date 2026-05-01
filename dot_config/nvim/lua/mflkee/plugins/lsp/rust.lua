@@ -49,7 +49,7 @@ function M.setup(capabilities)
         vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
         vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
         vim.keymap.set("n", "<leader>f", function()
-          vim.lsp.buf.format { async = true }
+          require("conform").format({ async = true, lsp_fallback = true, stop_after_first = true })
         end, opts)
       end,
       capabilities = capabilities,

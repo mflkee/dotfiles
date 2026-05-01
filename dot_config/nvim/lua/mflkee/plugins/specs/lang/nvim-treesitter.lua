@@ -1,7 +1,8 @@
 return {
   -- Highlight, edit, and navigate code
   'nvim-treesitter/nvim-treesitter',
-  branch = 'master',
+  -- `master` is frozen and does not support Neovim 0.12; use `main` instead.
+  branch = 'main',
   build = ':TSUpdate',
   opts = {
     ensure_installed = {

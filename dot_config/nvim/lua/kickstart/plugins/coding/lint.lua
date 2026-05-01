@@ -5,11 +5,29 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
       local lint = require 'lint'
-      lint.linters.markdownlint.args = { '--disable', 'MD013', '--stdin' }
+      local parser = require('lint.parser')
 
-      lint.linters_by_ft = {
-        markdown = { 'markdownlint' },
-      }
+      local markdown_linters = {}
+      if vim.fn.executable('markdownlint-cli2') == 1 then
+        markdown_linters[#markdown_linters + 1] = 'markdownlint-cli2'
+      elseif vim.fn.executable('mdl') == 1 then
+        lint.linters.mdl = {
+          cmd = 'mdl',
+          stdin = false,
+          ignore_exitcode = true,
+          stream = 'stdout',
+          parser = parser.from_errorformat('%f:%l: %m', {
+            source = 'markdownlint',
+            severity = vim.diagnostic.severity.WARN,
+          }),
+        }
+        markdown_linters[#markdown_linters + 1] = 'mdl'
+      end
+
+      lint.linters_by_ft = {}
+      if #markdown_linters > 0 then
+        lint.linters_by_ft.markdown = markdown_linters
+      end
 
       -- To allow other plugins to add linters to require('lint').linters_by_ft,
       -- instead set linters_by_ft like this:

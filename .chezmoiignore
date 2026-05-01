@@ -4,3 +4,8 @@ study/**/.venv/
 study/**/env/
 study/**/venv/
 study/**/*venv/
+# Ignoring OpenClaw secrets
+.openclaw/.env
+.openclaw/openclaw.json
+.openclaw/openclaw.json.last-good
+.openclaw/*.bak

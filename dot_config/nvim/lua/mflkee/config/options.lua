@@ -5,6 +5,7 @@ vim.opt.mouse = "a"               -- mouse in all modes
 vim.opt.clipboard = "unnamedplus" -- system clipboard
 vim.opt.tabstop = 2               -- tab width
 vim.opt.shiftwidth = 2            -- indentation amount
+vim.opt.softtabstop = 2           -- editing feels consistent with shiftwidth
 vim.opt.expandtab = true          -- convert tabs to spaces
 vim.opt.smartindent = false       -- disable smartindent (use treesitter instead)
 vim.opt.autoindent = true         -- standard autoindent

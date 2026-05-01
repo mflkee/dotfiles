@@ -17,15 +17,21 @@ return {
 
     -- Specify which formatters run per filetype (flat list; stop after first success)
     formatters_by_ft = {
-      lua        = { "stylua", stop_after_first = true },
-      python     = { "ruff_format", stop_after_first = true },
-      rust       = { "rustfmt", stop_after_first = true },
+      lua = { "stylua", stop_after_first = true },
+      python = { "ruff_format", stop_after_first = true },
+      rust = { "rustfmt", stop_after_first = true },
+      json = { "prettierd", "prettier", stop_after_first = true },
+      jsonc = { "prettierd", "prettier", stop_after_first = true },
+      yaml = { "prettierd", "prettier", stop_after_first = true },
+      markdown = { "prettierd", "prettier", stop_after_first = true },
       javascript = { "prettierd", "prettier", stop_after_first = true },
+      javascriptreact = { "prettierd", "prettier", stop_after_first = true },
       typescript = { "prettierd", "prettier", stop_after_first = true },
-      c          = { "clang_format", stop_after_first = true },
-      cpp        = { "clang_format", stop_after_first = true },
-      go         = { "gofmt", "goimports", stop_after_first = true },
-      plantuml  = {},
+      typescriptreact = { "prettierd", "prettier", stop_after_first = true },
+      c = { "clang_format", stop_after_first = true },
+      cpp = { "clang_format", stop_after_first = true },
+      go = { "gofmt", "goimports", stop_after_first = true },
+      plantuml = {},
     },
 
     -- Custom formatter definitions (stdin and filename handling)

@@ -214,3 +214,6 @@ dh() {
 
   python3 /home/mflkee/projects/domainHub/main.py "$1" --with-playwright "${@:2}"
 }
+
+# OpenClaw Completion
+source "/home/mflkee/.openclaw/completions/openclaw.zsh"
