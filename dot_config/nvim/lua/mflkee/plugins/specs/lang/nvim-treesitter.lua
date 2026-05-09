@@ -33,7 +33,18 @@ return {
     },
     indent = {
       enable = true,
-      disable = { 'ruby' },
+      disable = {
+        'ruby',
+        'json',
+        'jsonc',
+        'javascript',
+        'javascriptreact',
+        'typescript',
+        'typescriptreact',
+        'python',
+        'rust',
+        'yaml',
+      },
     },
     incremental_selection = {
       enable = true,

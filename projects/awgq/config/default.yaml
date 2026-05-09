@@ -1,0 +1,30 @@
+profile: default
+mode: full
+
+profiles:
+  default:
+    name: "Default Profile"
+    vpn:
+      type: "amneziawg"
+      interface: "wg0"
+      # Конфиг выбирается при запуске: awgq on --config <name>
+      configs:
+        awg0:
+          file: "/etc/amnezia/amneziawg/awg0.conf"
+          description: "Основной конфиг"
+        awg1:
+          file: "/etc/amnezia/amneziawg/awg1.conf"
+          description: "Запасной конфиг"
+      unit: "awg-quick@wg0.service"
+    
+    tailscale:
+      enabled: true
+      fix_routes: true
+      
+    servers:
+      - name: "mkair-server"
+        ip: "100.80.114.18"
+        description: "Tailscale server"
+      - name: "localhost"
+        ip: "127.0.0.1"
+        description: "Local test"

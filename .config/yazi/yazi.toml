@@ -1,0 +1,173 @@
+# Yazi configuration file
+# General settings
+
+[mgr]
+# Show hidden files by default
+show_hidden = true
+# Draw border around the manager ui
+draw_border = true
+# Enable mouse support
+mouse_enabled = true
+# Use icons (requires nerd font)
+use_logo = true
+
+[preview]
+# Maximum width for previews (images, PDFs, etc.)
+max_width = 800
+# Maximum height for previews
+max_height = 600
+# Directory for caching previews
+cache_dir = ""
+# Delay before starting image preview (ms)
+image_delay = 30
+# Image filter for scaling (triangle, lanczos3, etc.)
+image_filter = "lanczos3"
+# Image quality (0-100)
+image_quality = 85
+# Überzug++ scale factor
+ueberzug_scale = 1.0
+# Überzug++ offset [left, top, right, bottom]
+ueberzug_offset = [0, 0, 0, 0]
+# Wrap text in preview
+wrap = "yes"
+# Tab size for code preview
+tab_size = 2
+
+# Preloaders - what to preload when selecting files
+[[preloaders]]
+mime = "image/*"
+run = "image"
+
+[[preloaders]]
+mime = "application/pdf"
+run = "pdf"
+
+[[preloaders]]
+mime = "video/*"
+run = "video"
+
+[[preloaders]]
+mime = "application/{zip,rar,7z,tar,gzip,xz,zstd,bz2,lzma,compress,cpio,arj,xar,cab}"
+run = "archive"
+
+[[preloaders]]
+mime = "application/{iso9660-image,qemu-disk,ms-wim,apple-diskimage}"
+run = "archive"
+
+[[preloaders]]
+mime = "application/virtualbox-{vhd,vhdx}"
+run = "archive"
+
+[[preloaders]]
+mime = "font/*"
+run = "font"
+
+[[preloaders]]
+mime = "application/ms-opentype"
+run = "font"
+
+[[preloaders]]
+mime = "text/*"
+run = "code"
+
+[[preloaders]]
+mime = "application/json"
+run = "json"
+
+[[preloaders]]
+mime = "application/ndjson"
+run = "json"
+
+# Previewers - what to use for previewing files
+[[previewers]]
+url = "*/"
+run = "folder"
+
+[[previewers]]
+mime = "text/*"
+run = "code"
+
+[[previewers]]
+mime = "application/json"
+run = "json"
+
+[[previewers]]
+mime = "application/ndjson"
+run = "json"
+
+[[previewers]]
+mime = "image/*"
+run = "image"
+
+[[previewers]]
+mime = "application/pdf"
+run = "pdf"
+
+[[previewers]]
+mime = "video/*"
+run = "video"
+
+[[previewers]]
+mime = "application/{zip,rar,7z,tar,gzip,xz,zstd,bz2,lzma,compress,cpio,arj,xar,cab}"
+run = "archive"
+
+[[previewers]]
+mime = "application/{iso9660-image,qemu-disk,ms-wim,apple-diskimage}"
+run = "archive"
+
+[[previewers]]
+mime = "application/virtualbox-{vhd,vhdx}"
+run = "archive"
+
+[[previewers]]
+mime = "font/*"
+run = "font"
+
+[[previewers]]
+mime = "application/ms-opentype"
+run = "font"
+
+[[previewers]]
+mime = "inode/empty"
+run = "empty"
+
+[[previewers]]
+mime = "vfs/*"
+run = "vfs"
+
+[[previewers]]
+mime = "null/*"
+run = "null"
+
+# Fallback previewer
+[[previewers]]
+url = "*"
+run = "file"
+
+# Open with associations
+[[open]]
+# Open images with viewer
+extensions = ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp"]
+run = "feh"
+# Open PDFs
+extensions = ["pdf"]
+run = "zathura"
+# Open videos
+extensions = ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm"]
+run = "mpv"
+# Open archives
+extensions = ["zip", "rar", "7z", "tar", "gz", "xz", "bz2"]
+run = "file-roller"
+# Open text files
+extensions = ["txt", "md", "log", "ini", "cfg", "conf"]
+run = "nvim"
+# Open code files
+extensions = ["rs", "py", "js", "ts", "html", "css", "cpp", "c", "go", "java"]
+run = "nvim"
+
+# Safety
+[safety]
+# Delete to trash instead of immediate deletion
+delete_to_trash = true
+# Confirm before deletion
+confirm_delete = true
