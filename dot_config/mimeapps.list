@@ -11,7 +11,7 @@ application/x-extension-xhtml=userapp-Zen-S9X6L3.desktop
 application/x-extension-xht=userapp-Zen-S9X6L3.desktop
 application/pdf=zen.desktop
 text/plain=nvim.desktop
-inode/directory=ranger.desktop
+inode/directory=com.system76.CosmicFiles.desktop
 x-scheme-handler/claude-cli=claude-code-url-handler.desktop
 
 [Added Associations]

@@ -1,2 +1,1 @@
-run_once_install.sh.tmpl run_once
-run_onchange_install-update-timezone.sh.tmpl mode=0755
+run_once_set-gtk-dark-theme.sh.tmpl run_once

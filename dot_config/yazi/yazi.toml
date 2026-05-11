@@ -1,0 +1,11 @@
+[manager]
+ratio = [1, 2, 3]
+sort_by = "natural"
+sort_dir_first = true
+linemode = "size"
+show_hidden = false
+
+[preview]
+tab_size = 2
+max_width = 1200
+max_height = 1800
