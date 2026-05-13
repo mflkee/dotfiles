@@ -1,0 +1,25 @@
+machines:
+  antix1:
+    wm: ""
+    desktop: xfce
+    has_gsettings: false
+    arch: i686
+    browser: firefox
+    has_anaconda: false
+    has_niri: false
+  archlinux-notebook:
+    wm: niri
+    desktop: gnome
+    has_gsettings: true
+    arch: x86_64
+    browser: zen-browser
+    has_anaconda: true
+    has_niri: true
+  archlinux-desktop:
+    wm: niri
+    desktop: gnome
+    has_gsettings: true
+    arch: x86_64
+    browser: zen-browser
+    has_anaconda: false
+    has_niri: true
