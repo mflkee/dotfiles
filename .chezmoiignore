@@ -4,6 +4,7 @@ study/**/.venv/
 study/**/env/
 study/**/venv/
 study/**/*venv/
+projects/**/dot_venv/
 # Ignoring OpenClaw secrets
 .openclaw/.env
 .openclaw/openclaw.json
