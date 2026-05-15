@@ -1,4 +1,3 @@
-{{- $machine := (get .machines .chezmoi.hostname) | default dict -}}
 #!/usr/bin/env zsh
 # ================================================================
 # .zshrc - Конфигурация Zsh с использованием Zinit и Oh My Zsh + Starship
@@ -27,13 +26,16 @@ autoload -Uz _zinit
 autoload -Uz compinit && compinit -u
 setopt COMPLETE_IN_WORD
 
+# Разрешаем completion по подстроке и частям имени файла:
+# `str` сможет матчиться в `about_string.js`.
 zstyle ':completion:*' matcher-list \
   'm:{a-zA-Z}={A-Za-z}' \
   'r:|[._-]=* r:|=*' \
   'l:|=* r:|=*'
 
+# fzf-tab settings
 zstyle ':completion:*' fzf-preview 'bat --style=numbers --color=always --line-range :500 {} 2>/dev/null || tree -C {} | head -100'
-zstyle ':fzf-tab:*' switch-group ','
+zstyle ':fzf-tab:*' switch-group ','  # Ctrl+comma переключение группы
 zstyle ':fzf-tab:*' fzf-flags --height=40% --reverse --inline-info
 zstyle ':completion:*' menu select
 
@@ -51,6 +53,7 @@ fi
 # --------------------
 # Загрузка основных компонентов Oh My Zsh
 # --------------------
+# Примечание: Загрузка OMZ::lib/async.zsh пропущена, так как URL вернул 404.
 zinit snippet OMZ::lib/git.zsh
 zinit snippet OMZ::lib/theme-and-appearance.zsh
 zinit snippet OMZ::plugins/git/git.plugin.zsh
@@ -60,6 +63,7 @@ zinit snippet OMZ::plugins/git/git.plugin.zsh
 # --------------------
 zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-autosuggestions
+# zinit light agkozak/zsh-z # replaced by zoxide
 zinit light MichaelAquilina/zsh-you-should-use
 zinit light Aloxaf/fzf-tab
 zinit light jeffreytse/zsh-vi-mode
@@ -95,11 +99,13 @@ fi
 # --------------------
 # Переменные окружения
 # --------------------
+#
+# оставить навсегда
 export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
 export EDITOR="nvim"
 export MANPAGER="nvim +Man!"
 export XDG_CONFIG_HOME="$HOME/.config"
-export BROWSER={{ $machine.browser | default "zen-browser" | quote }}
+export BROWSER=zen-browser
 export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.socket"
 export GPG_TTY="$(tty)"
 gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
@@ -113,14 +119,13 @@ export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
 
 # Python
 export PYTHONSTARTUP="$HOME/.config/python/pythonrc.py"
-export PYTHONPYCACHEPREFIX="$HOME/.cache/python/__pycache__"
+export PYTHONPYCACHEPREFIX="$HOME/.cache/python/__pycache__"  # Для организации pycache
 
 #plantuml
 export PLANTUML_INCLUDE_PATH="$HOME/.config/plantuml/config.puml"
 
 # Дополнительные пути
-export PATH="$HOME/bin:$PATH"
-
+export PATH="$HOME/bin:$PATH"  # Пользовательские бинарники
 # --------------------
 # Настройки приложений
 # --------------------
@@ -159,36 +164,53 @@ if [[ -z "$TMUX" ]]; then
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
-{{ if $machine.has_anaconda -}}
 # Work around a broken Anaconda OpenSSL build path so Conda can load providers.
 [[ -d /opt/anaconda/lib/ossl-modules ]] && export OPENSSL_MODULES=/opt/anaconda/lib/ossl-modules
 [ -f /opt/anaconda/etc/profile.d/conda.sh ] && source /opt/anaconda/etc/profile.d/conda.sh
-{{ end -}}
 
 # --------------------
 # Финальная инициализация
 # --------------------
 zinit cdreplay -q
+# Отключаем тему OMZ (::ys) – используем Starship вместо неё
+# zinit snippet OMZ::themes/ys.zsh-theme
 
+# Инициализация Starship prompt
 eval "$(starship init zsh)"
 
 # ================================================================
 # Конец файла .zshrc
 # ================================================================
+# ~/.zshrc
 
+# Функция-заместитель для nvim
 nvim() {
+  # Если нет аргументов — просто запускаем
   if [ $# -eq 0 ]; then
     command nvim
     return
   fi
 
+  # Проверяем первый аргумент (файл)
   local file="$1"
+  # Если файл не существует или у нас есть на него право на запись — нормальный запуск
   if [ ! -e "$file" ] || [ -w "$file" ]; then
     command nvim "$@"
   else
+    # Иначе запускаем под sudo, сохраняя окружение (-E) для того,
+    # чтобы vim взял вашу конфигурацию из $HOME/.config/nvim
     sudo -E nvim "$@"
   fi
 }
+# HP Mini Syncthing Server
+alias hpssh="ssh mflkee@192.168.1.124"
+alias hpgui="ssh -N -L 9999:127.0.0.1:8384 mflkee@192.168.1.124"
 
-# Host-specific overrides
-[[ -f ~/.config/zsh/host-${HOST}.zsh ]] && source ~/.config/zsh/host-${HOST}.zsh
+dh() {
+  if [[ $# -lt 1 ]]; then
+    echo "Usage: dh <domain> [extra args]"
+    return 1
+  fi
+
+  python3 /home/mflkee/projects/domainHub/main.py "$1" --with-playwright "${@:2}"
+}

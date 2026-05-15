@@ -9,3 +9,24 @@ show_hidden = false
 tab_size = 2
 max_width = 1200
 max_height = 1800
+
+[opener]
+default = [{ run = "xdg-open", block = false, orphan = true }]
+
+rules = [
+    { name = "*.doc", use = "libreoffice" },
+    { name = "*.docx", use = "libreoffice" },
+    { name = "*.xls", use = "libreoffice" },
+    { name = "*.xlsx", use = "libreoffice" },
+    { name = "*.ppt", use = "libreoffice" },
+    { name = "*.pptx", use = "libreoffice" },
+    { name = "*.odt", use = "libreoffice" },
+    { name = "*.ods", use = "libreoffice" },
+    { name = "*.odp", use = "libreoffice" },
+    { name = "*.rtf", use = "libreoffice" },
+]
+
+[opener.libreoffice]
+run = "libreoffice"
+block = false
+orphan = true

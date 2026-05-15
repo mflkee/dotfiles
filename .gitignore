@@ -1,1 +1,5 @@
 /nvim.log
+/.nvimlog
+/.config/
+/projects/
+/dot_tmux/plugins/
