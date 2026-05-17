@@ -14,19 +14,14 @@ max_height = 1800
 default = [{ run = "xdg-open", block = false, orphan = true }]
 
 rules = [
-    { name = "*.doc", use = "libreoffice" },
-    { name = "*.docx", use = "libreoffice" },
-    { name = "*.xls", use = "libreoffice" },
-    { name = "*.xlsx", use = "libreoffice" },
-    { name = "*.ppt", use = "libreoffice" },
-    { name = "*.pptx", use = "libreoffice" },
-    { name = "*.odt", use = "libreoffice" },
-    { name = "*.ods", use = "libreoffice" },
-    { name = "*.odp", use = "libreoffice" },
-    { name = "*.rtf", use = "libreoffice" },
+    { name = "*.doc",  run = "libreoffice", block = false, orphan = true },
+    { name = "*.docx", run = "libreoffice", block = false, orphan = true },
+    { name = "*.xls",  run = "libreoffice", block = false, orphan = true },
+    { name = "*.xlsx", run = "libreoffice", block = false, orphan = true },
+    { name = "*.ppt",  run = "libreoffice", block = false, orphan = true },
+    { name = "*.pptx", run = "libreoffice", block = false, orphan = true },
+    { name = "*.odt",  run = "libreoffice", block = false, orphan = true },
+    { name = "*.ods",  run = "libreoffice", block = false, orphan = true },
+    { name = "*.odp",  run = "libreoffice", block = false, orphan = true },
+    { name = "*.rtf",  run = "libreoffice", block = false, orphan = true },
 ]
-
-[opener.libreoffice]
-run = "libreoffice"
-block = false
-orphan = true

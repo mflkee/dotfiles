@@ -1,4 +1,5 @@
-# Manage AmneziaWG from the shell without changing network state on shell startup.
+# awgq - обёртка для Python CLI + быстрые команды
+# Неизвестные команды передаются в Python awgq
 awgq() {
   local unit="${AWG_QUICK_UNIT:-awg-quick@wg0.service}"
   local app_unit="${AMNEZIA_VPN_UNIT:-AmneziaVPN.service}"
@@ -52,7 +53,6 @@ awgq() {
       local awg_priority
       awg_priority=$(ip rule show | command grep -E "lookup ${awg_table}" | head -1 | cut -d: -f1 | tr -d ' ')
       if [[ -n "$awg_priority" ]]; then
-        # Ищем свободный слот ниже AWG (меньше число = выше приоритет)
         local dynamic_pref=$((awg_priority - 1))
         while [[ "$dynamic_pref" -gt 0 ]]; do
           if ! ip rule show | command grep -q "^${dynamic_pref}:"; then
@@ -68,11 +68,9 @@ awgq() {
       fi
 
       local old_pref
-      # Чистим ВСЕ старые tailnet правила, включая динамические
       for old_pref in $(ip rule show | command grep -E "to ${tailnet_cidr} lookup ${tailscale_table}" | cut -d: -f1 | tr -d ' '); do
         sudo ip rule del pref "$old_pref" to "$tailnet_cidr" lookup "$tailscale_table" 2> /dev/null || true
       done
-      # Чистим остальные старые приоритеты
       for old_pref in "$old_tailscale_rule_prefs[@]"; do
         [[ "$old_pref" == "$tailscale_rule_pref" ]] && continue
         sudo ip rule del pref "$old_pref" to "$tailnet_cidr" lookup "$tailscale_table" 2> /dev/null || true
@@ -94,7 +92,6 @@ awgq() {
         fi
         sudo ip rule add pref "$tailscale_rule_pref" to "$tailnet_cidr" lookup "$tailscale_table"
       fi
-      # Сбрасываем кэш маршрутов
       sudo ip route flush cache 2>/dev/null || true
       ip route get "$target"
       ;;
@@ -102,7 +99,6 @@ awgq() {
       local old_pref
       sudo ip rule del pref "$tailscale_fwmark_rule_pref" fwmark "$tailscale_fwmark" lookup main 2>/dev/null || true
       sudo ip rule del pref "$tailscale_rule_pref" to "$tailnet_cidr" lookup "$tailscale_table" 2>/dev/null || true
-      # Чистим ВСЕ tailnet правила, включая динамические
       for old_pref in $(ip rule show | command grep -E "to ${tailnet_cidr} lookup ${tailscale_table}" | cut -d: -f1 | tr -d ' '); do
         sudo ip rule del pref "$old_pref" to "$tailnet_cidr" lookup "$tailscale_table" 2>/dev/null || true
       done
@@ -213,7 +209,7 @@ EOF
       cat <<EOF
 Usage: awgq <command> [target]
 
-Commands:
+Shell commands (fast, no Python):
   on, up, start          Start VPN + apply tailscale fix
   off, down, stop        Stop VPN
   restart                Restart VPN + apply tailscale fix
@@ -225,12 +221,25 @@ Commands:
   persist-fix            Install systemd auto-fix service
   autostart-on           Enable VPN autostart
   autostart-off          Disable VPN autostart
+
+Python commands (config management, TUI):
+  config [name]          Select or list configs
+  configs                Manage configs (list/add/remove/import)
+  tui                    Interactive TUI mode
+  setup                  Install configs from ~/Documents/vpns16.05/
+  logs                   Show logs
+  test                   Run tests
+  profile                Manage profiles
+
   help                   Show this help
 EOF
       ;;
+    (config | configs | setup | tui | logs | test | profile)
+      command awgq "$@"
+      ;;
     (*)
       echo "Unknown command: $1" >&2
-      awgq help
+      command awgq "$@" 2>/dev/null || awgq help
       return 1
       ;;
   esac
