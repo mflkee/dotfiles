@@ -16,3 +16,4 @@ projects/**/dot_venv/
 dot_config/niri/
 dot_config/systemd/
 {{ end -}}
+projects/**/.venv/
