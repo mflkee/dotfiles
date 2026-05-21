@@ -78,7 +78,8 @@ HISTSIZE=10000
 SAVEHIST=10000
 setopt appendhistory
 
-bindkey -e
+# Vi mode включен через zsh-vi-mode plugin (строка 69)
+# bindkey -e  # <-- УБРАНО: конфликтует с zsh-vi-mode
 bindkey '^[[3~' delete-char
 
 # --------------------
@@ -125,7 +126,8 @@ export PYTHONPYCACHEPREFIX="$HOME/.cache/python/__pycache__"  # Для орга�
 export PLANTUML_INCLUDE_PATH="$HOME/.config/plantuml/config.puml"
 
 # Дополнительные пути
-export PATH="$HOME/bin:$PATH"  # Пользовательские бинарники
+# ~/bin не существует — убрано
+# export PATH="$HOME/bin:$PATH"
 # --------------------
 # Настройки приложений
 # --------------------
@@ -163,7 +165,8 @@ if [[ -z "$TMUX" ]]; then
   fi
 fi
 
-export PATH="$HOME/.local/bin:$PATH"
+# .local/bin уже в PATH (строка 104)
+# export PATH="$HOME/.local/bin:$PATH"
 # Work around a broken Anaconda OpenSSL build path so Conda can load providers.
 [[ -d /opt/anaconda/lib/ossl-modules ]] && export OPENSSL_MODULES=/opt/anaconda/lib/ossl-modules
 [ -f /opt/anaconda/etc/profile.d/conda.sh ] && source /opt/anaconda/etc/profile.d/conda.sh
@@ -177,6 +180,9 @@ zinit cdreplay -q
 
 # Инициализация Starship prompt
 eval "$(starship init zsh)"
+
+# Инициализация Atuin (волшебная история shell)
+eval "$(atuin init zsh)"
 
 # ================================================================
 # Конец файла .zshrc

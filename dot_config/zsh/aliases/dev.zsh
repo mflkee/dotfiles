@@ -1,8 +1,8 @@
 # Development
 alias g++="g++ -std=c++23"
-alias rr="ranger-cd"
-alias fm="ranger-cd"
-alias files="ranger-cd"
+alias rr="yazi"
+alias fm="yazi"
+alias files="yazi"
 alias lg="lazygit"
 alias vim="nvim"
 
