@@ -61,8 +61,32 @@ zinit snippet OMZ::plugins/git/git.plugin.zsh
 # --------------------
 # Загрузка дополнительных плагинов
 # --------------------
+# zsh-syntax-highlighting (должен быть загружен до zsh-vi-mode)
+ZSH_HIGHLIGHT_STYLES[default]=none
+ZSH_HIGHLIGHT_STYLES[unknown-token]=fg=#f7768e
+ZSH_HIGHLIGHT_STYLES[reserved-word]=fg=#bb9af7
+ZSH_HIGHLIGHT_STYLES[alias]=fg=#7dcfff
+ZSH_HIGHLIGHT_STYLES[builtin]=fg=#7dcfff
+ZSH_HIGHLIGHT_STYLES[function]=fg=#7dcfff
+ZSH_HIGHLIGHT_STYLES[command]=fg=#7dcfff
+ZSH_HIGHLIGHT_STYLES[precommand]=fg=#e0af68
+ZSH_HIGHLIGHT_STYLES[commandseparator]=fg=#f7768e
+ZSH_HIGHLIGHT_STYLES[hashed-command]=fg=#7dcfff
+ZSH_HIGHLIGHT_STYLES[path]=fg=#c0caf5,underline
+ZSH_HIGHLIGHT_STYLES[path_prefix]=none
+ZSH_HIGHLIGHT_STYLES[globbing]=fg=#bb9af7
+ZSH_HIGHLIGHT_STYLES[history-expansion]=fg=#bb9af7
+ZSH_HIGHLIGHT_STYLES[single-hyphen-option]=fg=#7aa2f7
+ZSH_HIGHLIGHT_STYLES[double-hyphen-option]=fg=#7aa2f7
+ZSH_HIGHLIGHT_STYLES[back-quoted-argument]=fg=#e0af68
+ZSH_HIGHLIGHT_STYLES[single-quoted-argument]=fg=#9ece6a
+ZSH_HIGHLIGHT_STYLES[double-quoted-argument]=fg=#9ece6a
+ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]=fg=#9ece6a
+ZSH_HIGHLIGHT_STYLES[assign]=fg=#c0caf5
+ZSH_HIGHLIGHT_STYLES[autodirectory]=fg=#bb9af7
 zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-autosuggestions
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#565f89"
 # zinit light agkozak/zsh-z # replaced by zoxide
 zinit light MichaelAquilina/zsh-you-should-use
 zinit light Aloxaf/fzf-tab
@@ -207,6 +231,13 @@ eval "$(atuin init zsh)"
 # fzf key-bindings and completion (должен быть после zsh-vi-mode и cdreplay)
 source /usr/share/fzf/key-bindings.zsh
 source /usr/share/fzf/completion.zsh
+
+# Tokyonight цвета для fzf
+export FZF_DEFAULT_OPTS="
+  --color=bg:#1a1b26,bg+:#292e42,fg:#c0caf5,fg+:#c0caf5,hl:#bb9af7,hl+:#bb9af7
+  --color=info:#7dcfff,prompt:#7aa2f7,pointer:#7aa2f7,marker:#9ece6a,spinner:#9ece6a,header:#7aa2f7"
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always --line-range :500 {} 2>/dev/null || tree -C {} | head -100'"
+export FZF_ALT_C_OPTS="--preview 'tree -C {} | head -50'"
 
 # Переопределяем completion для cd: любой Tab с текстом → zoxide interactive search
 __zoxide_z_complete() {

@@ -1,9 +1,9 @@
 appearance:
   theme:
-    gtk: Adwaita
+    gtk: Tokyonight-Dark
     gtk_prefer_dark: true
     qt: kvantum
-    kvantum: KvGnomeDark
+    kvantum: Kvantum-Tokyo-Night
     color_scheme: prefer-dark
   icons:
     name: Tela-circle-dracula
@@ -22,8 +22,8 @@ appearance:
         gaps: 14
         centerFocusedColumn: on-overflow
         borderWidth: 2
-        borderActiveColor: '#70757d'
-        borderInactiveColor: '#43484f'
+        borderActiveColor: '#7aa2f7'
+        borderInactiveColor: '#3b4261'
         shadowSoftness: 56
         shadowSpread: 2
         shadowOffsetY: 8
@@ -34,8 +34,8 @@ appearance:
         gaps: 14
         centerFocusedColumn: on-overflow
         borderWidth: 2
-        borderActiveColor: '#70757d'
-        borderInactiveColor: '#43484f'
+        borderActiveColor: '#7aa2f7'
+        borderInactiveColor: '#3b4261'
         shadowSoftness: 56
         shadowSpread: 2
         shadowOffsetY: 8
