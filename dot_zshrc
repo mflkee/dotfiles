@@ -62,6 +62,7 @@ zinit snippet OMZ::plugins/git/git.plugin.zsh
 # Загрузка дополнительных плагинов
 # --------------------
 # zsh-syntax-highlighting (должен быть загружен до zsh-vi-mode)
+typeset -gA ZSH_HIGHLIGHT_STYLES
 ZSH_HIGHLIGHT_STYLES[default]=none
 ZSH_HIGHLIGHT_STYLES[unknown-token]=fg=#f7768e
 ZSH_HIGHLIGHT_STYLES[reserved-word]=fg=#bb9af7
