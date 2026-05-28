@@ -1,4 +1,21 @@
 appearance:
+  theme:
+    gtk: Adwaita
+    gtk_prefer_dark: true
+    qt: kvantum
+    kvantum: KvGnomeDark
+    color_scheme: prefer-dark
+  icons:
+    name: Tela-circle-dracula
+    fallback: Adwaita
+  fonts:
+    main: "JetBrains Mono 11"
+    monospace: "JetBrains Mono 11"
+    document: "Noto Sans 11"
+    window_title: "Noto Sans Bold 11"
+  cursor:
+    theme: Adwaita
+    size: 24
   profiles:
     archlinux-notebook:
       niri:

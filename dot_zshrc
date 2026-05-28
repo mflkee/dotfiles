@@ -67,6 +67,11 @@ zinit light zsh-users/zsh-autosuggestions
 zinit light MichaelAquilina/zsh-you-should-use
 zinit light Aloxaf/fzf-tab
 zinit light jeffreytse/zsh-vi-mode
+
+# Исправление рекурсии zsh-vi-mode + starship при нажатии Esc
+function zvm_after_select_vi_mode() {
+    zle reset-prompt
+}
 zinit light hlissner/zsh-autopair
 
 # --------------------
@@ -111,6 +116,10 @@ export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.socket"
 export GPG_TTY="$(tty)"
 gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
 
+# Qt / GTK appearance
+export QT_QPA_PLATFORMTHEME=qt6ct
+export QT_STYLE_OVERRIDE=kvantum
+
 # Rust
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -145,7 +154,7 @@ export XSECURELOCK_DIM_FPS=60
 # --------------------
 # Сторонние инструменты
 # --------------------
-eval "$(zoxide init zsh)"
+eval "$(zoxide init zsh --cmd cd)"
 
 function zoxide-fzf() {
   local dir
@@ -181,8 +190,37 @@ zinit cdreplay -q
 # Инициализация Starship prompt
 eval "$(starship init zsh)"
 
+# Защита от рекурсии zle-keymap-select с zsh-vi-mode
+if (( ${+__starship_preserved_zle_keymap_select} )); then
+    function starship_zle-keymap-select-wrapped() {
+        [[ -n "${STARSHIP_KEYMAP_GUARD:-}" ]] && return
+        typeset -g STARSHIP_KEYMAP_GUARD=1
+        $__starship_preserved_zle_keymap_select "$@"
+        starship_zle-keymap-select "$@"
+        unset STARSHIP_KEYMAP_GUARD
+    }
+fi
+
 # Инициализация Atuin (волшебная история shell)
 eval "$(atuin init zsh)"
+
+# fzf key-bindings and completion (должен быть после zsh-vi-mode и cdreplay)
+source /usr/share/fzf/key-bindings.zsh
+source /usr/share/fzf/completion.zsh
+
+# Переопределяем completion для cd: любой Tab с текстом → zoxide interactive search
+__zoxide_z_complete() {
+    [[ "${#words[@]}" -eq "${CURRENT}" ]] || return 0
+    if [[ "${#words[@]}" -eq 2 ]]; then
+        __zoxide_result="$(
+            \command zoxide query --exclude "$(__zoxide_pwd)" --interactive -- ${words[2,-1]}
+        )" || __zoxide_result=''
+        compadd -Q ""
+        builtin bindkey '\e[0n' '__zoxide_z_complete_helper'
+        builtin printf '\e[5n'
+        return 0
+    fi
+}
 
 # ================================================================
 # Конец файла .zshrc

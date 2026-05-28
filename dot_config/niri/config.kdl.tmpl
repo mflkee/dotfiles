@@ -257,7 +257,7 @@ layout {
 spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET; systemctl --user restart noctalia-shell.service"
 
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
-spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark'"
+spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme '{{ .appearance.theme.color_scheme }}'; gsettings set org.gnome.desktop.interface gtk-theme '{{ .appearance.theme.gtk }}'; gsettings set org.gnome.desktop.interface icon-theme '{{ .appearance.icons.name }}'; gsettings set org.gnome.desktop.interface cursor-theme '{{ .appearance.cursor.theme }}'; gsettings set org.gnome.desktop.interface cursor-size {{ .appearance.cursor.size }}; gsettings set org.gnome.desktop.interface font-name '{{ .appearance.fonts.main }}'"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"

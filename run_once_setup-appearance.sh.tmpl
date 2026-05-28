@@ -1,0 +1,14 @@
+#!/bin/sh
+# vim: ft=sh
+
+if command -v gsettings >/dev/null 2>&1; then
+  gsettings set org.gnome.desktop.interface gtk-theme '{{ .appearance.theme.gtk }}'
+  gsettings set org.gnome.desktop.interface icon-theme '{{ .appearance.icons.name }}'
+  gsettings set org.gnome.desktop.interface color-scheme '{{ .appearance.theme.color_scheme }}'
+  gsettings set org.gnome.desktop.interface cursor-theme '{{ .appearance.cursor.theme }}'
+  gsettings set org.gnome.desktop.interface cursor-size {{ .appearance.cursor.size }}
+  gsettings set org.gnome.desktop.interface font-name '{{ .appearance.fonts.main }}'
+  gsettings set org.gnome.desktop.interface monospace-font-name '{{ .appearance.fonts.monospace }}'
+  gsettings set org.gnome.desktop.interface document-font-name '{{ .appearance.fonts.document }}'
+  gsettings set org.gnome.desktop.interface text-scaling-factor 1.0
+fi

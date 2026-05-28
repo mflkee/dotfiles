@@ -17,3 +17,4 @@ dot_config/niri/
 dot_config/systemd/
 {{ end -}}
 projects/**/.venv/
+dot_config/mimeapps.list

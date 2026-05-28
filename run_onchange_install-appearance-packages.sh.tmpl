@@ -1,0 +1,27 @@
+#!/bin/bash
+# vim: ft=bash
+# run_onchange hash-packages: {{ list "kvantum" "kvantum-qt5" "qt5ct" "qt6ct" "tela-circle-icon-theme-dracula" "papirus-icon-theme" "breeze" "noto-fonts" "noto-fonts-cjk" "noto-fonts-emoji" "noto-fonts-extra" "ttf-jetbrains-mono" "xdg-desktop-portal-gtk" | join "\n" | sha256sum }}
+
+set -euo pipefail
+
+PACKAGES=(
+  kvantum kvantum-qt5 qt5ct qt6ct
+  tela-circle-icon-theme-dracula papirus-icon-theme breeze
+  noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra
+  ttf-jetbrains-mono
+  xdg-desktop-portal-gtk
+)
+
+MISSING=()
+for pkg in "${PACKAGES[@]}"; do
+  if ! pacman -Q "$pkg" &>/dev/null; then
+    MISSING+=("$pkg")
+  fi
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "[chezmoi] Installing missing appearance packages: ${MISSING[*]}"
+  sudo pacman -S --needed --noconfirm "${MISSING[@]}"
+else
+  echo "[chezmoi] All appearance packages are already installed."
+fi

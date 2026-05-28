@@ -14,6 +14,7 @@ max_height = 1800
 default = [{ run = "xdg-open", block = false, orphan = true }]
 
 rules = [
+    { name = "*.pdf",  run = "okular",  block = false, orphan = true },
     { name = "*.doc",  run = "libreoffice", block = false, orphan = true },
     { name = "*.docx", run = "libreoffice", block = false, orphan = true },
     { name = "*.xls",  run = "libreoffice", block = false, orphan = true },

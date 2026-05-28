@@ -12,11 +12,11 @@ background = #0c1017
 foreground = #e0e0e0
 background-opacity = 0.95
 
-# Neon cursor
-cursor-style = bar
+# Cursor
+cursor-style = block
 cursor-color = #ff8800
-cursor-style-blink = true
-cursor-opacity = 0.9
+cursor-style-blink = false
+cursor-opacity = 1
 
 # Selection colors
 selection-background = #1a1f2e
@@ -47,10 +47,6 @@ palette = 15=#ffffff
 # Split divider
 cursor-click-to-move = true
 split-divider-color = #45a0d6
-
-# Cursor trail shader
-custom-shader = shaders/cursor_tail.glsl
-custom-shader-animation = always
 
 # Window settings
 confirm-close-surface = false
