@@ -19,3 +19,4 @@ dot_config/systemd/
 projects/**/.venv/
 dot_config/mimeapps.list
 dot_config/qt6ct/qt6ct.conf
+dot_config/Kvantum/kvantum.kvconfig
