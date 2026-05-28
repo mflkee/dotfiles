@@ -18,3 +18,4 @@ dot_config/systemd/
 {{ end -}}
 projects/**/.venv/
 dot_config/mimeapps.list
+dot_config/qt6ct/qt6ct.conf
