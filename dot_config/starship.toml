@@ -5,23 +5,23 @@ $directory\
 \n$character"""
 
 [character]
-success_symbol = "[＄](bold green)"
-error_symbol = "[＄](bold red)"
-vimcmd_symbol = "[＄](bold yellow)"
+success_symbol = "[＄](bold #7aa2f7)"
+error_symbol = "[＄](bold #f7768e)"
+vimcmd_symbol = "[＄](bold #e0af68)"
 
 [username]
 disabled = false
-style_user = "bold cyan"
+style_user = "bold #7dcfff"
 
 [hostname]
 disabled = false
-style = "bold cyan"
-format = "@[$hostname](bold cyan)"
+style = "bold #7dcfff"
+format = "@[$hostname](bold #7dcfff)"
 
 [directory]
 truncation_length = 3
 truncate_to_repo = false
-style = "bold cyan"
+style = "bold #7dcfff"
 
 [kubernetes]
 disabled = true
