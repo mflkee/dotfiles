@@ -1,6 +1,6 @@
 format = """
 $username\
-$hostname\
+$hostname \
 $directory\
 \n$character"""
 

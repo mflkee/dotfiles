@@ -61,7 +61,7 @@ AUR_PACKAGES=(
   zen-browser-bin
 )
 
-paru -S --needed "${REPO_PACKAGES[@]}" "${AUR_PACKAGES[@]}"
+paru -S --noconfirm --needed --skipreview --removemake --cleanafter --noconfirm --skipreview "${REPO_PACKAGES[@]}" "${AUR_PACKAGES[@]}"
 
 mkdir -p \
   "$HOME/Pictures/Wallpapers" \

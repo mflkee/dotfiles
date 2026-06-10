@@ -90,6 +90,11 @@ zinit light zsh-users/zsh-autosuggestions
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#565f89"
 # zinit light agkozak/zsh-z # replaced by zoxide
 zinit light MichaelAquilina/zsh-you-should-use
+
+# fzf key-bindings and completion (должен быть до fzf-tab, чтобы fzf-tab переопределил Tab)
+source /usr/share/fzf/key-bindings.zsh
+source /usr/share/fzf/completion.zsh
+
 zinit light Aloxaf/fzf-tab
 zinit light jeffreytse/zsh-vi-mode
 
@@ -228,10 +233,6 @@ fi
 
 # Инициализация Atuin (волшебная история shell)
 eval "$(atuin init zsh)"
-
-# fzf key-bindings and completion (должен быть после zsh-vi-mode и cdreplay)
-source /usr/share/fzf/key-bindings.zsh
-source /usr/share/fzf/completion.zsh
 
 # Tokyonight цвета для fzf
 export FZF_DEFAULT_OPTS="
