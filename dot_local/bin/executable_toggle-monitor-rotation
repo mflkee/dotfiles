@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUTPUT="DP-4"
+WALLPAPER="$HOME/pictures/vertical/abstract-purple-sand.jpg"
+NOCTALIA_IPC="qs -c noctalia-shell ipc call"
+
+get_current_transform() {
+    wlr-randr --output "$OUTPUT" 2>/dev/null | grep -oP 'Transform:\s*\K\S+' || echo "unknown"
+}
+
+current="$(get_current_transform)"
+
+case "$current" in
+    normal|unknown)
+        wlr-randr --output "$OUTPUT" --transform 90
+        $NOCTALIA_IPC wallpaper set "$WALLPAPER"
+        ;;
+    "90"|"90 ")
+        wlr-randr --output "$OUTPUT" --transform normal
+        $NOCTALIA_IPC wallpaper random
+        ;;
+esac

@@ -80,7 +80,7 @@ input {
 output "DP-4" {
     mode "1920x1080@143.855"
     scale 1.20
-    transform "normal"
+    transform "90"
 }
 {{ else }}
 output "eDP-1" {
@@ -124,7 +124,7 @@ layout {
     // preset-window-heights { }
 
     // You can change the default width of the new windows.
-    default-column-width { proportion 0.5; }
+    default-column-width { proportion 1.0; }
     // If you leave the brackets empty, the windows themselves will decide their initial width.
     // default-column-width {}
 
@@ -383,6 +383,8 @@ binds {
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
     // For example, this is a standard bind to toggle the screen reader (orca).
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
+
+    Mod+Ctrl+0 hotkey-overlay-title="Toggle Monitor Rotation (Portrait/Landscape)" { spawn-sh "PATH=\"$HOME/.local/bin:$PATH\" toggle-monitor-rotation"; }
 
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
