@@ -85,10 +85,12 @@ output "DP-4" {
 {{ else }}
 output "eDP-1" {
     scale 1.20
+    position x=0 y=0
 }
 
 output "HDMI-A-1" {
-    mode "1920x1080@74.986"
+    mode "1920x1080@60.000"
+    position x=1600 y=0
 }
 {{ end }}
 

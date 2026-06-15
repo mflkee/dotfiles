@@ -1,0 +1,9 @@
+{{- $isDesktop := or (eq .chezmoi.hostname "archlinux-desktop") (eq .chezmoi.hostname "omarchy-desktop") -}}
+#!/bin/sh
+# Re-runs when niri config changes: {{ include "dot_config/niri/config.kdl.tmpl" | sha256sum }}
+{{ if not $isDesktop -}}
+if command -v niri >/dev/null 2>&1 && niri msg outputs >/dev/null 2>&1; then
+    niri msg output "eDP-1" position set 0 0 || true
+    niri msg output "HDMI-A-1" position set 1600 0 || true
+fi
+{{ end -}}
