@@ -76,11 +76,19 @@ input {
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Outputs
 {{ if $isDesktop }}
-// Desktop profile for the ASUS VP249 on DisplayPort.
+// Desktop profile: Thunderobot F27H144F on the left, ASUS VP249 on the right.
 output "DP-4" {
-    mode "1920x1080@143.855"
-    scale 1.20
-    transform "90"
+    mode "1920x1080@165.003"
+    scale 1.0
+    transform "normal"
+    position x=0 y=0
+}
+
+output "HDMI-A-2" {
+    mode "1920x1080@144.013"
+    scale 1.0
+    transform "normal"
+    position x=1920 y=0
 }
 {{ else }}
 output "eDP-1" {

@@ -1,23 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUTPUT="DP-4"
-WALLPAPER="$HOME/pictures/vertical/abstract-purple-sand.jpg"
+OUTPUT="HDMI-A-2"
+WALLPAPER_VERTICAL="$HOME/pictures/vertical/abstract-purple-sand.jpg"
 NOCTALIA_IPC="qs -c noctalia-shell ipc call"
 
 get_current_transform() {
-    wlr-randr --output "$OUTPUT" 2>/dev/null | grep -oP 'Transform:\s*\K\S+' || echo "unknown"
+    niri msg outputs 2>/dev/null \
+        | awk -v out="$OUTPUT" '
+            BEGIN { RS=""; FS="\n" }
+            $0 ~ "\\(" out "\\)" {
+                for (i=1;i<=NF;i++) {
+                    if ($i ~ /Transform:/) {
+                        gsub(/^.*Transform:[[:space:]]*/, "", $i)
+                        print $i
+                        exit
+                    }
+                }
+            }
+        '
 }
 
 current="$(get_current_transform)"
 
 case "$current" in
-    normal|unknown)
-        wlr-randr --output "$OUTPUT" --transform 90
-        $NOCTALIA_IPC wallpaper set "$WALLPAPER"
+    normal|unknown|"")
+        niri msg output "$OUTPUT" transform 90
+        $NOCTALIA_IPC wallpaper set "$WALLPAPER_VERTICAL"
         ;;
-    "90"|"90 ")
-        wlr-randr --output "$OUTPUT" --transform normal
+    "90"*)
+        niri msg output "$OUTPUT" transform normal
+        $NOCTALIA_IPC wallpaper random
+        ;;
+    *)
+        # Fallback for any unexpected value: reset to normal.
+        niri msg output "$OUTPUT" transform normal
         $NOCTALIA_IPC wallpaper random
         ;;
 esac
