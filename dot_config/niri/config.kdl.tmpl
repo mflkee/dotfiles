@@ -363,6 +363,7 @@ binds {
     // Suggested binds for running programs: terminal and screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Super+Shift+I repeat=false hotkey-overlay-title="Voice Dictate" { spawn "bash" "-lc" "whisper-dictate"; }
 
     // Noctalia is the primary shell surface for launchers and system popups.
     Mod+D repeat=false hotkey-overlay-title="Open Noctalia Launcher" {
