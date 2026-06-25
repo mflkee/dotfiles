@@ -1,0 +1,57 @@
+#!/bin/bash
+# vim: ft=bash
+# Auto-install auto-timezone script and systemd units
+# Managed by chezmoi
+
+set -euo pipefail
+
+SCRIPT_SRC="{{ .chezmoi.homeDir }}/.local/bin/auto-timezone.sh"
+SERVICE_DST="/etc/systemd/system/auto-timezone.service"
+TIMER_DST="/etc/systemd/system/auto-timezone.timer"
+
+# Copy script to /usr/local/bin
+if [ -f "$SCRIPT_SRC" ]; then
+    sudo cp "$SCRIPT_SRC" /usr/local/bin/auto-timezone.sh
+    sudo chmod +x /usr/local/bin/auto-timezone.sh
+    echo "[chezmoi] Installed /usr/local/bin/auto-timezone.sh"
+fi
+
+# Install systemd units
+sudo tee "$SERVICE_DST" > /dev/null <<'SERVICE'
+[Unit]
+Description=Auto-detect and set timezone via IP geolocation
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/auto-timezone.sh
+User=root
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+sudo tee "$TIMER_DST" > /dev/null <<'TIMER'
+[Unit]
+Description=Periodic timezone auto-detection
+Requires=auto-timezone.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+TIMER
+
+echo "[chezmoi] Installed systemd units"
+
+# Enable and start
+sudo systemctl daemon-reload
+sudo systemctl enable --now auto-timezone.timer 2>/dev/null || true
+sudo systemctl enable auto-timezone.service 2>/dev/null || true
+sudo systemctl start auto-timezone.service 2>/dev/null || true
+
+echo "[chezmoi] auto-timezone setup complete"
