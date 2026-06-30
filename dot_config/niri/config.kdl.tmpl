@@ -394,6 +394,8 @@ binds {
     // For example, this is a standard bind to toggle the screen reader (orca).
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
 
+    Super+Alt+D hotkey-overlay-title="Voice Dictation (hyprwhspr)" { spawn "hyprwhspr" "record" "toggle"; }
+
     Mod+Ctrl+0 hotkey-overlay-title="Toggle Monitor Rotation (Portrait/Landscape)" { spawn-sh "PATH=\"$HOME/.local/bin:$PATH\" toggle-monitor-rotation"; }
 
     // Example volume keys mappings for PipeWire & WirePlumber.
