@@ -1,0 +1,31 @@
+Host *
+  AddKeysToAgent yes
+  HashKnownHosts yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host hp
+  HostName 192.168.1.124
+  User mflkee
+  Port 22
+  IdentityFile ~/.ssh/id_ed25519
+
+Host antix1
+    HostName antix1.netbird.cloud
+    User mflkee
+
+Host desktop
+    HostName archlinux-desktop.netbird.cloud
+    User mflkee
+
+Host notebook
+    HostName archlinux-notebook-198-212.netbird.cloud
+    User mflkee
+
+Host server
+    HostName mkair-server.netbird.cloud
+    User mflkee
+
+Host server-tmn
+    HostName mkair-server-tmn.netbird.cloud
+    User mflkee

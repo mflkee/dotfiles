@@ -1,0 +1,11 @@
+# dsync configuration
+[machines]
+notebook = { host = "archlinux-notebook-198-212.netbird.cloud", user = "mflkee" }
+server = { host = "mkair-server.netbird.cloud", user = "mflkee" }
+server-tmn = { host = "mkair-server-tmn.netbird.cloud", user = "mflkee" }
+desktop = { host = "archlinux-desktop.netbird.cloud", user = "mflkee" }
+antix1 = { host = "antix1.netbird.cloud", user = "mflkee" }
+
+[git]
+source = "~/dotfiles"
+branch = "main"
