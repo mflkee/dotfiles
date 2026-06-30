@@ -72,6 +72,13 @@ mkdir -p \
 fc-cache -f "$HOME/.local/share/fonts" 2>/dev/null || true
 systemctl --user enable --now ssh-agent.socket syncthing.service || true
 
+# Ensure SSH daemon is enabled (required for dsync remote sync)
+if systemctl is-enabled --quiet sshd 2>/dev/null; then
+  systemctl is-active --quiet sshd || sudo systemctl start sshd || true
+else
+  sudo systemctl enable --now sshd || true
+fi
+
 if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/zsh" ]]; then
   printf 'Login shell is not /bin/zsh yet. Run: chsh -s /bin/zsh\n'
 fi
