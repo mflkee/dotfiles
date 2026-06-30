@@ -11,21 +11,21 @@ Host hp
   IdentityFile ~/.ssh/id_ed25519
 
 Host antix1
-    HostName antix1.netbird.cloud
+    HostName 100.89.195.135
     User mflkee
 
 Host desktop
-    HostName archlinux-desktop.netbird.cloud
+    HostName 100.89.65.186
     User mflkee
 
 Host notebook
-    HostName archlinux-notebook-198-212.netbird.cloud
+    HostName 100.89.198.212
     User mflkee
 
 Host server
-    HostName mkair-server.netbird.cloud
+    HostName 100.89.59.195
     User mflkee
 
 Host server-tmn
-    HostName mkair-server-tmn.netbird.cloud
+    HostName 100.89.18.223
     User mflkee
