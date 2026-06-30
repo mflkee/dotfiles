@@ -1,0 +1,8 @@
+{
+  "$schema": "https://raw.githubusercontent.com/goodroot/hyprwhspr/main/share/config.schema.json",
+  "transcription_backend": "onnx-asr",
+  "language": "ru",
+  "recording_mode": "toggle",
+  "audio_ducking": true,
+  "grab_keys": false
+}

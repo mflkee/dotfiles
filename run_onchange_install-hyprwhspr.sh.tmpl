@@ -1,0 +1,51 @@
+#!/bin/bash
+# vim: ft=bash
+# run_onchange hash-packages: {{ list "hyprwhspr" "wtype" "ydotool" | join "\n" | sha256sum }}
+
+set -euo pipefail
+
+PACKAGES=(
+  hyprwhspr
+  wtype
+  ydotool
+)
+
+# Install AUR packages via paru
+MISSING=()
+for pkg in "${PACKAGES[@]}"; do
+  if ! pacman -Q "$pkg" &>/dev/null; then
+    MISSING+=("$pkg")
+  fi
+done
+
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+  echo "[chezmoi] Installing missing hyprwhspr packages: ${MISSING[*]}"
+  paru -S --needed --noconfirm "${MISSING[@]}"
+else
+  echo "[chezmoi] All hyprwhspr packages are already installed."
+fi
+
+# Setup udev rule for uinput access
+UDEV_RULE='/etc/udev/rules.d/99-hyprwhspr-uinput.rules'
+if [[ ! -f "$UDEV_RULE" ]]; then
+  echo 'KERNEL=="uinput", MODE="0666"' | sudo tee "$UDEV_RULE" >/dev/null
+  sudo udevadm control --reload-rules
+  sudo udevadm trigger
+  echo "[chezmoi] Udev rule created: $UDEV_RULE"
+else
+  echo "[chezmoi] Udev rule already exists: $UDEV_RULE"
+fi
+
+# Add user to input group if not already
+if ! groups "$USER" | grep -q '\binput\b'; then
+  sudo usermod -aG input "$USER"
+  echo "[chezmoi] Added $USER to input group (relogin required)"
+fi
+
+# Run hyprwhspr setup only if no config exists
+if [[ ! -f "$HOME/.config/hyprwhspr/config.json" ]]; then
+  echo "[chezmoi] hyprwhspr config will be deployed by chezmoi, skipping setup"
+fi
+
+# Enable ydotool user service
+systemctl --user enable --now ydotool.service 2>/dev/null || true
