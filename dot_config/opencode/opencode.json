@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "instructions/machines.md"
+  ],
+  "provider": {
+    "openai":     { "options": { "baseURL": "https://api.proxyapi.ru/openai/v1" } },
+    "anthropic":  { "options": { "baseURL": "https://api.proxyapi.ru/anthropic/v1" } },
+    "google":     { "options": { "baseURL": "https://api.proxyapi.ru/google/v1beta" } },
+    "openrouter": { "options": { "baseURL": "https://api.proxyapi.ru/openrouter/v1" } }
+  },
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "enabled": true,
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}"
+      }
+    },
+    "obsidian": {
+      "type": "local",
+      "command": ["uvx", "mcp-obsidian"],
+      "enabled": true,
+      "environment": {
+        "OBSIDIAN_API_KEY": "{env:OBSIDIAN_API_KEY}",
+        "OBSIDIAN_HOST": "127.0.0.1",
+        "OBSIDIAN_PORT": "27124"
+      }
+    }
+  },
+  "experimental": {
+    "mcp_timeout": 30000
+  }
+}
