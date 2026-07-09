@@ -19,14 +19,13 @@
       }
     },
     "obsidian": {
-      "type": "local",
-      "command": ["uvx", "mcp-obsidian"],
+      "type": "remote",
+      "url": "http://127.0.0.1:27123/second-brain-mcp/",
       "enabled": true,
-      "environment": {
-        "OBSIDIAN_API_KEY": "{env:OBSIDIAN_API_KEY}",
-        "OBSIDIAN_HOST": "127.0.0.1",
-        "OBSIDIAN_PORT": "27124"
-      }
+      "headers": {
+        "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
+      },
+      "oauth": false
     }
   },
   "experimental": {
