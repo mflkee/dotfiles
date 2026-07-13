@@ -27,7 +27,7 @@
 
 В opencode настроены MCP-серверы:
 
-- **github** — `@modelcontextprotocol/server-github`. Требует переменную `GITHUB_TOKEN` (передаётся как `GITHUB_PERSONAL_ACCESS_TOKEN`).
+- **github** — `@modelcontextprotocol/server-github`. Требует переменные `GITHUB_TOKEN` и `GITHUB_PERSONAL_ACCESS_TOKEN` (выставляются в `~/.config/zsh/secrets.zsh`).
 - **obsidian** — плагин Obsidian **Local REST API Second Brain MCP Extension**. Подключается через HTTP к `http://127.0.0.1:27123/second-brain-mcp/`. Требует:
   - родительский плагин `obsidian-local-rest-api` (включён и запущен в Obsidian);
   - плагин `obsidian-local-rest-api-second-brain-mcp-extension`;
