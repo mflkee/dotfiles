@@ -5,7 +5,7 @@ server = { host = "mkair-server.netbird.cloud", user = "mflkee" }
 server-tmn = { host = "mkair-server-tmn.netbird.cloud", user = "mflkee" }
 desktop = { host = "archlinux-desktop-12-158.netbird.cloud", user = "mflkee" }
 antix1 = { host = "antix1.netbird.cloud", user = "mflkee" }
-archlinux-server = { host = "archlinux-server", user = "mflkee" }
+archlinux-server = { host = "archlinux-server.netbird.cloud", user = "mflkee" }
 
 [git]
 source = "~/dotfiles"
