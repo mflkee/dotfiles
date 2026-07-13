@@ -2,6 +2,15 @@
 # vim: ft=bash
 # run_onchange hash-packages: {{ list "hyprwhspr" "wtype" "ydotool" | join "\n" | sha256sum }}
 
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if not $has_niri }}
+echo "Not a desktop machine, skipping hyprwhspr setup."
+exit 0
+{{- end }}
+
 set -euo pipefail
 
 PACKAGES=(

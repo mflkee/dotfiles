@@ -2,6 +2,15 @@
 # vim: ft=bash
 # run_onchange hash-packages: {{ list "kvantum" "kvantum-qt5" "qt5ct" "qt6ct" "tela-circle-icon-theme-dracula" "papirus-icon-theme" "breeze" "noto-fonts" "noto-fonts-cjk" "noto-fonts-emoji" "noto-fonts-extra" "ttf-jetbrains-mono" "xdg-desktop-portal-gtk" | join "\n" | sha256sum }}
 
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if not $has_niri }}
+echo "Not a desktop machine, skipping appearance packages."
+exit 0
+{{- end }}
+
 set -euo pipefail
 
 PACKAGES=(
