@@ -9,7 +9,7 @@ set -euo pipefail
 # Server package bootstrap for Arch Linux machines.
 # Runs once after chezmoi apply on machines without a graphical environment.
 
-if ! command -v pacman >/dev/null 2>&1; then
+if ! command -v pacman > /dev/null 2>&1; then
   echo "Not an Arch-based system, skipping server package install."
   exit 0
 fi
@@ -19,7 +19,7 @@ export PATH="$HOME/.local/bin:$PATH"
 echo "Installing base-devel..."
 sudo pacman -S --needed --noconfirm base-devel
 
-if ! command -v paru >/dev/null 2>&1; then
+if ! command -v paru > /dev/null 2>&1; then
   echo "Installing paru..."
   cd /tmp
   rm -rf paru
@@ -116,5 +116,7 @@ fi
 
 echo "Server bootstrap complete."
 {{- else -}}
+#!/usr/bin/env bash
 # Graphical machine: desktop package script handles installation.
+exit 0
 {{- end }}

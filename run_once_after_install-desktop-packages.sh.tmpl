@@ -136,5 +136,7 @@ fi
 
 echo "Desktop bootstrap complete."
 {{- else -}}
+#!/usr/bin/env bash
 # Server machine: desktop packages are not installed.
+exit 0
 {{- end }}
