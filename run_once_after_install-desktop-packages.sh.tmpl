@@ -1,10 +1,13 @@
-{{- $m := (get .machines .chezmoi.hostname) -}}
-{{- if $m.has_niri }}
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if $has_niri -}}
 #!/usr/bin/env bash
 set -euo pipefail
 
 # Desktop/graphics package bootstrap for Arch Linux machines.
-# Runs once after chezmoi apply on machines with a graphical environment (has_niri=true).
+# Runs once after chezmoi apply on machines with a graphical environment.
 
 if ! command -v pacman >/dev/null 2>&1; then
   echo "Not an Arch-based system, skipping desktop package install."
@@ -132,6 +135,6 @@ if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/zsh" ]]; then
 fi
 
 echo "Desktop bootstrap complete."
-{{- else }}
+{{- else -}}
 # Server machine: desktop packages are not installed.
 {{- end }}

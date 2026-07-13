@@ -1,5 +1,8 @@
-{{- $m := (get .machines .chezmoi.hostname) -}}
-{{- if not ($m.has_niri) }}
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if not $has_niri -}}
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -112,6 +115,6 @@ if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/zsh" ]]; then
 fi
 
 echo "Server bootstrap complete."
-{{- else }}
-# Graphical machine: server packages are installed by the desktop script.
+{{- else -}}
+# Graphical machine: desktop package script handles installation.
 {{- end }}

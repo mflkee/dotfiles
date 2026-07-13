@@ -11,8 +11,11 @@ projects/**/dot_venv/
 .openclaw/openclaw.json.last-good
 .openclaw/*.bak
 
-{{- $m := (get .machines .chezmoi.hostname) -}}
-{{- if not ($m.has_niri) -}}
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if not $has_niri -}}
 dot_config/niri/
 dot_config/systemd/
 {{ end -}}

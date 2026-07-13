@@ -31,6 +31,15 @@ machines:
     browser: zen-browser
     has_anaconda: false
     has_niri: true
+  archlinux-server:
+    wm: ""
+    desktop: ""
+    has_gsettings: false
+    arch: x86_64
+    browser: ""
+    has_anaconda: false
+    has_niri: false
+
   mkair-server-tmn:
     wm: ""
     desktop: ""
