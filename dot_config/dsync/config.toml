@@ -10,3 +10,7 @@ archlinux-server = { host = "archlinux-server", user = "mflkee" }
 [git]
 source = "~/dotfiles"
 branch = "main"
+remote_url = "https://github.com/mflkee/dotfiles.git"
+
+[projects]
+dsync = { path = "~/projects/dsync", remote = "git@github.com:mflkee/dsync.git", machines = ["notebook", "desktop", "server-tmn", "server", "antix1"], branch = "main" }
