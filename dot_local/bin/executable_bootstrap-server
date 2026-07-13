@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bootstrap a headless Arch Linux server to match the dotfiles/chezmoi setup.
+# Run this on the target server after copying the age key to:
+#   ~/.config/chezmoi/key.txt
+# And optionally SSH keys to ~/.ssh/
+
+REPO_PACKAGES=(
+  age
+  bat
+  chezmoi
+  dust
+  fd
+  fzf
+  git
+  lazygit
+  lsd
+  openssh
+  paru
+  ripgrep
+  tmux
+  zsh
+  jq
+  yazi
+  starship
+  atuin
+  uv
+)
+
+AUR_PACKAGES=(
+  # Add server-appropriate AUR packages here if needed.
+  # Most tools above are available in official repos.
+)
+
+# Ensure base-devel is installed for building paru/AUR packages.
+if ! pacman -Q base-devel >/dev/null 2>&1; then
+  echo "Installing base-devel..."
+  sudo pacman -S --noconfirm --needed base-devel
+fi
+
+# Install paru
+if ! command -v paru >/dev/null 2>&1; then
+  echo "Installing paru..."
+  cd /tmp
+  rm -rf paru
+  git clone https://aur.archlinux.org/paru.git
+  cd paru
+  makepkg -si --noconfirm
+fi
+
+# Install packages
+echo "Installing server packages..."
+paru -S --noconfirm --needed --skipreview --removemake --cleanafter "${REPO_PACKAGES[@]}"
+
+# Install dsync
+export PATH="$HOME/.local/bin:$PATH"
+if [ -f "$HOME/.local/bin/bootstrap-dsync" ]; then
+  bash "$HOME/.local/bin/bootstrap-dsync"
+else
+  echo "Installing dsync from remote..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/mflkee/dsync/main/bootstrap-dsync | bash
+fi
+
+# Clone dotfiles
+DOTFILES_DIR="$HOME/dotfiles"
+if [ -d "$DOTFILES_DIR/.git" ]; then
+  echo "Updating dotfiles..."
+  git -C "$DOTFILES_DIR" pull --ff-only
+else
+  echo "Cloning dotfiles..."
+  git clone https://github.com/mflkee/dotfiles.git "$DOTFILES_DIR"
+fi
+
+# Check age key
+if [ ! -f "$HOME/.config/chezmoi/key.txt" ]; then
+  echo ""
+  echo "WARNING: age key not found at ~/.config/chezmoi/key.txt"
+  echo "Copy it from your main machine before running chezmoi apply."
+  echo "Example: scp ~/.config/chezmoi/key.txt mflkee@archlinux-server:~/.config/chezmoi/key.txt"
+  echo ""
+  echo "After copying the age key, run:"
+  echo "  chezmoi apply"
+  exit 0
+fi
+
+# Apply dotfiles
+echo "Applying dotfiles with chezmoi..."
+chezmoi apply
+
+echo ""
+echo "Bootstrap complete."
+echo "Next steps:"
+echo "1. Start a new zsh shell or log out/in."
+echo "2. Run 'dsync status' to verify configuration."
+echo "3. Add this machine to the dsync config on your main machine:"
+echo "   dsync add archlinux-server archlinux-server.netbird.cloud"
