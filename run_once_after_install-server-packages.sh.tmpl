@@ -1,0 +1,117 @@
+{{- $m := (get .machines .chezmoi.hostname) -}}
+{{- if not ($m.has_niri) }}
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Server package bootstrap for Arch Linux machines.
+# Runs once after chezmoi apply on machines without a graphical environment.
+
+if ! command -v pacman >/dev/null 2>&1; then
+  echo "Not an Arch-based system, skipping server package install."
+  exit 0
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+echo "Installing base-devel..."
+sudo pacman -S --needed --noconfirm base-devel
+
+if ! command -v paru >/dev/null 2>&1; then
+  echo "Installing paru..."
+  cd /tmp
+  rm -rf paru
+  git clone https://aur.archlinux.org/paru.git
+  cd paru
+  makepkg -si --noconfirm
+fi
+
+REPO_PACKAGES=(
+  age
+  atool
+  bat
+  bc
+  chezmoi
+  clang
+  dosfstools
+  dust
+  fd
+  fzf
+  git
+  go
+  htop
+  hurl
+  ipython
+  jq
+  jre-openjdk
+  lazygit
+  lsd
+  luarocks
+  man-db
+  neovim
+  nodejs
+  npm
+  ntfs-3g
+  openssh
+  opencode
+  pacman-contrib
+  plantuml
+  prettier
+  prettierd
+  procs
+  python
+  python-pip
+  reflector
+  ripgrep
+  ruff
+  rust-analyzer
+  ssh-agent
+  starship
+  stylua
+  tmux
+  tldr
+  tree
+  unrar
+  wget
+  yazi
+  zoxide
+  zsh
+  lua-language-server
+  atuin
+)
+
+AUR_PACKAGES=(
+  paru
+  uv
+)
+
+echo "Installing server packages..."
+paru -S --noconfirm --needed --skipreview --removemake --cleanafter \
+  "${REPO_PACKAGES[@]}" \
+  "${AUR_PACKAGES[@]}"
+
+# Install dsync via local bootstrap script (already in dotfiles).
+if [ -f "$HOME/.local/bin/bootstrap-dsync" ]; then
+  echo "Installing dsync..."
+  bash "$HOME/.local/bin/bootstrap-dsync"
+else
+  echo "bootstrap-dsync not found, skipping dsync install."
+fi
+
+# Enable ssh-agent for the user.
+systemctl --user enable --now ssh-agent.socket || true
+
+# Ensure SSH daemon is running (required for dsync remote sync).
+if systemctl is-enabled --quiet sshd 2>/dev/null; then
+  systemctl is-active --quiet sshd || sudo systemctl start sshd || true
+else
+  sudo systemctl enable --now sshd || true
+fi
+
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/zsh" ]]; then
+  echo "Login shell is not /bin/zsh. Run: chsh -s /bin/zsh"
+fi
+
+echo "Server bootstrap complete."
+{{- else }}
+# Graphical machine: server packages are installed by the desktop script.
+{{- end }}

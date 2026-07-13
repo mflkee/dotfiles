@@ -1,0 +1,137 @@
+{{- $m := (get .machines .chezmoi.hostname) -}}
+{{- if $m.has_niri }}
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Desktop/graphics package bootstrap for Arch Linux machines.
+# Runs once after chezmoi apply on machines with a graphical environment (has_niri=true).
+
+if ! command -v pacman >/dev/null 2>&1; then
+  echo "Not an Arch-based system, skipping desktop package install."
+  exit 0
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+echo "Installing base-devel..."
+sudo pacman -S --needed --noconfirm base-devel
+
+if ! command -v paru >/dev/null 2>&1; then
+  echo "Installing paru..."
+  cd /tmp
+  rm -rf paru
+  git clone https://aur.archlinux.org/paru.git
+  cd paru
+  makepkg -si --noconfirm
+fi
+
+REPO_PACKAGES=(
+  age
+  atool
+  bat
+  bc
+  chezmoi
+  clang
+  dosfstools
+  dust
+  fd
+  ffmpegthumbnailer
+  fzf
+  ghostty
+  git
+  go
+  gtop
+  htop
+  hurl
+  ipython
+  jq
+  jre-openjdk
+  lazygit
+  lsd
+  luarocks
+  man-db
+  neovim
+  niri
+  nodejs
+  npm
+  noto-fonts
+  ntfs-3g
+  obsidian
+  openssh
+  opencode
+  pacman-contrib
+  plantuml
+  prettier
+  prettierd
+  procs
+  python
+  python-pip
+  reflector
+  ripgrep
+  ruff
+  rust-analyzer
+  ssh-agent
+  starship
+  stylua
+  syncthing
+  telegram-desktop
+  tldr
+  tmux
+  tree
+  udiskie
+  unrar
+  wl-clipboard
+  xclip
+  xsecurelock
+  zoxide
+  zsh
+  lua-language-server
+  atuin
+)
+
+AUR_PACKAGES=(
+  noctalia-shell
+  paru
+  quarto-cli-bin
+  ttf-firacode-nerd
+  ttf-iosevka-nerd
+  uv
+  zen-browser-bin
+)
+
+echo "Installing desktop packages..."
+paru -S --noconfirm --needed --skipreview --removemake --cleanafter \
+  "${REPO_PACKAGES[@]}" \
+  "${AUR_PACKAGES[@]}"
+
+# Install dsync via local bootstrap script (already in dotfiles).
+if [ -f "$HOME/.local/bin/bootstrap-dsync" ]; then
+  echo "Installing dsync..."
+  bash "$HOME/.local/bin/bootstrap-dsync"
+else
+  echo "bootstrap-dsync not found, skipping dsync install."
+fi
+
+mkdir -p \
+  "$HOME/Pictures/Wallpapers" \
+  "$HOME/Pictures/Screenshots" \
+  "$HOME/.local/state" \
+  "$HOME/buffer"
+
+fc-cache -f "$HOME/.local/share/fonts" 2>/dev/null || true
+systemctl --user enable --now ssh-agent.socket syncthing.service || true
+
+if systemctl is-enabled --quiet sshd 2>/dev/null; then
+  systemctl is-active --quiet sshd || sudo systemctl start sshd || true
+else
+  sudo systemctl enable --now sshd || true
+fi
+
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/bin/zsh" ]]; then
+  echo "Login shell is not /bin/zsh. Run: chsh -s /bin/zsh"
+fi
+
+echo "Desktop bootstrap complete."
+{{- else }}
+# Server machine: desktop packages are not installed.
+{{- end }}
