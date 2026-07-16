@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# noctalia-theme-export: Export current Noctalia theme settings to theme-profile.toml
+set -euo pipefail
+
+SETTINGS="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
+PROFILE="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/theme-profile.toml"
+
+[ -f "$SETTINGS" ] || { echo "Error: Noctalia settings not found at $SETTINGS" >&2; exit 1; }
+
+python3 << 'PYEOF'
+import tomllib, os
+
+SETTINGS = os.path.expanduser("~/.local/state/noctalia/settings.toml")
+PROFILE = os.path.expanduser("~/.config/noctalia/theme-profile.toml")
+
+with open(SETTINGS, "rb") as f:
+    settings = tomllib.load(f)
+
+# Extract only theme-related settings (no machine-specific stuff like lockscreen)
+profile = {}
+for key in ["theme", "plugins", "shell"]:
+    if key in settings:
+        profile[key] = settings[key]
+
+# Write TOML
+with open(PROFILE, "w") as f:
+    f.write("# Noctalia Theme Profile\n")
+    f.write("# Exported automatically by noctalia-theme-export\n")
+    f.write("# Do not edit manually — changes will be overwritten\n\n")
+    for section, data in profile.items():
+        if isinstance(data, dict):
+            f.write(f"[{section}]\n")
+            for k, v in data.items():
+                if isinstance(v, dict):
+                    f.write(f"\n    [{section}.{k}]\n")
+                    for kk, vv in v.items():
+                        if isinstance(vv, list):
+                            items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in vv)
+                            f.write(f"    {kk} = [ {items} ]\n")
+                        elif isinstance(vv, bool):
+                            f.write(f"    {kk} = {'true' if vv else 'false'}\n")
+                        elif isinstance(vv, str):
+                            f.write(f'    {kk} = "{vv}"\n')
+                        else:
+                            f.write(f"    {kk} = {vv}\n")
+                elif isinstance(v, list):
+                    items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in v)
+                    f.write(f"{k} = [ {items} ]\n")
+                elif isinstance(v, bool):
+                    f.write(f"{k} = {'true' if v else 'false'}\n")
+                elif isinstance(v, str):
+                    f.write(f'{k} = "{v}"\n')
+                else:
+                    f.write(f"{k} = {v}\n")
+        f.write("\n")
+
+print(f"Theme profile exported to {PROFILE}")
+PYEOF
