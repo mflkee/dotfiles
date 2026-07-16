@@ -3,6 +3,7 @@
 # Do not edit manually — changes will be overwritten
 
 [theme]
+builtin = "Ayu"
 community_palette = "Oxocarbon"
 mode = "dark"
 source = "builtin"
