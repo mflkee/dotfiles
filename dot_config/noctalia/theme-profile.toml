@@ -1,0 +1,19 @@
+# Noctalia Theme Profile
+# Managed by chezmoi - synced between machines via dsync
+# Apply with: noctalia-theme-apply (or automatically after chezmoi apply)
+
+[theme]
+community_palette = "Oxocarbon"
+mode = "dark"
+source = "builtin"
+wallpaper_scheme = "m3-content"
+
+    [theme.templates]
+    builtin_ids = [ "btop", "gtk3", "ghostty", "qt", "starship" ]
+    community_ids = [ "zen-browser", "neovim", "obsidian", "bat", "telegram", "yazi" ]
+
+[plugins]
+enabled = [ "noctalia/bongocat" ]
+
+[shell]
+lang = "ru"

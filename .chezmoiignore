@@ -23,3 +23,23 @@ projects/**/.venv/
 dot_config/mimeapps.list
 dot_config/qt6ct/qt6ct.conf
 dot_config/Kvantum/kvantum.kvconfig
+
+# Noctalia v5 manages these via theme templates + apply.sh
+dot_config/ghostty/themes/
+dot_config/alacritty/themes/
+dot_config/btop/themes/
+dot_config/cava/themes/
+dot_config/foot/themes/
+dot_config/kitty/themes/
+dot_config/helix/themes/
+dot_config/wezterm/colors/
+dot_config/gtk-3.0/noctalia.css
+dot_config/gtk-4.0/noctalia.css
+dot_config/labwc/noctalia.conf
+dot_config/mango/noctalia.conf
+dot_config/scroll/noctalia
+dot_config/sway/noctalia
+dot_config/qt5ct/colors/
+dot_config/qt6ct/colors/
+.local/state/noctalia/
+.local/share/noctalia/

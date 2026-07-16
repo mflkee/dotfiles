@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# noctalia-theme-apply: Apply theme profile to Noctalia settings
+# Replaces [theme], [plugins], [shell] sections in settings.toml
+set -euo pipefail
+
+PROFILE="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/theme-profile.toml"
+SETTINGS="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
+
+[ -f "$PROFILE" ] || { echo "Error: theme profile not found at $PROFILE" >&2; exit 1; }
+[ -f "$SETTINGS" ] || { echo "Error: Noctalia settings not found at $SETTINGS" >&2; exit 1; }
+
+python3 << 'PYEOF'
+import tomllib
+
+PROFILE = "/home/mflkee/.config/noctalia/theme-profile.toml"
+SETTINGS = "/home/mflkee/.local/state/noctalia/settings.toml"
+
+with open(PROFILE, "rb") as f:
+    profile = tomllib.load(f)
+
+with open(SETTINGS, "r") as f:
+    lines = f.readlines()
+
+def fmt_val(v):
+    if isinstance(v, list):
+        items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in v)
+        return f"[ {items} ]"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, str):
+        return f'"{v}"'
+    return str(v)
+
+def dict_to_toml(data, indent=0):
+    """Convert flat dict (no nested dicts) to TOML lines"""
+    pad = "    " * indent
+    result = []
+    for k, v in data.items():
+        if not isinstance(v, dict):
+            result.append(f"{pad}{k} = {fmt_val(v)}")
+    return "\n".join(result)
+
+def find_section_range(lines, section_name):
+    """Find start and end line indices for a TOML section (including subsections)"""
+    start = None
+    end = len(lines)
+    header = f"[{section_name}]"
+    header_prefix = f"[{section_name}."
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == header:
+            start = i
+        elif start is not None and (stripped.startswith("[") and not stripped.startswith(header_prefix)):
+            end = i
+            break
+    return start, end
+
+def replace_section(lines, section_name, new_data):
+    start, end = find_section_range(lines, section_name)
+    if start is None:
+        return lines
+
+    # Build new section
+    new_lines = [f"[{section_name}]\n"]
+    flat = {k: v for k, v in new_data.items() if not isinstance(v, dict)}
+    if flat:
+        new_lines.append(dict_to_toml(flat) + "\n")
+
+    # Add subsections
+    for k, v in new_data.items():
+        if isinstance(v, dict):
+            new_lines.append(f"\n    [{section_name}.{k}]\n")
+            new_lines.append(dict_to_toml(v, indent=1) + "\n")
+
+    return lines[:start] + new_lines + lines[end:]
+
+for key in ["theme", "plugins", "shell"]:
+    if key in profile:
+        lines = replace_section(lines, key, profile[key])
+
+# Ensure blank line before each top-level section
+import re
+result = []
+for i, line in enumerate(lines):
+    if i > 0 and line.strip().startswith("[") and not line.strip().startswith("[ ") and result and result[-1].strip():
+        result.append("\n")
+    result.append(line)
+
+with open(SETTINGS, "w") as f:
+    f.writelines(result)
+
+print("Theme profile applied successfully")
+PYEOF
+
+if pgrep -f noctalia >/dev/null 2>&1; then
+    noctalia msg reload >/dev/null 2>&1 || true
+    echo "Noctalia reloaded"
+fi
