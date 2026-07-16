@@ -4,6 +4,7 @@ set -euo pipefail
 
 SETTINGS="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
 PROFILE="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/theme-profile.toml"
+DOTFILES_PROFILE="${HOME}/dotfiles/dot_config/noctalia/theme-profile.toml"
 
 [ -f "$SETTINGS" ] || { echo "Error: Noctalia settings not found at $SETTINGS" >&2; exit 1; }
 
@@ -12,6 +13,7 @@ import tomllib, os
 
 SETTINGS = os.path.expanduser("~/.local/state/noctalia/settings.toml")
 PROFILE = os.path.expanduser("~/.config/noctalia/theme-profile.toml")
+DOTFILES_PROFILE = os.path.expanduser("~/dotfiles/dot_config/noctalia/theme-profile.toml")
 
 with open(SETTINGS, "rb") as f:
     settings = tomllib.load(f)
@@ -22,37 +24,42 @@ for key in ["theme", "plugins", "shell"]:
     if key in settings:
         profile[key] = settings[key]
 
-# Write TOML
-with open(PROFILE, "w") as f:
-    f.write("# Noctalia Theme Profile\n")
-    f.write("# Exported automatically by noctalia-theme-export\n")
-    f.write("# Do not edit manually — changes will be overwritten\n\n")
-    for section, data in profile.items():
-        if isinstance(data, dict):
-            f.write(f"[{section}]\n")
-            for k, v in data.items():
-                if isinstance(v, dict):
-                    f.write(f"\n    [{section}.{k}]\n")
-                    for kk, vv in v.items():
-                        if isinstance(vv, list):
-                            items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in vv)
-                            f.write(f"    {kk} = [ {items} ]\n")
-                        elif isinstance(vv, bool):
-                            f.write(f"    {kk} = {'true' if vv else 'false'}\n")
-                        elif isinstance(vv, str):
-                            f.write(f'    {kk} = "{vv}"\n')
-                        else:
-                            f.write(f"    {kk} = {vv}\n")
-                elif isinstance(v, list):
-                    items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in v)
-                    f.write(f"{k} = [ {items} ]\n")
-                elif isinstance(v, bool):
-                    f.write(f"{k} = {'true' if v else 'false'}\n")
-                elif isinstance(v, str):
-                    f.write(f'{k} = "{v}"\n')
-                else:
-                    f.write(f"{k} = {v}\n")
-        f.write("\n")
+# Write TOML content
+content = "# Noctalia Theme Profile\n"
+content += "# Exported automatically by noctalia-theme-export\n"
+content += "# Do not edit manually — changes will be overwritten\n\n"
+for section, data in profile.items():
+    if isinstance(data, dict):
+        content += f"[{section}]\n"
+        for k, v in data.items():
+            if isinstance(v, dict):
+                content += f"\n    [{section}.{k}]\n"
+                for kk, vv in v.items():
+                    if isinstance(vv, list):
+                        items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in vv)
+                        content += f"    {kk} = [ {items} ]\n"
+                    elif isinstance(vv, bool):
+                        content += f"    {kk} = {'true' if vv else 'false'}\n"
+                    elif isinstance(vv, str):
+                        content += f'    {kk} = "{vv}"\n'
+                    else:
+                        content += f"    {kk} = {vv}\n"
+            elif isinstance(v, list):
+                items = ", ".join(f'"{x}"' if isinstance(x, str) else str(x) for x in v)
+                content += f"{k} = [ {items} ]\n"
+            elif isinstance(v, bool):
+                content += f"{k} = {'true' if v else 'false'}\n"
+            elif isinstance(v, str):
+                content += f'{k} = "{v}"\n'
+            else:
+                content += f"{k} = {v}\n"
+    content += "\n"
+
+# Write to both locations
+for path in [PROFILE, DOTFILES_PROFILE]:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(content)
 
 print(f"Theme profile exported to {PROFILE}")
 PYEOF
