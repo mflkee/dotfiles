@@ -1,8 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/goodroot/hyprwhspr/main/share/config.schema.json",
-  "transcription_backend": "onnx-asr",
+  "use_hypr_bindings": true,
   "language": "ru",
-  "recording_mode": "toggle",
-  "audio_ducking": true,
-  "grab_keys": false
+  "transcription_backend": "faster-whisper",
+  "faster_whisper_model": "small",
+  "faster_whisper_device": "cpu",
+  "faster_whisper_compute_type": "int8",
+  "mute_detection": false,
+  "audio_ducking": true
 }
