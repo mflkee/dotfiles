@@ -4,8 +4,14 @@ set -euo pipefail
 # Sync the installed editable dsync with the git ref tracked by chezmoi.
 
 DSYNC_DIR="${DSYNC_DIR:-$HOME/.local/share/dsync}"
-DSYNC_REPO="${DSYNC_REPO:-https://github.com/mflkee/dsync.git}"
+DSYNC_REPO="${DSYNC_REPO:-git@github.com:mflkee/dsync.git}"
 REF_FILE="${REF_FILE:-$HOME/.local/share/dsync-state/ref}"
+
+# Ensure dsync Python package can be imported; if not, force reinstall.
+dsync_import_ok() {
+    export PATH="$HOME/.local/bin:$PATH"
+    "$HOME/.local/share/uv/tools/dsync/bin/python" -c "import dsync" 2>/dev/null
+}
 
 if [ ! -f "$REF_FILE" ]; then
     # Ref file is not yet created during this chezmoi apply; skip until next run.
@@ -30,19 +36,21 @@ fi
 cd "$DSYNC_DIR"
 
 CURRENT_REF=$(git rev-parse HEAD)
-if [ "$CURRENT_REF" = "$DESIRED_REF" ]; then
+if [ "$CURRENT_REF" = "$DESIRED_REF" ] && dsync_import_ok; then
     echo "dsync already at $DESIRED_REF"
     exit 0
 fi
 
-echo "Updating dsync from ${CURRENT_REF:0:12} to ${DESIRED_REF:0:12}..."
-git fetch origin "$DESIRED_REF" 2>/dev/null || git fetch origin
+if [ "$CURRENT_REF" != "$DESIRED_REF" ]; then
+    echo "Updating dsync from ${CURRENT_REF:0:12} to ${DESIRED_REF:0:12}..."
+    git fetch origin "$DESIRED_REF" 2>/dev/null || git fetch origin
 
-if git cat-file -e "$DESIRED_REF" 2>/dev/null; then
-    git checkout -q "$DESIRED_REF"
-else
-    echo "dsync ref $DESIRED_REF not found in fetched repository" >&2
-    exit 1
+    if git cat-file -e "$DESIRED_REF" 2>/dev/null; then
+        git checkout -q "$DESIRED_REF"
+    else
+        echo "dsync ref $DESIRED_REF not found in fetched repository" >&2
+        exit 1
+    fi
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
