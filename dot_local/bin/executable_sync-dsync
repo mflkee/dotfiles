@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sync the installed editable dsync with the git ref tracked by chezmoi.
+
+DSYNC_DIR="${DSYNC_DIR:-$HOME/.local/share/dsync}"
+DSYNC_REPO="${DSYNC_REPO:-https://github.com/mflkee/dsync.git}"
+REF_FILE="${REF_FILE:-$HOME/.local/share/dsync-state/ref}"
+
+if [ ! -f "$REF_FILE" ]; then
+    # Ref file is not yet created during this chezmoi apply; skip until next run.
+    exit 0
+fi
+
+DESIRED_REF=$(cat "$REF_FILE" | tr -d '[:space:]')
+if [ -z "$DESIRED_REF" ]; then
+    echo "dsync ref is empty" >&2
+    exit 1
+fi
+
+command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
+
+if [ ! -d "$DSYNC_DIR/.git" ]; then
+    echo "Cloning dsync to $DSYNC_DIR..."
+    rm -rf "$DSYNC_DIR"
+    mkdir -p "$(dirname "$DSYNC_DIR")"
+    git clone "$DSYNC_REPO" "$DSYNC_DIR"
+fi
+
+cd "$DSYNC_DIR"
+
+CURRENT_REF=$(git rev-parse HEAD)
+if [ "$CURRENT_REF" = "$DESIRED_REF" ]; then
+    echo "dsync already at $DESIRED_REF"
+    exit 0
+fi
+
+echo "Updating dsync from ${CURRENT_REF:0:12} to ${DESIRED_REF:0:12}..."
+git fetch origin "$DESIRED_REF" 2>/dev/null || git fetch origin
+
+if git cat-file -e "$DESIRED_REF" 2>/dev/null; then
+    git checkout -q "$DESIRED_REF"
+else
+    echo "dsync ref $DESIRED_REF not found in fetched repository" >&2
+    exit 1
+fi
+
+export PATH="$HOME/.local/bin:$PATH"
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "uv is required to install dsync" >&2
+    exit 1
+fi
+
+uv tool install --force --editable "$DSYNC_DIR" >/dev/null
+
+echo "dsync updated to $DESIRED_REF"
