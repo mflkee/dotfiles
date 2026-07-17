@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+# trigger: {{ include "dot_config/noctalia/theme-profile.toml" | sha256sum }}
+if [ -x "$HOME/.local/bin/noctalia-theme-apply" ]; then
+    exec "$HOME/.local/bin/noctalia-theme-apply"
+fi
