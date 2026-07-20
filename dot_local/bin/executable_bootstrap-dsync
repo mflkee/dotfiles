@@ -4,7 +4,7 @@ set -euo pipefail
 # Bootstrap dsync on a new machine.
 # Requires: git, ssh, netbird. Recommends: uv, chezmoi.
 
-DSYNC_DIR="${DSYNC_DIR:-$HOME/.local/share/dsync}"
+DSYNC_DIR="${DSYNC_DIR:-$HOME/projects/dsync}"
 DSYNC_REPO="${DSYNC_REPO:-https://github.com/mflkee/dsync.git}"
 
 command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
