@@ -366,25 +366,25 @@ binds {
 
     // Noctalia is the primary shell surface for launchers and system popups.
     Mod+D repeat=false hotkey-overlay-title="Open Noctalia Launcher" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "toggle"
+        spawn "noctalia" "msg" "panel-toggle" "launcher"
     }
-    Mod+P repeat=false hotkey-overlay-title="Open Noctalia Command Runner" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "command"
+    Mod+P repeat=false hotkey-overlay-title="Open Noctalia Session Launcher" {
+        spawn "noctalia" "msg" "panel-toggle" "launcher" "/session"
     }
     Mod+S repeat=false hotkey-overlay-title="Toggle Noctalia Control Center" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "controlCenter" "toggle"
+        spawn "noctalia" "msg" "panel-toggle" "control-center"
     }
     Mod+Ctrl+V repeat=false hotkey-overlay-title="Open Noctalia Clipboard History" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "clipboard"
+        spawn "noctalia" "msg" "panel-toggle" "clipboard"
     }
     Mod+E repeat=false hotkey-overlay-title="Open Noctalia Emoji Picker" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "emoji"
+        spawn "noctalia" "msg" "panel-toggle" "launcher" "/emo"
     }
     Mod+Shift+Escape repeat=false hotkey-overlay-title="Open Noctalia Window Switcher" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "launcher" "windows"
+        spawn "noctalia" "msg" "window-switcher"
     }
     Mod+Ctrl+Escape repeat=false hotkey-overlay-title="Open Noctalia Session Menu" {
-        spawn "qs" "-c" "noctalia-shell" "ipc" "call" "sessionMenu" "toggle"
+        spawn "noctalia" "msg" "panel-toggle" "session"
     }
     Mod+Ctrl+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Mod+Z hotkey-overlay-title="Open Zen Browser" { spawn "zen-browser"; }
@@ -652,3 +652,5 @@ binds {
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
 }
+
+include "noctalia.kdl"
