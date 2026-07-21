@@ -1,6 +1,5 @@
 #!/bin/sh
 set -e
-# trigger: {{ include "dot_config/noctalia/settings.json" | sha256sum }}
 
 SETTINGS="$HOME/.config/noctalia/settings.json"
 [ -f "$SETTINGS" ] || exit 0
