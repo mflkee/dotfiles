@@ -1,0 +1,4 @@
+export PATH="$HOME/.local/bin:$PATH"
+
+# Encrypted secrets — available for all zsh sessions (including non-interactive)
+[[ -f ~/.config/zsh/secrets.zsh ]] && source ~/.config/zsh/secrets.zsh
