@@ -1,5 +1,5 @@
 machines:
-  mkair-server:
+  archlinux-mkair:
     wm: ""
     desktop: ""
     has_gsettings: false
