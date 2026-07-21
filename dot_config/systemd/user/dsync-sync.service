@@ -1,0 +1,10 @@
+[Unit]
+Description=dsync sync (pull + chezmoi apply)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/mflkee/.local/bin/dsync sync
+StandardOutput=journal
+StandardError=journal
