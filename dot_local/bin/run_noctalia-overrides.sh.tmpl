@@ -10,7 +10,6 @@ case "$HOSTNAME" in
     archlinux-notebook*)
         command -v jq >/dev/null 2>&1 || exit 0
         jq '
-            .wallhavenQuery = "berserk" |
             .networkPanelView = "ethernet" |
             .bluetoothAutoConnect = false |
             .locationName = "" |
