@@ -257,7 +257,7 @@
                     "id": "ControlCenter",
                     "useDistroLogo": false
                 }
-            {{ if index .machines .chezmoi.hostname `noctalia` `has_arch_updater` }},
+            ,
                 {
                     "defaultSettings": {
                         "aurCmd": "paru -Qua 2>/dev/null",
@@ -289,7 +289,7 @@
                     },
                     "id": "plugin:arch-updater"
                 }
-            {{ end }}
+            
             ]
         }
     },
@@ -525,7 +525,7 @@
         "firstDayOfWeek": -1,
         "hideWeatherCityName": false,
         "hideWeatherTimezone": false,
-        "name": "{{ index .machines .chezmoi.hostname `noctalia` `location_name` }}",
+        "name": "Tyumen",
         "showCalendarEvents": true,
         "showCalendarWeather": true,
         "showWeekNumberInCalendar": false,
@@ -536,13 +536,13 @@
         "weatherTaliaMascotAlways": false
     },
     "network": {
-        "bluetoothAutoConnect": {{ index .machines .chezmoi.hostname `noctalia` `bluetooth_auto_connect` }},
+        "bluetoothAutoConnect": true,
         "bluetoothDetailsViewMode": "grid",
         "bluetoothHideUnnamedDevices": false,
         "bluetoothRssiPollIntervalMs": 60000,
         "bluetoothRssiPollingEnabled": true,
         "disableDiscoverability": false,
-        "networkPanelView": "{{ index .machines .chezmoi.hostname `noctalia` `network_view` }}",
+        "networkPanelView": "wifi",
         "wifiDetailsViewMode": "list"
     },
     "nightLight": {
@@ -750,7 +750,7 @@
         "wallhavenCategories": "111",
         "wallhavenOrder": "desc",
         "wallhavenPurity": "100",
-        "wallhavenQuery": "{{ index .machines .chezmoi.hostname `noctalia` `wallhaven_query` }}",
+        "wallhavenQuery": "",
         "wallhavenRatios": "",
         "wallhavenResolutionHeight": "",
         "wallhavenResolutionMode": "atleast",
