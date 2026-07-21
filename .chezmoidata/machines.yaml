@@ -7,6 +7,12 @@ machines:
     browser: ""
     has_anaconda: false
     has_niri: false
+    noctalia:
+      wallhaven_query: ""
+      network_view: "wifi"
+      bluetooth_auto_connect: true
+      has_arch_updater: false
+      location_name: ""
   antix1:
     wm: ""
     desktop: xfce
@@ -15,6 +21,12 @@ machines:
     browser: firefox
     has_anaconda: false
     has_niri: false
+    noctalia:
+      wallhaven_query: ""
+      network_view: "wifi"
+      bluetooth_auto_connect: true
+      has_arch_updater: false
+      location_name: ""
   archlinux-notebook:
     wm: niri
     desktop: gnome
@@ -23,6 +35,12 @@ machines:
     browser: zen-browser
     has_anaconda: true
     has_niri: true
+    noctalia:
+      wallhaven_query: "berserk"
+      network_view: "ethernet"
+      bluetooth_auto_connect: false
+      has_arch_updater: false
+      location_name: ""
   archlinux-desktop:
     wm: niri
     desktop: gnome
@@ -31,6 +49,12 @@ machines:
     browser: zen-browser
     has_anaconda: false
     has_niri: true
+    noctalia:
+      wallhaven_query: ""
+      network_view: "wifi"
+      bluetooth_auto_connect: true
+      has_arch_updater: true
+      location_name: "Tyumen"
   archlinux-server:
     wm: ""
     desktop: ""
@@ -39,7 +63,12 @@ machines:
     browser: ""
     has_anaconda: false
     has_niri: false
-
+    noctalia:
+      wallhaven_query: ""
+      network_view: "wifi"
+      bluetooth_auto_connect: true
+      has_arch_updater: false
+      location_name: ""
   mkair-server-tmn:
     wm: ""
     desktop: ""
@@ -48,3 +77,9 @@ machines:
     browser: ""
     has_anaconda: false
     has_niri: false
+    noctalia:
+      wallhaven_query: ""
+      network_view: "wifi"
+      bluetooth_auto_connect: true
+      has_arch_updater: false
+      location_name: ""
