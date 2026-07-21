@@ -13,7 +13,7 @@
 | notebook | `mflkee@100.89.198.212` | `archlinux-notebook-198-212.netbird.cloud` | connected (текущая) |
 | desktop | `mflkee@100.89.12.158` | `archlinux-desktop-12-158.netbird.cloud` | Connecting |
 | server-tmn | `mflkee@100.89.18.223` | `mkair-server-tmn.netbird.cloud` | connected (P2P) |
-| archlinux-mkair | `mflkee@100.89.59.195` | `archlinux-mkair.netbird.cloud` | Connecting |
+| archlinux-mkair | `mflkee@100.89.59.195` | `archlinux-mkair.netbird.cloud` (DNS обновляется) | Connecting |
 | antix1 | `mflkee@100.89.195.135` | `antix1.netbird.cloud` | connected (P2P) |
 | archlinux-server | `mflkee@100.89.126.211` | `archlinux-server.netbird.cloud` | connected (P2P) |
 
