@@ -11,7 +11,7 @@ wallpaper_scheme = "m3-content"
 
     [theme.templates]
     builtin_ids = [ "btop", "gtk3", "ghostty", "niri", "qt", "starship" ]
-    community_ids = [ "zen-browser", "neovim", "obsidian", "vscode", "rofi", "bat", "obs", "opencode", "papirus-icons", "steam", "telegram", "yazi" ]
+    community_ids = [ "zen-browser", "neovim", "obsidian", "vscode", "rofi", "bat", "lazygit", "obs", "opencode", "papirus-icons", "steam", "telegram", "yazi" ]
 
 [plugins]
 enabled = [ "noctalia/bongocat" ]
