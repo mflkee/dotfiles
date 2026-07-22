@@ -3,19 +3,8 @@
 # Do not edit manually — changes will be overwritten
 
 [theme]
-builtin = "Ayu"
-community_palette = "Oxocarbon"
-mode = "dark"
-source = "builtin"
-wallpaper_scheme = "m3-content"
 
     [theme.templates]
-    builtin_ids = [ "btop", "gtk3", "ghostty", "niri", "qt", "starship" ]
-    community_ids = [ "zen-browser", "neovim", "obsidian", "vscode", "rofi", "bat", "lazygit", "obs", "opencode", "papirus-icons", "steam", "telegram", "yazi" ]
-
-[plugins]
-enabled = [ "noctalia/bongocat" ]
-
-[shell]
-lang = "ru"
+    builtin_ids = [ "alacritty", "btop", "gtk3", "gtk4", "ghostty", "kcolorscheme", "kitty", "mango", "niri", "qt", "scroll", "starship", "wezterm" ]
+    community_ids = [ "zen-browser", "neovim", "obsidian", "vscode", "zed", "lazygit", "opencode", "steam", "yazi" ]
 
