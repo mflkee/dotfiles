@@ -18,9 +18,18 @@
         "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
-    "obsidian": {
+    "obsidian-second-brain": {
       "type": "remote",
       "url": "http://127.0.0.1:27123/second-brain-mcp/",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
+      },
+      "oauth": false
+    },
+    "obsidian-api": {
+      "type": "remote",
+      "url": "http://127.0.0.1:27123/mcp",
       "enabled": true,
       "headers": {
         "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
