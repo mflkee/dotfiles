@@ -1,10 +1,10 @@
 # dsync configuration
 [machines]
 notebook = { host = "archlinux-notebook-198-212.netbird.cloud", user = "mflkee" }
-server-tmn = { host = "mkair-server-tmn.netbird.cloud", user = "mflkee" }
 desktop = { host = "archlinux-desktop-12-158.netbird.cloud", user = "mflkee" }
 archlinux-server = { host = "archlinux-server.netbird.cloud", user = "mflkee" }
-archlinux-mkair = { host = "100.89.59.195", user = "mflkee" }
+archlinux-mkair = { host = "archlinux-mkair.netbird.cloud", user = "mflkee" }
+antix1 = { host = "antix1.netbird.cloud", user = "mflkee" }
 
 [git]
 source = "~/dotfiles"
@@ -15,5 +15,5 @@ remote_url = "https://github.com/mflkee/dotfiles.git"
 root = "~/projects"
 
 [projects]
-dsync = { path = "~/projects/dsync", remote = "git@github.com:mflkee/dsync.git", machines = ["notebook", "desktop", "server-tmn"], branch = "main" }
-obs_main = { path = "~/obs_main", remote = "server-tmn:obs_main.git", machines = ["notebook", "server-tmn"], branch = "main" }
+dsync = { path = "~/projects/dsync", remote = "git@github.com:mflkee/dsync.git", machines = ["notebook", "desktop", "archlinux-server"], branch = "main" }
+obs_main = { path = "~/obs_main", remote = "archlinux-server:obs_main.git", machines = ["notebook", "archlinux-server"], branch = "main" }
