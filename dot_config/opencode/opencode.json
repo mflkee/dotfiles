@@ -20,7 +20,7 @@
     },
     "obsidian-second-brain": {
       "type": "remote",
-      "url": "http://127.0.0.1:27123/second-brain-mcp/",
+      "url": "http://100.89.18.223:27123/second-brain-mcp/",
       "enabled": true,
       "headers": {
         "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
@@ -29,7 +29,7 @@
     },
     "obsidian-api": {
       "type": "remote",
-      "url": "http://127.0.0.1:27123/mcp",
+      "url": "http://100.89.18.223:27123/mcp",
       "enabled": true,
       "headers": {
         "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
