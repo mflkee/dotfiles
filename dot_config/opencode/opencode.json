@@ -13,7 +13,7 @@
     "openrouter": { "options": { "baseURL": "https://api.proxyapi.ru/openrouter/v1" } }
   },
   "mcp": {
-    "obsidian-memory": {
+    "obsidian": {
       "type": "local",
       "command": ["npx", "-y", "obsidian-mcp", "/home/mflkee/obs_main"],
       "enabled": true
@@ -25,15 +25,6 @@
       "environment": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
-    },
-    "obsidian-second-brain": {
-      "type": "remote",
-      "url": "http://100.89.59.195:27123/second-brain-mcp/",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
-      },
-      "oauth": false
     },
     "netbird": {
       "type": "local",
