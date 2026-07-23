@@ -7,27 +7,31 @@
 
 # Infrastructure
 
-## Centralized Obsidian on server-tmn
-- **Server**: `mkair-server-tmn` (Netbird IP: `100.89.18.223`)
-- **Vault**: `~/obs_main` (git-synced via bare repo at `server-tmn:obs_main.git`)
-- **REST API**: `http://100.89.18.223:27123` (HTTP) and `https://100.89.18.223:27124` (HTTPS)
-- **MCP Endpoints**: `/mcp` (obsidian-api) and `/second-brain-mcp/` (obsidian-second-brain)
+## Centralized Obsidian on archlinux-server
+- **Server**: `archlinux-server` (Netbird IP: `100.89.126.211`)
+- **Vault**: `~/obs_main` (git-synced via bare repo at `archlinux-server:obs_main.git`)
+- **REST API**: `http://100.89.59.195:27123` (via archlinux-mkair) and `https://100.89.59.195:27124`
+- **MCP Endpoints**: `/second-brain-mcp/` (obsidian-second-brain)
 - **API Key**: Stored in `OBSIDIAN_API_KEY` env var
-- **systemd service**: `obsidian.service` (user service, runs headless with xvfb)
-- **Plugin**: `obsidian-local-rest-api` v4.1.3 with `bindingHost: "0.0.0.0"`
 
-### How to update vault on server-tmn
+### How to update vault on archlinux-server
 ```bash
 # From desktop (or any machine with vault):
 cd ~/obs_main
 git add -A && git commit -m "description"
-git push server-tmn master:main
+git push archlinux-server master:main
 
-# On server-tmn:
+# On archlinux-server:
 cd ~/obs_main && git pull
-systemctl --user restart obsidian.service
 ```
 
 ### How to access Obsidian from any machine
-All opencode configs point to `http://100.89.18.223:27123` for MCP access.
-Use the same API key as configured in `OBSIDIAN_API_KEY` env var.
+- `obsidian-memory` MCP — reads vault files locally (via Syncthing)
+- `obsidian-second-brain` MCP — points to `archlinux-mkair:27123` (running Obsidian with plugins)
+
+## NetBird MCP (machine management)
+- Opencode has a built-in NetBird MCP tool (`netbird` MCP server).
+- Requires `NETBIRD_API_KEY` env var (personal access token from NetBird dashboard).
+- Available tools: `list-peers`, `get-peer`, `get-peer-by-ip`, `rename-peer`.
+- **Secrets**: `NETBIRD_API_KEY` stored in `~/.config/zsh/secrets.zsh` (encrypted via chezmoi+age).
+  Source before starting opencode: `source ~/.config/zsh/secrets.zsh`

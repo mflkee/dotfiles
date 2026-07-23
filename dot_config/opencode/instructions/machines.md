@@ -4,16 +4,15 @@
 
 ## Текущая машина
 
-- **notebook** — `mflkee@100.89.198.212` (`archlinux-notebook-198-212.netbird.cloud`)
+- **desktop** — `mflkee@100.89.12.158` (`archlinux-desktop-12-158.netbird.cloud`)
 
 ## Целевые машины для dsync / SSH
 
 | Имя | SSH (user@IP) | FQDN | Статус NetBird |
 |-----|---------------|------|----------------|
-| notebook | `mflkee@100.89.198.212` | `archlinux-notebook-198-212.netbird.cloud` | connected (текущая) |
-| desktop | `mflkee@100.89.12.158` | `archlinux-desktop-12-158.netbird.cloud` | Connecting |
-| server-tmn | `mflkee@100.89.18.223` | `mkair-server-tmn.netbird.cloud` | connected (P2P) |
-| archlinux-mkair | `mflkee@100.89.59.195` | `archlinux-mkair.netbird.cloud` (DNS обновляется) | Connecting |
+| notebook | `mflkee@100.89.198.212` | `archlinux-notebook-198-212.netbird.cloud` | connected |
+| desktop | `mflkee@100.89.12.158` | `archlinux-desktop-12-158.netbird.cloud` | connected (текущая) |
+| archlinux-mkair | `mflkee@100.89.59.195` | `archlinux-mkair.netbird.cloud` | connected (P2P) |
 | antix1 | `mflkee@100.89.195.135` | `antix1.netbird.cloud` | connected (P2P) |
 | archlinux-server | `mflkee@100.89.126.211` | `archlinux-server.netbird.cloud` | connected (P2P) |
 
@@ -29,9 +28,20 @@
 В opencode настроены MCP-серверы:
 
 - **github** — `@modelcontextprotocol/server-github`. Токен в `secrets.zsh`.
-- **obsidian** — Second Brain MCP Extension (`http://127.0.0.1:27123/second-brain-mcp/`). Требует `OBSIDIAN_API_KEY` в `secrets.zsh`.
-- **obsidian-memory** — встроенные инструменты для работы с Obsidian vault.
+- **obsidian-memory** — работа с Obsidian vault локально (через Syncthing).
+- **obsidian-second-brain** — семантический поиск по wiki (remote, archlinux-mkair:27123).
+- **netbird** — управление пирами NetBird. Требует `NETBIRD_API_KEY` в `secrets.zsh`.
 
 Перед запуском opencode убедись, что secrets загружены: `source ~/.config/zsh/secrets.zsh`.
 
 Obsidian vault (`~/obs_main`) синхронизируется между машинами через Syncthing.
+
+## Маппинг машин ↔ Obsidian
+
+| NetBird peer | IP | Obsidian note |
+|---|---|---|
+| archlinux-server | 100.89.126.211 | `machines/archlinux-server.md` |
+| archlinux-mkair | 100.89.59.195 | `machines/archlinux-mkair.md` |
+| archlinux-notebook | 100.89.198.212 | `machines/archlinux-notebook.md` |
+| archlinux-desktop | 100.89.12.158 | `machines/archlinux-desktop.md` |
+| antix1 | 100.89.195.135 | `machines/antix1.md` |

@@ -28,21 +28,20 @@
     },
     "obsidian-second-brain": {
       "type": "remote",
-      "url": "http://100.89.18.223:27123/second-brain-mcp/",
+      "url": "http://100.89.59.195:27123/second-brain-mcp/",
       "enabled": true,
       "headers": {
         "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
       },
       "oauth": false
     },
-    "obsidian-api": {
-      "type": "remote",
-      "url": "http://100.89.18.223:27123/mcp",
+    "netbird": {
+      "type": "local",
+      "command": ["node", "~/.config/opencode/scripts/netbird-mcp.js"],
       "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:OBSIDIAN_API_KEY}"
-      },
-      "oauth": false
+      "environment": {
+        "NETBIRD_API_KEY": "{env:NETBIRD_API_KEY}"
+      }
     }
   },
   "experimental": {
