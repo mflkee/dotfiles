@@ -2,6 +2,10 @@
 # Exported automatically by noctalia-theme-export
 # Do not edit manually — changes will be overwritten
 
-[shell]
-lang = "ru"
+[theme]
+builtin = "Kanagawa"
+
+    [theme.templates]
+    builtin_ids = [ "alacritty", "btop", "gtk3", "gtk4", "ghostty", "kcolorscheme", "kitty", "mango", "niri", "qt", "scroll", "starship", "wezterm" ]
+    community_ids = [ "zen-browser", "neovim", "obsidian", "vscode", "zed", "lazygit", "opencode", "steam", "yazi" ]
 
