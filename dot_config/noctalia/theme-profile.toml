@@ -3,7 +3,7 @@
 # Do not edit manually — changes will be overwritten
 
 [theme]
-builtin = "Noctalia"
+builtin = "Ayu"
 
     [theme.templates]
     builtin_ids = [ "alacritty", "btop", "gtk3", "gtk4", "ghostty", "kcolorscheme", "kitty", "mango", "niri", "qt", "scroll", "starship", "wezterm" ]
