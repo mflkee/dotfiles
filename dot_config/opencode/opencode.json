@@ -28,7 +28,7 @@
     },
     "netbird": {
       "type": "local",
-      "command": ["node", "~/.config/opencode/scripts/netbird-mcp.js"],
+      "command": ["node", "/home/mflkee/.config/opencode/scripts/netbird-mcp.js"],
       "enabled": true,
       "environment": {
         "NETBIRD_API_KEY": "{env:NETBIRD_API_KEY}"
