@@ -16,3 +16,4 @@ root = "~/projects"
 
 [projects]
 dsync = { path = "~/projects/dsync", remote = "git@github.com:mflkee/dsync.git", machines = ["notebook", "desktop", "server-tmn"], branch = "main" }
+obs_main = { path = "~/obs_main", remote = "server-tmn:obs_main.git", machines = ["notebook", "server-tmn"], branch = "main" }
