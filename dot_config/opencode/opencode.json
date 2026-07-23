@@ -10,6 +10,11 @@
     "openrouter": { "options": { "baseURL": "https://api.proxyapi.ru/openrouter/v1" } }
   },
   "mcp": {
+    "obsidian-memory": {
+      "type": "local",
+      "command": ["npx", "-y", "obsidian-mcp", "/home/mflkee/obs_main"],
+      "enabled": true
+    },
     "github": {
       "type": "local",
       "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
