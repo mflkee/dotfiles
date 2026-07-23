@@ -3,6 +3,9 @@
   "instructions": [
     "instructions/machines.md"
   ],
+  "skills": {
+    "paths": ["~/.config/opencode/skills"]
+  },
   "provider": {
     "openai":     { "options": { "baseURL": "https://api.proxyapi.ru/openai/v1" } },
     "anthropic":  { "options": { "baseURL": "https://api.proxyapi.ru/anthropic/v1" } },
