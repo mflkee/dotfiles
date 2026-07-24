@@ -5,9 +5,18 @@
 SETTINGS="$HOME/.config/noctalia/settings.json"
 [ -f "$SETTINGS" ] || exit 0
 
-HOSTNAME=$(hostname)
+# All machines: disable keyboard layout toast
+python3 -c "
+import json
+with open('$SETTINGS') as f:
+    cfg = json.load(f)
+cfg['notifications']['enableKeyboardLayoutToast'] = False
+with open('$SETTINGS', 'w') as f:
+    json.dump(cfg, f, indent=2)
+" 2>/dev/null
 
-case "$HOSTNAME" in
+# Per-machine overrides
+case "$(hostname)" in
     archlinux-notebook*)
         python3 -c "
 import json
@@ -15,17 +24,6 @@ with open('$SETTINGS') as f:
     cfg = json.load(f)
 cfg['networkPanelView'] = 'wifi'
 cfg['bluetoothAutoConnect'] = True
-with open('$SETTINGS', 'w') as f:
-    json.dump(cfg, f, indent=2)
-" 2>/dev/null
-        ;;
-    *)
-        # Default overrides for all machines
-        python3 -c "
-import json
-with open('$SETTINGS') as f:
-    cfg = json.load(f)
-cfg['notifications']['enableKeyboardLayoutToast'] = False
 with open('$SETTINGS', 'w') as f:
     json.dump(cfg, f, indent=2)
 " 2>/dev/null
