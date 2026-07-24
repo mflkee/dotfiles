@@ -25,6 +25,8 @@ dot_config/qt6ct/qt6ct.conf
 dot_config/Kvantum/kvantum.kvconfig
 
 # Noctalia v5 manages these via theme templates + apply.sh
+dot_config/noctalia/plugins/
+dot_config/noctalia/colorschemes/
 dot_config/ghostty/themes/
 dot_config/alacritty/themes/
 dot_config/btop/themes/
