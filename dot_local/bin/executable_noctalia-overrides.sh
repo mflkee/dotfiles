@@ -16,7 +16,7 @@ with open('$SETTINGS', 'w') as f:
 " 2>/dev/null
 
 # Per-machine overrides
-case "$(hostname)" in
+case "$(uname -n)" in
     archlinux-notebook*)
         python3 -c "
 import json
