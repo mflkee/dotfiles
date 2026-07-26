@@ -726,7 +726,7 @@
     "wallpaperChangeMode": "random"
   },
   "wallhavenQuery": "berserk",
-  "networkPanelView": "ethernet",
-  "bluetoothAutoConnect": false,
+  "networkPanelView": "wifi",
+  "bluetoothAutoConnect": true,
   "locationName": ""
 }
