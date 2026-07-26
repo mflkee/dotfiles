@@ -1,5 +1,3 @@
-{{- $cfg := (get .appearance.profiles .chezmoi.hostname) | default (get .appearance.profiles "archlinux-notebook") -}}
-{{- $isDesktop := or (eq .chezmoi.hostname "archlinux-desktop") (eq .chezmoi.hostname "omarchy-desktop") -}}
 // This config is in the KDL format: https://kdl.dev
 // "/-" comments out the following node.
 // Check the wiki for a full description of the configuration:
@@ -75,7 +73,7 @@ input {
 // by running `niri msg outputs` while inside a niri instance.
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Outputs
-{{ if $isDesktop }}
+
 // Desktop profile: Thunderobot F27H144F on the left, ASUS VP249 on the right.
 output "DP-4" {
     mode "1920x1080@165.003"
@@ -90,24 +88,14 @@ output "HDMI-A-2" {
     transform "270"
     position x=1920 y=-840
 }
-{{ else }}
-output "eDP-1" {
-    scale 1.20
-    position x=0 y=0
-}
 
-output "HDMI-A-1" {
-    mode "1920x1080@60.000"
-    position x=1600 y=0
-}
-{{ end }}
 
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
 // https://yalter.github.io/niri/Configuration:-Layout
 layout {
     // Set gaps around windows in logical pixels.
-    gaps {{ index $cfg "niri" "gaps" }}
+    gaps 14
 
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
@@ -115,7 +103,7 @@ layout {
     // - "always", the focused column will always be centered.
     // - "on-overflow", focusing a column will center it if it doesn't fit
     //   together with the previously focused column.
-    center-focused-column "{{ index $cfg "niri" "centerFocusedColumn" }}"
+    center-focused-column "on-overflow"
 
     // You can customize the widths that "switch-preset-column-width" (Mod+R) toggles between.
     preset-column-widths {
@@ -193,9 +181,9 @@ layout {
         // If you enable the border, you probably want to disable the focus ring.
         on
 
-        width {{ index $cfg "niri" "borderWidth" }}
-        active-color "{{ index $cfg "niri" "borderActiveColor" }}"
-        inactive-color "{{ index $cfg "niri" "borderInactiveColor" }}"
+        width 2
+        active-color "#7aa2f7"
+        inactive-color "#3b4261"
 
         // Color of the border around windows that request your attention.
         urgent-color "#9b0000"
@@ -233,16 +221,16 @@ layout {
         // pixels and match the CSS box-shadow properties.
 
         // Softness controls the shadow blur radius.
-        softness {{ index $cfg "niri" "shadowSoftness" }}
+        softness 56
 
         // Spread expands the shadow.
-        spread {{ index $cfg "niri" "shadowSpread" }}
+        spread 2
 
         // Offset moves the shadow relative to the window.
-        offset x=0 y={{ index $cfg "niri" "shadowOffsetY" }}
+        offset x=0 y=8
 
         // You can also change the shadow color and opacity.
-        color "{{ index $cfg "niri" "shadowColor" }}"
+        color "#00000028"
     }
 
     // Struts shrink the area occupied by windows, similarly to layer-shell panels.
@@ -267,7 +255,7 @@ layout {
 spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP NIRI_SOCKET; systemctl --user restart noctalia-shell.service"
 
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
-spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme '{{ .appearance.theme.color_scheme }}'; gsettings set org.gnome.desktop.interface gtk-theme '{{ .appearance.theme.gtk }}'; gsettings set org.gnome.desktop.interface icon-theme '{{ .appearance.icons.name }}'; gsettings set org.gnome.desktop.interface cursor-theme '{{ .appearance.cursor.theme }}'; gsettings set org.gnome.desktop.interface cursor-size {{ .appearance.cursor.size }}; gsettings set org.gnome.desktop.interface font-name '{{ .appearance.fonts.main }}'"
+spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-dracula'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -341,7 +329,7 @@ window-rule {
 // Example: enable rounded corners for all windows.
 // (This example rule is commented out with a "/-" in front.)
 window-rule {
-    geometry-corner-radius {{ index $cfg "niri" "cornerRadius" }}
+    geometry-corner-radius 8
     clip-to-geometry true
 }
 
