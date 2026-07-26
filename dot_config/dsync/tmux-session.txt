@@ -1,22 +1,11 @@
-pane	1	1	1	:*	1	archlinux-desktop	:/home/mflkee	1	zsh	:
-pane	main	1	1	:*	1	:/home/mflkee	1	zsh	28620	:
-pane	main	2	0	:-	1	:/home/mflkee/.config/zsh	1	nvim	244838	:systemctl --user --wait start niri.service
-opencode
-wl-copy
-npm exec obsidian-mcp /home/mflkee/obs_main
-npm exec @modelcontextprotocol/server-github
-node /home/mflkee/.config/opencode/scripts/netbird-mcp.js
-node /home/mflkee/.npm/_npx/1eddcb5200a425a4/node_modules/.bin/obsidian-mcp /home/mflkee/obs_main
-node /home/mflkee/.npm/_npx/3dfbf5a9eea4a1b3/node_modules/.bin/mcp-server-github
-tmux attach-session -t main
-tmux attach-session -t main
-pane	main	3	0	:	1	OC | Проверка работоспособности	:/home/mflkee	1	opencode	:opencode
-pane	main	4	0	:	1	OC | Проверка связи	:/home/mflkee/projects/metroGen	1	opencode	:opencode
-pane	main	5	0	:	1	OC | Синхронизация GitHub репозиториев в п...	:/home/mflkee/projects	1	opencode	:opencode
-window	1	1	:zsh	1	:*	b441,170x42,0,0,4	:
-window	main	1	:[tmux]	1	:*	b43d,170x42,0,0,0	:
-window	main	2	:nvim	0	:-	b443,170x42,0,0,6	:
-window	main	3	:opencode	0	:	b442,170x42,0,0,5	:
-window	main	4	:opencode	0	:	b440,170x42,0,0,3	:
-window	main	5	:opencode	0	:	b444,170x42,0,0,7	:
+pane	main	1	0	:-	1	:/home/mflkee	:/home/mflkee	1	zsh	:
+pane	main	2	1	:*	1	OC | Исправление ошибок dsync для зелёного...	:/home/mflkee/projects/dsync	1	opencode	:opencode
+pane	main	3	0	:	1	archlinux-desktop	:/home/mflkee/study/rust/rust-study-materials/Practice/1\ Temperature Converter	1	zsh	:sl
+pane	main	4	0	:	1	OC | Проверка связи	:/home/mflkee/projects/metroGen	1	zsh	:
+pane	main	5	0	:	1	OC | Синхронизация GitHub репозиториев в п...	:/home/mflkee/projects	1	zsh	:
+window	main	1	:zsh	0	:-	b43f,170x42,0,0,2	:
+window	main	2	:opencode	1	:*	b440,170x42,0,0,3	:
+window	main	3	:zsh	0	:	b444,170x42,0,0,7	:
+window	main	4	:zsh	0	:	b102,143x41,0,0,5	:
+window	main	5	:zsh	0	:	b103,143x41,0,0,6	:
 state	main	
