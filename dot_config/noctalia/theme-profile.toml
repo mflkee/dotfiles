@@ -2,3 +2,6 @@
 # Exported automatically by noctalia-theme-export
 # Do not edit manually — changes will be overwritten
 
+[shell]
+lang = "ru"
+
