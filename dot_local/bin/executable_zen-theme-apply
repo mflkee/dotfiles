@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# zen-theme-apply: Apply synced Zen theme profile
+# Finds the active Zen release profile and copies theme files into it.
+set -euo pipefail
+
+THEME_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zen-theme"
+ZEN_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zen"
+
+[ -d "$THEME_DIR" ] || { echo "Error: zen-theme dir not found at $THEME_DIR" >&2; exit 1; }
+[ -d "$ZEN_DIR" ] || { echo "Error: Zen config dir not found at $ZEN_DIR" >&2; exit 1; }
+
+PROFILE_DIR=""
+for dir in "$ZEN_DIR"/*"Default (release)"*/; do
+    [ -d "$dir" ] && PROFILE_DIR="${dir%/}" && break
+done
+
+[ -n "$PROFILE_DIR" ] || { echo "Error: no Zen release profile found in $ZEN_DIR" >&2; exit 1; }
+
+echo "Zen profile: $PROFILE_DIR"
+
+if [ -f "$THEME_DIR/user.js" ]; then
+    cp "$THEME_DIR/user.js" "$PROFILE_DIR/user.js"
+    echo "  user.js applied"
+fi
+
+mkdir -p "$PROFILE_DIR/chrome"
+for f in userChrome.css userContent.css zen-themes.css; do
+    if [ -f "$THEME_DIR/chrome/$f" ]; then
+        cp "$THEME_DIR/chrome/$f" "$PROFILE_DIR/chrome/$f"
+        echo "  chrome/$f applied"
+    fi
+done
+
+if [ -d "$THEME_DIR/chrome/zen-themes" ]; then
+    mkdir -p "$PROFILE_DIR/chrome/zen-themes"
+    cp -r "$THEME_DIR/chrome/zen-themes/"* "$PROFILE_DIR/chrome/zen-themes/"
+    echo "  chrome/zen-themes/ applied"
+fi
+
+if pgrep -f zen >/dev/null 2>&1; then
+    echo "  Note: Zen is running — restart to pick up changes"
+fi

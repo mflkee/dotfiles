@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# zen-theme-export: Export Zen chrome profile files to synced location
+set -euo pipefail
+
+THEME_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zen-theme"
+ZEN_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zen"
+
+PROFILE_DIR=""
+for dir in "$ZEN_DIR"/*"Default (release)"*/; do
+    [ -d "$dir" ] && PROFILE_DIR="${dir%/}" && break
+done
+
+[ -n "$PROFILE_DIR" ] || { echo "Error: no Zen release profile found" >&2; exit 1; }
+
+mkdir -p "$THEME_DIR/chrome"
+
+if [ -f "$PROFILE_DIR/user.js" ]; then
+    cp "$PROFILE_DIR/user.js" "$THEME_DIR/user.js"
+fi
+
+for f in userChrome.css userContent.css zen-themes.css; do
+    if [ -f "$PROFILE_DIR/chrome/$f" ]; then
+        cp "$PROFILE_DIR/chrome/$f" "$THEME_DIR/chrome/$f"
+    fi
+done
+
+if [ -d "$PROFILE_DIR/chrome/zen-themes" ]; then
+    mkdir -p "$THEME_DIR/chrome/zen-themes"
+    cp -r "$PROFILE_DIR/chrome/zen-themes/"* "$THEME_DIR/chrome/zen-themes/"
+fi
+
+echo "Zen theme profile exported to $THEME_DIR"

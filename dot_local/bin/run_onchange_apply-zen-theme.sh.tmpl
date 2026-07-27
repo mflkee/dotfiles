@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+# trigger: {{ include "dot_config/zen-theme/chrome/zen-themes.css" | sha256sum }}
+if [ -x "$HOME/.local/bin/zen-theme-apply" ]; then
+    exec "$HOME/.local/bin/zen-theme-apply"
+fi
