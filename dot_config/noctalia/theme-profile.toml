@@ -2,10 +2,3 @@
 # Exported automatically by noctalia-theme-export
 # Do not edit manually — changes will be overwritten
 
-[theme]
-builtin = "Ayu"
-
-    [theme.templates]
-    builtin_ids = [ "alacritty", "btop", "gtk3", "gtk4", "ghostty", "kcolorscheme", "kitty", "mango", "niri", "qt", "scroll", "starship", "wezterm" ]
-    community_ids = [ "zen-browser", "neovim", "obsidian", "vscode", "zed", "lazygit", "opencode", "steam", "yazi" ]
-
