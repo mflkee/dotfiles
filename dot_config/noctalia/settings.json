@@ -786,5 +786,7 @@
     "wallhavenResolutionWidth": "",
     "wallhavenSorting": "relevance",
     "wallpaperChangeMode": "random"
-  }
+  },
+  "networkPanelView": "wifi",
+  "bluetoothAutoConnect": true
 }
