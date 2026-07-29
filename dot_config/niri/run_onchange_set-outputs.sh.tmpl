@@ -13,9 +13,10 @@ find_niri_socket() {
 
 setup_output() {
     local name="$1" mode="$2" scale="$3" transform="$4" x="$5" y="$6"
-    niri msg output "$name" mode set "$mode" 2>/dev/null || true
-    niri msg output "$name" scale set "$scale" 2>/dev/null || true
-    niri msg output "$name" transform set "$transform" 2>/dev/null || true
+    # Niri 26.04+ changed CLI: removed "set" subcommand for mode/scale/transform
+    niri msg output "$name" mode "$mode" 2>/dev/null || true
+    niri msg output "$name" scale "$scale" 2>/dev/null || true
+    niri msg output "$name" transform "$transform" 2>/dev/null || true
     niri msg output "$name" position set "$x" "$y" 2>/dev/null || true
 }
 

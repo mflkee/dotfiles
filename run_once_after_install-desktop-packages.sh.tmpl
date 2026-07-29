@@ -9,6 +9,12 @@ set -euo pipefail
 # Desktop/graphics package bootstrap for Arch Linux machines.
 # Runs once after chezmoi apply on machines with a graphical environment.
 
+# Skip in non-interactive dsync sessions (sudo needs TTY)
+if [ -n "${NONINTERACTIVE:-}" ] || ! tty -s 2>/dev/null; then
+  echo "Skipping interactive install in non-interactive session (NONINTERACTIVE=${NONINTERACTIVE:-})"
+  exit 0
+fi
+
 if ! command -v pacman >/dev/null 2>&1; then
   echo "Not an Arch-based system, skipping desktop package install."
   exit 0
