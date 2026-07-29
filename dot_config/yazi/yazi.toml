@@ -11,7 +11,7 @@ max_width = 1200
 max_height = 1800
 
 [opener]
-edit = [{ run = "ghostty -e nvim", block = false, orphan = false }]
+edit = [{ run = "nvim", block = true, orphan = false }]
 default = [{ run = "xdg-open", block = false, orphan = true }]
 
 rules = [
@@ -23,14 +23,11 @@ rules = [
     { name = "*.wps",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.wpd",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.sdw",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
-    { name = "*.txt",  run = "ghostty -e nvim", block = false, orphan = true },
-    { name = "*.md",   run = "ghostty -e nvim", block = false, orphan = true },
     # Spreadsheets
     { name = "*.xls",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.xlsx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.ods",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.csv",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
-    { name = "*.tsv",  run = "ghostty -e nvim", block = false, orphan = true },
     { name = "*.dbf",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     # Presentations
     { name = "*.ppt",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
@@ -58,7 +55,7 @@ rules = [
     { name = "*.tar.xz", run = "file-roller", block = false, orphan = true },
     { name = "*.rar",  run = "file-roller", block = false, orphan = true },
     { name = "*.7z",   run = "file-roller", block = false, orphan = true },
-    # Images — open with default viewer (xdg-open)
+    # Images
     { name = "*.jpg",  run = "xdg-open", block = false, orphan = true },
     { name = "*.jpeg", run = "xdg-open", block = false, orphan = true },
     { name = "*.png",  run = "xdg-open", block = false, orphan = true },
@@ -66,7 +63,7 @@ rules = [
     { name = "*.bmp",  run = "xdg-open", block = false, orphan = true },
     { name = "*.webp", run = "xdg-open", block = false, orphan = true },
     { name = "*.tiff", run = "xdg-open", block = false, orphan = true },
-    # Video / Audio — default player
+    # Video / Audio
     { name = "*.mp4",  run = "xdg-open", block = false, orphan = true },
     { name = "*.avi",  run = "xdg-open", block = false, orphan = true },
     { name = "*.mkv",  run = "xdg-open", block = false, orphan = true },
