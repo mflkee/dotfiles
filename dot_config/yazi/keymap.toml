@@ -19,7 +19,7 @@ keymap = [
 	{ on = "H", run = "back", desc = "Back" },
 	{ on = "L", run = "forward", desc = "Forward" },
 
-	{ on = "<Enter>", run = "open", desc = "Smart enter" },
+	{ on = "<Enter>", run = "plugin smart-enter", desc = "Smart enter" },
 	{ on = "<S-Enter>", run = "open --interactive", desc = "Open interactive" },
 
 	{ on = "y", run = "yank", desc = "Yank" },
