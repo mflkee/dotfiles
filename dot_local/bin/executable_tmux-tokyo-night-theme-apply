@@ -52,6 +52,8 @@ for k, v in mapping.items():
     lines.append(f'    ["{k}"]="{v}"')
 lines.append(')')
 lines.append('')
+lines.append('RESET="#\\[fg=\\${THEME[foreground]},bg=\\${THEME[background]},nobold,noitalics,nounderscore,nodim]"')
+lines.append('')
 
 output = os.path.expanduser("~/.config/dsync/tokyo-night-theme-override.sh")
 os.makedirs(os.path.dirname(output), exist_ok=True)
