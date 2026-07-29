@@ -3,6 +3,12 @@
 # Re-runs when niri config changes: {{ include "dot_config/niri/config.kdl" | sha256sum }}
 # Configures output mode, scale, transform, and position per-machine.
 
+# Write a persistent copy so dsync can re-run it even when chezmoi state is stale.
+MARKER="# Generated from run_onchange_set-outputs.sh.tmpl — DO NOT EDIT"
+cat > "$HOME/.config/niri/set-outputs.sh" << 'EOF'
+#!/bin/sh
+{{ $MARKER }}
+
 # Find niri socket for SSH/non-interactive sessions
 find_niri_socket() {
     for s in /run/user/$(id -u)/niri.*.sock; do
@@ -17,7 +23,8 @@ setup_output() {
     niri msg output "$name" mode "$mode" 2>/dev/null || true
     niri msg output "$name" scale "$scale" 2>/dev/null || true
     niri msg output "$name" transform "$transform" 2>/dev/null || true
-    niri msg output "$name" position set "$x" "$y" 2>/dev/null || true
+    # Use -- so negative Y coordinates are not parsed as flags
+    niri msg output "$name" position set -- "$x" "$y" 2>/dev/null || true
 }
 
 SOCK=$(find_niri_socket) && export NIRI_SOCKET="$SOCK"
@@ -33,3 +40,8 @@ if command -v niri >/dev/null 2>&1 && niri msg outputs >/dev/null 2>&1; then
     setup_output "HDMI-A-1" "1920x1080@60.000" 1.0 "normal"  1920 0
 {{ end -}}
 fi
+EOF
+chmod +x "$HOME/.config/niri/set-outputs.sh"
+
+# Run the setup immediately
+bash "$HOME/.config/niri/set-outputs.sh"
