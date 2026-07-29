@@ -1,5 +1,4 @@
 {{- $isDesktop := or (eq .chezmoi.hostname "archlinux-desktop") (eq .chezmoi.hostname "omarchy-desktop") -}}
-{{- $isMkair := eq .chezmoi.hostname "archlinux-mkair" -}}
 #!/bin/sh
 # Re-runs when niri config changes: {{ include "dot_config/niri/config.kdl" | sha256sum }}
 # Configures output mode, scale, transform, and position per-machine.
@@ -27,11 +26,8 @@ if command -v niri >/dev/null 2>&1 && niri msg outputs >/dev/null 2>&1; then
     # Desktop (archlinux-desktop): Thunderobot F27H144F (DP-4) left, ASUS VP249 (HDMI-A-2) right
     setup_output "DP-4"    "1920x1080@165.003" 1.0 "normal"  0 0
     setup_output "HDMI-A-2" "1920x1080@144.013" 1.0 "270"   1920 -840
-{{ else if $isMkair -}}
-    # archlinux-mkair: single monitor Acer H235HL (HDMI-A-1)
-    setup_output "HDMI-A-1" "1920x1080@60.000" 1.0 "normal" 0 0
 {{ else -}}
-    # Laptop (notebook): eDP-1 built-in left, HDMI-A-1 external right
+    # Laptop/notebook/mkair: eDP-1 left, HDMI-A-1 external right
     setup_output "eDP-1"   "1920x1080@60.004"  1.0 "normal"  0 0
     setup_output "HDMI-A-1" "1920x1080@60.000" 1.0 "normal"  1920 0
 {{ end -}}
