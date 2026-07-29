@@ -7,6 +7,9 @@ TOKYO_DIR="${HOME}/.tmux/plugins/tokyo-night-tmux"
 THEMES_SH="${TOKYO_DIR}/src/themes.sh"
 COLORS_JSON="${HOME}/.config/noctalia/colors.json"
 
+# Generate Material3 colors from current Noctalia community palette
+~/.local/bin/generate-material3-colors 2>/dev/null || true
+
 # Generate complete themes.sh from Noctalia colors
 generate_themes() {
     [ -f "$COLORS_JSON" ] || return 0
