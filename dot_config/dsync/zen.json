@@ -1,5 +1,5 @@
 {
-  "_source": "/home/mflkee/.config/zen/oxblbp7e.Default (release)",
+  "_source": "/home/mflkee/.config/zen/zcav17up.Default (release)",
   "containers": {
     "version": 5,
     "lastUserContextId": 5,
@@ -70,42 +70,51 @@
   },
   "spaces": [
     {
-      "uuid": "{3b8e6fb6-ca82-4231-8190-2aad867d7e6c}",
-      "icon": "chrome://browser/skin/zen-icons/selectable/circle.svg",
+      "uuid": "{703ef0c8-bfd8-40b4-b6a0-44e14499a434}",
+      "name": "Space",
+      "theme": {
+        "type": "gradient",
+        "gradientColors": [],
+        "opacity": 0.5,
+        "texture": 0
+      },
+      "containerTabId": 0,
+      "hasCollapsedPinnedTabs": false
+    },
+    {
+      "uuid": "{D68F40EF-C883-4720-B16F-E8780C9C0B73}",
       "name": "main",
+      "icon": "chrome://browser/skin/zen-icons/selectable/circle.svg",
       "theme": {
         "type": "gradient",
         "gradientColors": [],
         "opacity": 0.532,
         "texture": 0
       },
-      "containerTabId": 6,
       "hasCollapsedPinnedTabs": false
     },
     {
-      "uuid": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
+      "uuid": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
       "name": "study",
+      "icon": "chrome://browser/skin/zen-icons/selectable/circle.svg",
       "theme": {
         "type": "gradient",
         "gradientColors": [],
         "opacity": 0.396,
         "texture": 0
       },
-      "containerTabId": 7,
-      "icon": "chrome://browser/skin/zen-icons/selectable/circle.svg",
       "hasCollapsedPinnedTabs": false
     },
     {
-      "uuid": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "uuid": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "name": "mkair",
+      "icon": "chrome://browser/skin/zen-icons/selectable/circle.svg",
       "theme": {
         "type": "gradient",
         "gradientColors": [],
         "opacity": 0.558,
         "texture": 0.1875
       },
-      "containerTabId": 9,
-      "icon": "chrome://browser/skin/zen-icons/selectable/circle.svg",
       "hasCollapsedPinnedTabs": false
     }
   ],
@@ -113,7 +122,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1772890605817-13",
+      "id": "2548934372720575028",
       "name": "netology",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -122,7 +131,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1772890648119-23",
+      "id": "2969307220366117129",
       "name": "lms",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -131,7 +140,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1772890629775-14",
+      "id": "6844994654914320809",
       "name": "mail",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -140,7 +149,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1778316321679-78",
+      "id": "2814141981394717061",
       "name": "LLM",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -149,7 +158,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1776074501108-87",
+      "id": "3397587866504262973",
       "name": "mkair-server-tmn",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -158,16 +167,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1781183756611-94",
-      "name": "mail_cloud",
-      "color": "zen-workspace-color",
-      "collapsed": false,
-      "saveOnWindowClose": true
-    },
-    {
-      "pinned": true,
-      "splitView": false,
-      "id": "1781183781976-90",
+      "id": "2390205810704872701",
       "name": "services",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -176,7 +176,7 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1782298503794-61",
+      "id": "1479785386765013377",
       "name": "staging",
       "color": "zen-workspace-color",
       "collapsed": false,
@@ -185,7 +185,16 @@
     {
       "pinned": true,
       "splitView": false,
-      "id": "1778593466460-7",
+      "id": "1102229472714901683",
+      "name": "mail_cloud",
+      "color": "zen-workspace-color",
+      "collapsed": false,
+      "saveOnWindowClose": true
+    },
+    {
+      "pinned": true,
+      "splitView": false,
+      "id": "1427854646730235130",
       "name": "МКАИР",
       "color": "zen-workspace-color",
       "collapsed": true,
@@ -196,192 +205,146 @@
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1772890605817-13",
+      "id": "2548934372720575028",
       "name": "netology",
       "collapsed": false,
       "saveOnWindowClose": true,
       "parentId": null,
       "prevSiblingInfo": null,
-      "emptyTabIds": [
-        "1772890605825-44"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}"
+      "workspaceId": "{09A138B8-6DBA-441A-9934-67C501B19AEF}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1772890648119-23",
+      "id": "2969307220366117129",
       "name": "lms",
       "collapsed": false,
       "saveOnWindowClose": true,
       "parentId": null,
       "prevSiblingInfo": {
         "type": "group",
-        "id": "1772890605817-13"
+        "id": "2548934372720575028"
       },
-      "emptyTabIds": [
-        "1772890648127-1"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}"
+      "workspaceId": "{09A138B8-6DBA-441A-9934-67C501B19AEF}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1772890629775-14",
+      "id": "6844994654914320809",
       "name": "mail",
       "collapsed": false,
       "saveOnWindowClose": true,
       "parentId": null,
       "prevSiblingInfo": {
         "type": "group",
-        "id": "1772890648119-23"
+        "id": "2969307220366117129"
       },
-      "emptyTabIds": [
-        "1772890629782-88"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}"
+      "workspaceId": "{09A138B8-6DBA-441A-9934-67C501B19AEF}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1778316321679-78",
+      "id": "2814141981394717061",
       "name": "LLM",
       "collapsed": false,
       "saveOnWindowClose": true,
       "parentId": null,
-      "prevSiblingInfo": null,
-      "emptyTabIds": [
-        "1778316321686-16"
-      ],
+      "prevSiblingInfo": {
+        "type": "tab",
+        "id": "1785304275913-8"
+      },
+      "emptyTabIds": [],
       "userIcon": "chrome://browser/skin/zen-icons/selectable/code.svg",
-      "workspaceId": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}"
+      "workspaceId": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1776074501108-87",
+      "id": "3397587866504262973",
       "name": "mkair-server-tmn",
       "collapsed": false,
       "saveOnWindowClose": true,
       "parentId": null,
       "prevSiblingInfo": {
         "type": "group",
-        "id": "1778316321679-78"
+        "id": "2814141981394717061"
       },
-      "emptyTabIds": [
-        "1776074501118-55",
-        "1781183756627-4",
-        "1781183781994-42",
-        "1782298503815-45"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}"
+      "workspaceId": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1781183756611-94",
-      "name": "mail_cloud",
+      "id": "2390205810704872701",
+      "name": "services",
       "collapsed": false,
       "saveOnWindowClose": true,
-      "parentId": "1776074501108-87",
+      "parentId": "3397587866504262973",
       "prevSiblingInfo": {
         "type": "tab",
         "id": "1779685611336-67"
       },
-      "emptyTabIds": [
-        "1781183756627-4"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}"
+      "workspaceId": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1781183781976-90",
-      "name": "services",
-      "collapsed": false,
-      "saveOnWindowClose": true,
-      "parentId": "1776074501108-87",
-      "prevSiblingInfo": {
-        "type": "group",
-        "id": "1781183756611-94"
-      },
-      "emptyTabIds": [
-        "1781183781994-42",
-        "1782298503815-45"
-      ],
-      "userIcon": "",
-      "workspaceId": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}"
-    },
-    {
-      "pinned": true,
-      "splitViewGroup": false,
-      "id": "1782298503794-61",
+      "id": "1479785386765013377",
       "name": "staging",
       "collapsed": false,
       "saveOnWindowClose": true,
-      "parentId": "1781183781976-90",
+      "parentId": "2390205810704872701",
       "prevSiblingInfo": {
         "type": "tab",
-        "id": "1782104126390-31"
+        "id": "1785301643532-4"
       },
-      "emptyTabIds": [
-        "1782298503815-45"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}"
+      "workspaceId": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}"
     },
     {
       "pinned": true,
       "splitViewGroup": false,
-      "id": "1778593466460-7",
+      "id": "1102229472714901683",
+      "name": "mail_cloud",
+      "collapsed": false,
+      "saveOnWindowClose": true,
+      "parentId": "3397587866504262973",
+      "prevSiblingInfo": {
+        "type": "group",
+        "id": "2390205810704872701"
+      },
+      "emptyTabIds": [],
+      "userIcon": "",
+      "workspaceId": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}"
+    },
+    {
+      "pinned": true,
+      "splitViewGroup": false,
+      "id": "1427854646730235130",
       "name": "МКАИР",
       "collapsed": true,
       "saveOnWindowClose": true,
       "parentId": null,
       "prevSiblingInfo": {
         "type": "group",
-        "id": "1776074501108-87"
+        "id": "3397587866504262973"
       },
-      "emptyTabIds": [
-        "1778593466469-38"
-      ],
+      "emptyTabIds": [],
       "userIcon": "",
-      "workspaceId": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}"
+      "workspaceId": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}"
     }
   ],
   "pinned_tabs": [
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1778316321668,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1778316321679-78",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1778316321686-16",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
     {
       "entries": [
         {
@@ -389,26 +352,16 @@
           "title": "opencode"
         }
       ],
-      "lastAccessed": 1782798423607,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778316321679-78",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1781798379552-35",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "_zenIsActiveTab": true,
+      "index": 1,
+      "groupId": "2814141981394717061",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1781798379552-35",
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "requestedIndex": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -417,26 +370,16 @@
           "title": "Kimi Pricing | Membership Plans and Subscription Options"
         }
       ],
-      "lastAccessed": 1782799031707,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778316321679-78",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1777806149756-47",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "_zenIsActiveTab": true,
+      "index": 2,
+      "groupId": "2814141981394717061",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1777806149756-47",
       "userContextId": 9,
-      "attributes": {},
-      "index": 10,
-      "requestedIndex": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -445,53 +388,16 @@
           "title": "AM4 кулер крепление - Kimi"
         }
       ],
-      "lastAccessed": 1782799134666,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778316321679-78",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "index": 3,
+      "groupId": "2814141981394717061",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1778316352138-87",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "_zenIsActiveTab": true,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 9,
-      "attributes": {},
-      "index": 15,
-      "requestedIndex": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1776074501097,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1776074501108-87",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1776074501118-55",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -500,53 +406,16 @@
           "title": "Deployments · mflkee/metroCheck"
         }
       ],
-      "lastAccessed": 1782613805421,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1776074501108-87",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "index": 4,
+      "groupId": "3397587866504262973",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1779685611336-67",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1781183756586,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1781183756611-94",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1781183756627-4",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -555,26 +424,16 @@
           "title": "test - Почта МКАИР ИТ"
         }
       ],
-      "lastAccessed": 1782704160986,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183756611-94",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1782195671419-87",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 5,
+      "groupId": "1102229472714901683",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1782195671419-87",
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -583,26 +442,16 @@
           "title": "Portal"
         }
       ],
-      "lastAccessed": 1782573663879,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183756611-94",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1782213314528-78",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 6,
+      "groupId": "1102229472714901683",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1782213314528-78",
       "userContextId": 9,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -611,26 +460,16 @@
           "title": "Nginx Proxy Manager"
         }
       ],
-      "lastAccessed": 1782573924309,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183756611-94",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1781800014717-51",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 7,
+      "groupId": "1102229472714901683",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1781800014717-51",
       "userContextId": 9,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -639,26 +478,16 @@
           "title": "LLDAP Administration"
         }
       ],
-      "lastAccessed": 1782718213566,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183756611-94",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1781791956661-36",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 8,
+      "groupId": "1102229472714901683",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1781791956661-36",
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -667,53 +496,16 @@
           "title": "Все файлы - Файлы - Nextcloud"
         }
       ],
-      "lastAccessed": 1782573779061,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183756611-94",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "index": 9,
+      "groupId": "1102229472714901683",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1781781770398-40",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 9,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1781183781960,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1781183781976-90",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1781183781994-42",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -722,26 +514,16 @@
           "title": "Grafana"
         }
       ],
-      "lastAccessed": 1782718213230,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183781976-90",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1782114049005-81",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 10,
+      "groupId": "2390205810704872701",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1782114049005-81",
       "userContextId": 9,
-      "attributes": {},
-      "index": 6,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -750,29 +532,16 @@
           "title": "metroChek"
         }
       ],
-      "lastAccessed": 1782573779856,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183781976-90",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1782383088466-48",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 11,
+      "groupId": "2390205810704872701",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1782383088466-48",
       "userContextId": 9,
-      "attributes": {},
-      "index": 6,
-      "scroll": {
-        "scroll": "0,1"
-      },
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -781,30 +550,16 @@
           "title": "metroLog"
         }
       ],
-      "lastAccessed": 1782573053107,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183781976-90",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1782124542650-73",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenStaticLabel": "rng.metroLog",
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 12,
+      "groupId": "2390205810704872701",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1782124542650-73",
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "scroll": {
-        "scroll": "0,4"
-      },
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -813,53 +568,16 @@
           "title": "metroLog"
         }
       ],
-      "lastAccessed": 1782573153508,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1781183781976-90",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "index": 13,
+      "groupId": "2390205810704872701",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1782104126390-31",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1782298503769,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1782298503794-61",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1782298503815-45",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -868,53 +586,16 @@
           "title": "metroChek"
         }
       ],
-      "lastAccessed": 1782726543696,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1782298503794-61",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "index": 14,
+      "groupId": "1479785386765013377",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1782299599325-82",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 9,
-      "attributes": {},
-      "index": 7,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1778593466451,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1778593466460-7",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1778593466469-38",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -923,26 +604,16 @@
           "title": "Задача: Повека; Преобразователи плотности и вязкости; мод. FVM, зав. 21184805"
         }
       ],
-      "lastAccessed": 1782573126257,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778593466460-7",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1777939053055-36",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 15,
+      "groupId": "1427854646730235130",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1777939053055-36",
       "userContextId": 9,
-      "attributes": {},
-      "index": 3,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -951,26 +622,16 @@
           "title": "Почта ООО «МКАИР» :: Добро пожаловать в Почта ООО «МКАИР»!"
         }
       ],
-      "lastAccessed": 1782605759689,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778593466460-7",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1779005785675-46",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": true,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 16,
+      "groupId": "1427854646730235130",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1779005785675-46",
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -979,26 +640,16 @@
           "title": "(7) Почта ООО «МКАИР» :: Входящие"
         }
       ],
-      "lastAccessed": 1782572851276,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778593466460-7",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
-      "zenSyncId": "1779079298375-63",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": true,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 17,
+      "groupId": "1427854646730235130",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1779079298375-63",
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1007,53 +658,16 @@
           "title": "Synology Drive"
         }
       ],
-      "lastAccessed": 1782032516410,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1778593466460-7",
-      "zenWorkspace": "{dac51e88-5c3e-4d4c-8611-d3e5a7a9d835}",
+      "index": 18,
+      "groupId": "1427854646730235130",
+      "zenWorkspace": "{B478C3BB-DAAC-4CD7-ACC3-2C5C2B37EB1E}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1778593453991-29",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 9,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1772890605808,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1772890605817-13",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1772890605825-44",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1062,53 +676,16 @@
           "title": "Задание: Итоговое задание. Часть 2 (дедлайн 13.06.26)"
         }
       ],
-      "lastAccessed": 1781697618275,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890605817-13",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
+      "index": 19,
+      "groupId": "2548934372720575028",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1772891447886-67",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 7,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1772890648114,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1772890648119-23",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1772890648127-1",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1117,26 +694,16 @@
           "title": "Макеев Глеб Борисович"
         }
       ],
-      "lastAccessed": 1781696267993,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890648119-23",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1779339572779-50",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 20,
+      "groupId": "2969307220366117129",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1779339572779-50",
       "userContextId": 7,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1145,26 +712,16 @@
           "title": "Вход на сайт | Учебный портал ТюмГУ"
         }
       ],
-      "lastAccessed": 1781695684109,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890648119-23",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1777035301686-51",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 21,
+      "groupId": "2969307220366117129",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1777035301686-51",
       "userContextId": 7,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1173,26 +730,16 @@
           "title": "Мои курсы | Учебный портал ТюмГУ"
         }
       ],
-      "lastAccessed": 1781695692053,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890648119-23",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1778285155061-21",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 22,
+      "groupId": "2969307220366117129",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1778285155061-21",
       "userContextId": 7,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1201,53 +748,16 @@
           "title": "Вход"
         }
       ],
-      "lastAccessed": 1781695685610,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890648119-23",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
+      "index": 23,
+      "groupId": "2969307220366117129",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
+      "zenLiveFolderItemId": null,
       "zenSyncId": "1780339930136-85",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
       "userContextId": 7,
-      "attributes": {},
-      "index": 11,
-      "userTypedValue": "",
-      "userTypedClear": 0
-    },
-    {
-      "entries": [
-        {
-          "url": "about:blank"
-        }
-      ],
-      "lastAccessed": 1772890629767,
-      "pinned": true,
-      "hidden": false,
-      "groupId": "1772890629775-14",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1772890629782-88",
-      "zenEssential": false,
-      "zenDefaultUserContextId": null,
-      "zenPinnedIcon": null,
-      "zenIsEmpty": true,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
-      "zenLiveFolderItemId": null,
-      "searchMode": null,
-      "userContextId": 0,
-      "attributes": {},
-      "index": 1,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1256,26 +766,16 @@
           "title": "почта яндекс - Google Search"
         }
       ],
-      "lastAccessed": 1779341234682,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890629775-14",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1779338880498-50",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 24,
+      "groupId": "6844994654914320809",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1779338880498-50",
       "userContextId": 7,
-      "attributes": {},
-      "index": 2,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     },
     {
       "entries": [
@@ -1284,26 +784,16 @@
           "title": "Авторизация"
         }
       ],
-      "lastAccessed": 1779956925902,
+      "lastAccessed": 0,
       "pinned": true,
       "hidden": false,
-      "groupId": "1772890629775-14",
-      "zenWorkspace": "{ece5b3cb-e73b-431d-a488-abb41edb19ea}",
-      "zenSyncId": "1773240467557-74",
-      "zenEssential": false,
-      "zenDefaultUserContextId": "true",
-      "zenPinnedIcon": null,
-      "zenIsEmpty": false,
-      "zenHasStaticIcon": false,
-      "zenGlanceId": null,
-      "zenIsGlance": false,
+      "index": 25,
+      "groupId": "6844994654914320809",
+      "zenWorkspace": "{09A138B8-6DBA-441A-9934-67C501B19AEF}",
       "zenLiveFolderItemId": null,
-      "searchMode": null,
+      "zenSyncId": "1773240467557-74",
       "userContextId": 7,
-      "attributes": {},
-      "index": 2,
-      "userTypedValue": "",
-      "userTypedClear": 0
+      "attributes": {}
     }
   ],
   "space_routing": {
