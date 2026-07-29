@@ -2,11 +2,3 @@
 # Exported automatically by noctalia-theme-export
 # Do not edit manually — changes will be overwritten
 
-[theme]
-community_palette = "Miasma"
-mode = "dark"
-source = "community"
-
-[shell]
-lang = "ru"
-
