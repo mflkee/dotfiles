@@ -7,7 +7,7 @@
 MARKER="# Generated from run_onchange_set-outputs.sh.tmpl — DO NOT EDIT"
 cat > "$HOME/.config/niri/set-outputs.sh" << 'EOF'
 #!/bin/sh
-{{ $MARKER }}
+# $MARKER
 
 # Find niri socket for SSH/non-interactive sessions
 find_niri_socket() {
