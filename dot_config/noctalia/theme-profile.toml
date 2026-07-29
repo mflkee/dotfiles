@@ -6,9 +6,7 @@
 community_palette = "Miasma"
 mode = "dark"
 source = "community"
-wallpaper_scheme = "m3-content"
 
-    [theme.templates]
-    builtin_ids = [ "alacritty", "btop", "cava", "emacs", "foot", "gtk3", "gtk4", "ghostty", "helix", "hyprland", "kcolorscheme", "kitty", "labwc", "mango", "niri", "qt", "scroll", "starship", "sway", "wezterm" ]
-    community_ids = [ "antigravity", "opencode", "pi-agent", "feishin", "pear-desktop", "spicetify", "tauon", "pywalfox", "pywalfox-beta4", "zen-browser", "discord", "nchat", "telegram", "neovim", "obsidian", "vscode", "zed", "heroiclauncher", "prismlauncher", "steam", "fuzzel", "rofi", "velo", "vicinae", "walker", "obs", "zathura", "hyprtoolkit", "papirus-icons", "snappy-switcher", "bat", "lazygit", "yazi" ]
+[shell]
+lang = "ru"
 
