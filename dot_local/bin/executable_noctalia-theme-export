@@ -1,30 +1,32 @@
 #!/usr/bin/env bash
-# noctalia-theme-export: Export current Noctalia theme settings to theme-profile.toml
+# noctalia-theme-export: Export current Noctalia theme settings to theme-profile.toml and colors.json
 set -euo pipefail
 
 SETTINGS="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
 PROFILE="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/theme-profile.toml"
 DOTFILES_PROFILE="${HOME}/dotfiles/dot_config/noctalia/theme-profile.toml"
+COLORS="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/colors.json"
 
 [ -f "$SETTINGS" ] || { echo "Error: Noctalia settings not found at $SETTINGS" >&2; exit 1; }
 
 python3 << 'PYEOF'
-import tomllib, os
+import tomllib, os, json
 
 SETTINGS = os.path.expanduser("~/.local/state/noctalia/settings.toml")
 PROFILE = os.path.expanduser("~/.config/noctalia/theme-profile.toml")
 DOTFILES_PROFILE = os.path.expanduser("~/dotfiles/dot_config/noctalia/theme-profile.toml")
+COLORS = os.path.expanduser("~/.config/noctalia/colors.json")
 
 with open(SETTINGS, "rb") as f:
     settings = tomllib.load(f)
 
-# Extract only theme-related settings (no machine-specific stuff like lockscreen)
+# Extract only theme-related settings
 profile = {}
 for key in ["theme", "plugins", "shell"]:
     if key in settings:
         profile[key] = settings[key]
 
-# Write TOML content
+# Write theme-profile.toml
 content = "# Noctalia Theme Profile\n"
 content += "# Exported automatically by noctalia-theme-export\n"
 content += "# Do not edit manually — changes will be overwritten\n\n"
@@ -55,11 +57,28 @@ for section, data in profile.items():
                 content += f"{k} = {v}\n"
     content += "\n"
 
-# Write to both locations
 for path in [PROFILE, DOTFILES_PROFILE]:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
 
 print(f"Theme profile exported to {PROFILE}")
+
+# Export colors.json from community palette if applicable
+theme = settings.get("theme", {})
+if theme.get("source") == "community" and "community_palette" in theme:
+    palette_name = theme["community_palette"]
+    palette_path = os.path.expanduser(f"~/.local/state/noctalia/community-palettes/{palette_name}.json")
+    if os.path.exists(palette_path):
+        with open(palette_path, "r") as f:
+            palette = json.load(f)
+        mode = theme.get("mode", "dark")
+        colors = palette.get(mode, palette.get("dark", {}))
+        with open(COLORS, "w") as f:
+            json.dump(colors, f, indent=2)
+        print(f"Colors exported to {COLORS} from palette '{palette_name}' ({mode} mode)")
+    else:
+        print(f"Warning: Palette file not found: {palette_path}")
+else:
+    print("Theme is not community-sourced, skipping colors.json export")
 PYEOF
