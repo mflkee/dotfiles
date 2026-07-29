@@ -5,11 +5,10 @@ set -euo pipefail
 TPM_DIR="${HOME}/.tmux/plugins/tpm"
 TOKYO_DIR="${HOME}/.tmux/plugins/tokyo-night-tmux"
 THEMES_SH="${TOKYO_DIR}/src/themes.sh"
-OVERRIDE="${HOME}/.config/dsync/tokyo-night-theme-override.sh"
 COLORS_JSON="${HOME}/.config/noctalia/colors.json"
 
-# Generate theme override from Noctalia colors
-generate_override() {
+# Generate complete themes.sh from Noctalia colors
+generate_themes() {
     [ -f "$COLORS_JSON" ] || return 0
     python3 << 'PYEOF'
 import json, os
@@ -18,79 +17,69 @@ colors_path = os.path.expanduser("~/.config/noctalia/colors.json")
 with open(colors_path) as f:
     c = json.load(f)
 
-mapping = {
-    "background": c.get("mSurface", "#1a1b26"),
-    "foreground": c.get("mOnSurface", "#c0caf5"),
-    "black": c.get("mSurface", "#1a1b26"),
-    "blue": c.get("mPrimary", "#7aa2f7"),
-    "cyan": c.get("mSecondary", "#bb9af7"),
-    "green": c.get("mTertiary", "#9ece6a"),
-    "magenta": c.get("mSecondary", "#bb9af7"),
-    "red": c.get("mError", "#f7768e"),
-    "white": c.get("mOnSurface", "#c0caf5"),
-    "yellow": c.get("mPrimary", "#7aa2f7"),
-    "bblack": c.get("mSurfaceVariant", "#24283b"),
-    "bblue": c.get("mPrimary", "#7aa2f7"),
-    "bcyan": c.get("mSecondary", "#bb9af7"),
-    "bgreen": c.get("mTertiary", "#9ece6a"),
-    "bmagenta": c.get("mSecondary", "#bb9af7"),
-    "bred": c.get("mError", "#f7768e"),
-    "bwhite": c.get("mOnSurfaceVariant", "#9aa5ce"),
-    "byellow": c.get("mPrimary", "#7aa2f7"),
-    "ghgreen": "#3fb950",
-    "ghmagenta": "#A371F7",
-    "ghred": "#d73a4a",
-    "ghyellow": "#d29922",
-}
-
-lines = [
-    '#!/usr/bin/env bash',
-    '# Auto-generated from Noctalia colors — overrides THEME after themes.sh runs',
-    'declare -A THEME=(',
+# Noctalia Material3 -> Tokyo Night theme mapping
+mapping = [
+    ("background", c.get("mSurface", "#1a1b26")),
+    ("foreground", c.get("mOnSurface", "#c0caf5")),
+    ("black", c.get("mSurface", "#1a1b26")),
+    ("blue", c.get("mPrimary", "#7aa2f7")),
+    ("cyan", c.get("mSecondary", "#bb9af7")),
+    ("green", c.get("mTertiary", "#9ece6a")),
+    ("magenta", c.get("mSecondary", "#bb9af7")),
+    ("red", c.get("mError", "#f7768e")),
+    ("white", c.get("mOnSurface", "#c0caf5")),
+    ("yellow", c.get("mPrimary", "#7aa2f7")),
+    ("bblack", c.get("mSurfaceVariant", "#24283b")),
+    ("bblue", c.get("mPrimary", "#7aa2f7")),
+    ("bcyan", c.get("mSecondary", "#bb9af7")),
+    ("bgreen", c.get("mTertiary", "#9ece6a")),
+    ("bmagenta", c.get("mSecondary", "#bb9af7")),
+    ("bred", c.get("mError", "#f7768e")),
+    ("bwhite", c.get("mOnSurfaceVariant", "#9aa5ce")),
+    ("byellow", c.get("mPrimary", "#7aa2f7")),
+    ("ghgreen", "#3fb950"),
+    ("ghmagenta", "#A371F7"),
+    ("ghred", "#d73a4a"),
+    ("ghyellow", "#d29922"),
 ]
-for k, v in mapping.items():
+
+lines = ['#!/usr/bin/env bash', '# Auto-generated from Noctalia colors by tmux-tokyo-night-theme-apply']
+lines.append('')
+lines.append('TRANSPARENT_THEME="$(tmux show-option -gv @tokyo-night-tmux_transparent 2>/dev/null)"')
+lines.append('')
+lines.append('declare -A THEME=(')
+for k, v in mapping:
     lines.append(f'    ["{k}"]="{v}"')
 lines.append(')')
 lines.append('')
 
-output = os.path.expanduser("~/.config/dsync/tokyo-night-theme-override.sh")
-os.makedirs(os.path.dirname(output), exist_ok=True)
-with open(output, "w") as f:
+# Transparent theme override
+lines.append('# Override background with "default" if transparent theme is enabled')
+lines.append('if [ "${TRANSPARENT_THEME}" == 1 ]; then')
+lines.append('  THEME["background"]="default"')
+lines.append('fi')
+lines.append('')
+lines.append('THEME["ghgreen"]="#3fb950"')
+lines.append('THEME["ghmagenta"]="#A371F7"')
+lines.append('THEME["ghred"]="#d73a4a"')
+lines.append('THEME["ghyellow"]="#d29922"')
+lines.append('')
+lines.append('RESET="#[fg=${THEME[foreground]},bg=${THEME[background]},nobold,noitalics,nounderscore,nodim]"')
+lines.append('')
+
+os.makedirs(os.path.dirname(os.path.expanduser("~/.tmux/plugins/tokyo-night-tmux/src/themes.sh")), exist_ok=True)
+with open(os.path.expanduser("~/.tmux/plugins/tokyo-night-tmux/src/themes.sh"), "w") as f:
     f.write("\n".join(lines))
-print(f"Generated {output}")
+print("Generated themes.sh from Noctalia colors")
 PYEOF
 }
 
-# Patch themes.sh to source override at the very end
-patch_themes() {
-    [ -f "$THEMES_SH" ] || return 0
-    
-    # Remove old patches if any
-    sed -i '/tokyo-night-theme.*override/d' "$THEMES_SH"
-    sed -i '/tokyo-night-theme.*return/d' "$THEMES_SH"
-    
-    # Check if already patched
-    if grep -q "tokyo-night-theme-override.sh" "$THEMES_SH"; then
-        return 0
-    fi
-    
-    # Append at the end
-    cat >> "$THEMES_SH" << 'EOF'
-
-# Noctalia color override
-if [ -f "$HOME/.config/dsync/tokyo-night-theme-override.sh" ]; then
-    source "$HOME/.config/dsync/tokyo-night-theme-override.sh"
-fi
-EOF
-}
-
-# Ensure theme options are set before TPM runs
+# Ensure theme options are set
 tmux set -g @tokyo-night-tmux_theme storm 2>/dev/null || true
 tmux set -g @tokyo-night-tmux_transparent 0 2>/dev/null || true
 
 # Main
-generate_override
-patch_themes
+generate_themes
 
 # Run TPM if available
 if [ -f "${TPM_DIR}/tpm" ]; then
