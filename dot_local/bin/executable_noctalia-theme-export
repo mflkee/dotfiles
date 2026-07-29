@@ -63,3 +63,6 @@ for path in [PROFILE, DOTFILES_PROFILE]:
 
 print(f"Theme profile exported to {PROFILE}")
 PYEOF
+
+# Generate Material3 colors from community palette for tmux sync
+~/.local/bin/generate-material3-colors 2>/dev/null || true
