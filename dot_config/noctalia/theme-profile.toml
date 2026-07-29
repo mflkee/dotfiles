@@ -7,3 +7,6 @@ community_palette = "Miasma"
 mode = "dark"
 source = "community"
 
+[shell]
+lang = "ru"
+
