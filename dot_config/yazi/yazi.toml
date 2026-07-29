@@ -41,7 +41,7 @@ rules = [
     { name = "*.pot",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.potx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
     # PDF
-    { name = "*.pdf",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.pdf",  run = "okular", block = false, orphan = true },
     # Draw / Vector
     { name = "*.odg",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
     { name = "*.svg",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
