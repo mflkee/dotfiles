@@ -11,18 +11,67 @@ max_width = 1200
 max_height = 1800
 
 [opener]
+edit = [{ run = "nvim", block = true, orphan = false }]
 default = [{ run = "xdg-open", block = false, orphan = true }]
 
 rules = [
-    { name = "*.pdf",  run = "okular",  block = false, orphan = true },
-    { name = "*.doc",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.docx", run = "libreoffice", block = false, orphan = true },
-    { name = "*.xls",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.xlsx", run = "libreoffice", block = false, orphan = true },
-    { name = "*.ppt",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.pptx", run = "libreoffice", block = false, orphan = true },
-    { name = "*.odt",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.ods",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.odp",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.rtf",  run = "libreoffice", block = false, orphan = true },
+    # Documents
+    { name = "*.doc",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.docx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.odt",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.rtf",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.wps",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.wpd",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.sdw",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.txt",  run = "nvim", block = true, orphan = false },
+    { name = "*.md",   run = "nvim", block = true, orphan = false },
+    # Spreadsheets
+    { name = "*.xls",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.xlsx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.ods",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.csv",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.tsv",  run = "nvim", block = true, orphan = false },
+    { name = "*.dbf",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # Presentations
+    { name = "*.ppt",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.pptx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.odp",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.pps",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.ppsx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.pot",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.potx", run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # PDF
+    { name = "*.pdf",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # Draw / Vector
+    { name = "*.odg",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.svg",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # Database
+    { name = "*.odb",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    { name = "*.mdb",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # Formula
+    { name = "*.odf",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # Publisher
+    { name = "*.pub",  run = "libreoffice --norestore --nologo", block = false, orphan = true },
+    # Archive
+    { name = "*.zip",  run = "file-roller", block = false, orphan = true },
+    { name = "*.tar.gz", run = "file-roller", block = false, orphan = true },
+    { name = "*.tar.xz", run = "file-roller", block = false, orphan = true },
+    { name = "*.rar",  run = "file-roller", block = false, orphan = true },
+    { name = "*.7z",   run = "file-roller", block = false, orphan = true },
+    # Images — open with default viewer (xdg-open)
+    { name = "*.jpg",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.jpeg", run = "xdg-open", block = false, orphan = true },
+    { name = "*.png",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.gif",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.bmp",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.webp", run = "xdg-open", block = false, orphan = true },
+    { name = "*.tiff", run = "xdg-open", block = false, orphan = true },
+    # Video / Audio — default player
+    { name = "*.mp4",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.avi",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.mkv",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.mp3",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.wav",  run = "xdg-open", block = false, orphan = true },
+    { name = "*.flac", run = "xdg-open", block = false, orphan = true },
+    { name = "*.ogg",  run = "xdg-open", block = false, orphan = true },
 ]
