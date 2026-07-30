@@ -64,16 +64,17 @@ PYEOF
 # Patch themes.sh to source override at the very end
 patch_themes() {
     [ -f "$THEMES_SH" ] || return 0
-    
-    # Remove old patches if any
+
+    # Remove old patches if any (including partial/broken ones)
+    sed -i '/Noctalia color override/d' "$THEMES_SH"
     sed -i '/tokyo-night-theme.*override/d' "$THEMES_SH"
     sed -i '/tokyo-night-theme.*return/d' "$THEMES_SH"
-    
+
     # Check if already patched
     if grep -q "tokyo-night-theme-override.sh" "$THEMES_SH"; then
         return 0
     fi
-    
+
     # Append at the end
     cat >> "$THEMES_SH" << 'EOF'
 
@@ -91,6 +92,11 @@ tmux set -g @tokyo-night-tmux_transparent 0 2>/dev/null || true
 # Main
 generate_override
 patch_themes
+
+# Reload theme in running tmux server so colors apply immediately
+if [ -f "${TOKYO_DIR}/tokyo-night.tmux" ]; then
+    tmux run-shell "${TOKYO_DIR}/tokyo-night.tmux" 2>/dev/null || true
+fi
 
 # Run TPM if available
 if [ -f "${TPM_DIR}/tpm" ]; then
