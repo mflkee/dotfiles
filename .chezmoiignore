@@ -45,3 +45,4 @@ dot_config/qt5ct/colors/
 dot_config/qt6ct/colors/
 .local/state/noctalia/
 .local/share/noctalia/
+.config/noctalia/settings.json
