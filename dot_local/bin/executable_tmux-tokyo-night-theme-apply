@@ -65,10 +65,10 @@ PYEOF
 patch_themes() {
     [ -f "$THEMES_SH" ] || return 0
 
-    # Remove old patches if any (including partial/broken ones)
-    sed -i '/Noctalia color override/d' "$THEMES_SH"
-    sed -i '/tokyo-night-theme.*override/d' "$THEMES_SH"
-    sed -i '/tokyo-night-theme.*return/d' "$THEMES_SH"
+    # Restore original from git to ensure clean slate (removes any broken old patches)
+    if [ -d "$TOKYO_DIR/.git" ]; then
+        (cd "$TOKYO_DIR" && git checkout -- src/themes.sh) 2>/dev/null || true
+    fi
 
     # Check if already patched
     if grep -q "tokyo-night-theme-override.sh" "$THEMES_SH"; then
