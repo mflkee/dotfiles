@@ -9,21 +9,25 @@
 
 ## Centralized Obsidian on archlinux-server
 - **Server**: `archlinux-server` (Netbird IP: `100.89.126.211`)
-- **Vault**: `~/obs_main` (git-synced via bare repo at `archlinux-server:obs_main.git`)
+- **Vault**: `~/obs_main` — synced across machines via **Syncthing** (folder `nzf3f-a9q4c`, sendreceive), NOT git push
 - **REST API**: `http://100.89.59.195:27123` (via archlinux-mkair) and `https://100.89.59.195:27124`
 - **MCP Endpoints**: `/second-brain-mcp/` (obsidian-second-brain)
 - **API Key**: Stored in `OBSIDIAN_API_KEY` env var
 
-### How to update vault on archlinux-server
+### How to edit the vault
 ```bash
-# From desktop (or any machine with vault):
-cd ~/obs_main
-git add -A && git commit -m "description"
-git push archlinux-server master:main
-
-# On archlinux-server:
-cd ~/obs_main && git pull
+# On any machine — just edit; Syncthing propagates to all machines automatically.
+# Optionally snapshot locally for versioning (NOT pushed anywhere):
+cd ~/obs_main && git add -A && git commit -m "description"
 ```
+
+## dsync v2 (Rust, replaces old Python v1)
+- **Hub**: `archlinux-server:42069` (QUIC), systemd user unit `dsync-hub.service`, `loginctl enable-linger mflkee` enabled. Data: `~/.local/share/dsync-hub/machines.json`
+- **Clients**: `~/.local/bin/dsync`, config `~/.config/dsync/dsync/config.toml` (chezmoi template), 15-min `dsync.timer` on desktop/mkair/notebook
+- **Flow**: client pushes zen + projects → hub stores → hub SSH-pulls projects on all other machines + runs `post_pull` (dotfiles: `chezmoi apply`)
+- **Hostnames**: archlinux-desktop=desktop, archlinux-mkair=archlinux-mkair, archlinux-notebook=archlinux-notebook (SSH by IP), archlinux-server=archlinux-server
+- **Source**: `~/projects/dsync`; build: `cargo build --release`, deploy binary to `~/.local/bin/dsync` (client) / `dsync-hub` (server)
+- **Note**: binary is a single ~18MB ELF with rustls (no cert verification)
 
 ### How to access Obsidian from any machine
 - `obsidian-memory` MCP — reads vault files locally (via Syncthing)
