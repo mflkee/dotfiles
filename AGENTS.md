@@ -25,7 +25,7 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - **Hub**: `archlinux-server:42069` (QUIC), systemd user unit `dsync-hub.service`, `loginctl enable-linger mflkee` enabled. Data: `~/.local/share/dsync-hub/machines.json`
 - **Clients**: `~/.local/bin/dsync`, config `~/.config/dsync/dsync/config.toml` (chezmoi template), 15-min `dsync.timer` on desktop/mkair/notebook
 - **Flow**: client pushes zen + projects → hub stores → hub SSH-pulls projects on all other machines + runs `post_pull` (dotfiles: `chezmoi apply`)
-- **Hostnames**: archlinux-desktop=desktop, archlinux-mkair=archlinux-mkair, archlinux-notebook=archlinux-notebook (SSH by IP), archlinux-server=archlinux-server
+- **Machine names**: desktop, notebook, archlinux-mkair, archlinux-server. Hostname mapping: archlinux-desktop→desktop, archlinux-notebook→notebook, archlinux-mkair→archlinux-mkair, archlinux-server→archlinux-server. Notebook SSH-pull by IP `100.89.198.212`
 - **Source**: `~/projects/dsync`; build: `cargo build --release`, deploy binary to `~/.local/bin/dsync` (client) / `dsync-hub` (server)
 - **Note**: binary is a single ~18MB ELF with rustls (no cert verification)
 
