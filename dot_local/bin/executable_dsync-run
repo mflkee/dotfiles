@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+DSYNC_BIN="${DSYNC_BIN:-$HOME/.local/bin/dsync}"
+
+"$DSYNC_BIN" push || true
+"$DSYNC_BIN" pull || true

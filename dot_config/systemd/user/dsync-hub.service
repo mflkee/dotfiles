@@ -1,0 +1,15 @@
+[Unit]
+Description=dsync hub — machine state synchronizer over QUIC
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/home/mflkee/.local/bin/dsync-hub daemon
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

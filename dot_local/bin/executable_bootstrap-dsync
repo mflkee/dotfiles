@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bootstrap dsync on a new machine.
-# Requires: git, ssh, netbird. Recommends: uv, chezmoi.
+# Bootstrap dsync v2 (Rust) on a new machine.
+# Requires: git, ssh, netbird, cargo (rustup), chezmoi.
+# Builds the release binary from source and installs it to ~/.local/bin/dsync.
 
 DSYNC_DIR="${DSYNC_DIR:-$HOME/projects/dsync}"
 DSYNC_REPO="${DSYNC_REPO:-https://github.com/mflkee/dsync.git}"
 
 command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
-
-if ! command -v uv >/dev/null 2>&1; then
-  echo "Installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+if ! command -v cargo >/dev/null 2>&1; then
+  echo "cargo (rust) is required:" >&2
+  echo '  curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh' >&2
+  exit 1
 fi
-export PATH="$HOME/.local/bin:$PATH"
 
 if [ -d "$DSYNC_DIR/.git" ]; then
   echo "Updating dsync..."
@@ -24,34 +24,11 @@ else
   git clone "$DSYNC_REPO" "$DSYNC_DIR"
 fi
 
-if uv tool list 2>/dev/null | grep -q "^dsync "; then
-  echo "Re-installing dsync..."
-  uv tool uninstall dsync
-fi
-uv tool install --editable "$DSYNC_DIR"
+echo "Building dsync..."
+cargo build --release --manifest-path "$DSYNC_DIR/Cargo.toml"
 
-# Ensure default config exists but do not overwrite an existing one.
-DSYNC_CONFIG_DIR="$HOME/.config/dsync"
-DSYNC_CONFIG="$DSYNC_CONFIG_DIR/config.toml"
-if [ ! -f "$DSYNC_CONFIG" ]; then
-  mkdir -p "$DSYNC_CONFIG_DIR"
-  cat > "$DSYNC_CONFIG" <<'EOF'
-# dsync configuration
-[machines]
-# notebook = { host = "archlinux-notebook-XXXXXX.netbird.cloud", user = "mflkee" }
-# desktop  = { host = "archlinux-desktop.netbird.cloud", user = "mflkee" }
-# server   = { host = "mkair-server.netbird.cloud", user = "mflkee" }
+mkdir -p "$HOME/.local/bin"
+cp "$DSYNC_DIR/target/release/dsync" "$HOME/.local/bin/dsync"
 
-[git]
-source = "~/dotfiles"
-branch = "main"
-EOF
-  echo "Created default config: $DSYNC_CONFIG"
-fi
-
-if ! command -v dsync >/dev/null 2>&1; then
-  echo "WARNING: dsync is not in PATH. Add ~/.local/bin to your PATH."
-  echo '  export PATH="$HOME/.local/bin:$PATH"'
-fi
-
-echo "dsync installed. Run 'dsync status' to check configuration."
+echo "dsync installed at $HOME/.local/bin/dsync. Run 'dsync status'."
+echo "Config comes from chezmoi: ~/.config/dsync/dsync/config.toml"
