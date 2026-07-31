@@ -1,5 +1,7 @@
-# Ghostty Tokyo Night Terminal Config
-# Based on folke/tokyonight.nvim extras
+# Ghostty config
+# Colors are managed by Noctalia (generated file: themes/noctalia).
+# IMPORTANT: do NOT set background/foreground/palette here — explicit colors
+# in the config override the theme file, which is why the theme wasn't applying.
 
 # Fonts
 font-family = "FiraCode Nerd Font Mono"
@@ -7,46 +9,20 @@ font-family = "Iosevka Nerd Font Mono"
 font-feature = "calt"
 font-size = 14
 
-# Tokyo Night Colors
-background = #1a1b26
-foreground = #c0caf5
+# Background transparency
 background-opacity = 0.95
 
 # Cursor
 cursor-style = block
-cursor-color = #c0caf5
 cursor-style-blink = false
 cursor-opacity = 1
-
-# Selection colors
-selection-background = #283457
-selection-foreground = #c0caf5
 
 # Terminal padding
 window-padding-x = 4
 window-padding-y = 2
 
-# Tokyo Night palette (16 ANSI colors)
-palette = 0=#15161e
-palette = 1=#f7768e
-palette = 2=#9ece6a
-palette = 3=#e0af68
-palette = 4=#7aa2f7
-palette = 5=#bb9af7
-palette = 6=#7dcfff
-palette = 7=#a9b1d6
-palette = 8=#414868
-palette = 9=#ff899d
-palette = 10=#9fe044
-palette = 11=#faba4a
-palette = 12=#8db0ff
-palette = 13=#c7a9ff
-palette = 14=#a4daff
-palette = 15=#c0caf5
-
 # Split divider
 cursor-click-to-move = true
-split-divider-color = #7aa2f7
 
 # Window settings
 confirm-close-surface = false
@@ -54,4 +30,6 @@ mouse-scroll-multiplier = discrete:0.5
 
 # Minimum contrast for readability
 minimum-contrast = 1.1
+
+# Noctalia theme (written to themes/noctalia by noctalia, ignored by chezmoi)
 theme = noctalia
