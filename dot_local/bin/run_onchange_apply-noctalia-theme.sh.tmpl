@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 # trigger: {{ include "dot_config/noctalia/theme-profile.toml" | sha256sum }}
+SETTINGS="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia/settings.toml"
+if [ ! -f "$SETTINGS" ]; then
+    exit 0
+fi
 if [ -x "$HOME/.local/bin/noctalia-theme-apply" ]; then
     exec "$HOME/.local/bin/noctalia-theme-apply"
 fi
