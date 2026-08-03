@@ -1,11 +1,11 @@
 return {
   {
-    "Mofiqul/vscode.nvim",
+    "scottmckendry/cyberdream.nvim",
     priority = 1000,
     lazy = false,
     config = function()
-      require("vscode").setup({ style = "dark" })
-      vim.cmd.colorscheme("vscode")
+      require("cyberdream").setup({})
+      vim.cmd.colorscheme("cyberdream")
     end,
   },
   -- additional themes for the picker (lazy-loaded on demand via :colorscheme)
@@ -13,4 +13,5 @@ return {
   { "rebelot/kanagawa.nvim", lazy = true },
   { "sainnhe/gruvbox-material", lazy = true },
   { "maxmx03/dracula.nvim", lazy = true },
+  { "Mofiqul/vscode.nvim", lazy = true },
 }
