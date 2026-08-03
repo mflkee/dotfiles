@@ -9,14 +9,14 @@ function M.setup(groups)
 
       local ok, cmp = pcall(require, 'cmp')
       if ok then
-        cmp.setup.buffer({
+        cmp.setup.buffer {
           sources = cmp.config.sources({
             { name = 'vim_dadbod-completion' },
           }, {
             { name = 'buffer' },
             { name = 'path' },
           }),
-        })
+        }
       end
     end,
   })

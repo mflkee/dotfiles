@@ -2,8 +2,7 @@ return {
   {
     'sainnhe/sonokai',
     name = 'sonokai',
-    lazy = false,
-    priority = 1000,
+    lazy = true,
     config = function()
       vim.g.sonokai_style = 'andromeda'
       vim.g.sonokai_enable_italic = 1

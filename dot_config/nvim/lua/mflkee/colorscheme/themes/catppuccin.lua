@@ -1,14 +1,13 @@
 return {
   {
-    "catppuccin/nvim",
-    name = "catppuccin",
-    lazy = false,
-    priority = 1000,
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    lazy = true,
     opts = {
-      flavour = "mocha",
+      flavour = 'mocha',
     },
     config = function(_, opts)
-      require("catppuccin").setup(opts)
+      require('catppuccin').setup(opts)
     end,
   },
 }

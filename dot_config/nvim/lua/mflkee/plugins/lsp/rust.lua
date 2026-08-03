@@ -8,14 +8,14 @@ local function resolve_rust_analyzer_cmd()
     return { system_cmd }
   end
 
-  local exepath = vim.fn.exepath('rust-analyzer')
+  local exepath = vim.fn.exepath 'rust-analyzer'
   if exepath ~= '' and not exepath:find('/mason/', 1, true) then
     return { exepath }
   end
 
   local candidates = {
-    vim.fn.stdpath('data') .. '/mason/bin/rust-analyzer',
-    vim.fn.expand('~/.cargo/bin/rust-analyzer'),
+    vim.fn.stdpath 'data' .. '/mason/bin/rust-analyzer',
+    vim.fn.expand '~/.cargo/bin/rust-analyzer',
   }
 
   for _, cmd in ipairs(candidates) do
@@ -33,25 +33,15 @@ function M.setup(capabilities)
   local rust_analyzer_cmd = resolve_rust_analyzer_cmd()
   local existing = vim.g.rustaceanvim or {}
 
-  vim.g.rustaceanvim = vim.tbl_deep_extend("force", existing, {
+  vim.g.rustaceanvim = vim.tbl_deep_extend('force', existing, {
     tools = {
       runnables = { use_telescope = true },
       inlay_hints = { auto = true },
     },
     server = {
       cmd = rust_analyzer_cmd,
-      on_attach = function(client, bufnr)
-        local opts = { buffer = bufnr, silent = true }
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
-        vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
-        vim.keymap.set("n", "<leader>f", function()
-          require("conform").format({ async = true, lsp_fallback = true, stop_after_first = true })
-        end, opts)
-      end,
+      -- LSP keymaps (gd, K, <leader>rn, ...) come from the global LspAttach
+      -- autocmd in lspconfig.lua; formatting is handled by conform.nvim.
       capabilities = capabilities,
       default_settings = {
         ['rust-analyzer'] = {
@@ -94,11 +84,11 @@ function M.setup(capabilities)
     },
     dap = {
       adapter = {
-        type = "server",
-        port = "${port}",
+        type = 'server',
+        port = '${port}',
         executable = {
-          command = "codelldb",
-          args = { "--port", "${port}" },
+          command = 'codelldb',
+          args = { '--port', '${port}' },
           detached = false,
         },
       },

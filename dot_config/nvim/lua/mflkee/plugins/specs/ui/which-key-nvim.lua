@@ -7,8 +7,10 @@ return {
 
       -- Document existing key chains with the new spec
       require('which-key').add {
+        { '<leader>b', group = '[B]uffer' },
         { '<leader>c', group = '[C]ode' },
-        { '<leader>d', group = '[D]ocument' },
+        { '<leader>d', group = '[D]ocument/[D]ebug' },
+        { '<leader>n', group = '[N]eominimap' },
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>w', group = '[W]orkspace' },

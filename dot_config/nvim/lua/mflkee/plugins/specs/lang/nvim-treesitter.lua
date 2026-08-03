@@ -66,7 +66,7 @@ return {
   },
   config = function(_, opts)
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-    local parser_install_dir = vim.fn.stdpath('data') .. '/site'
+    local parser_install_dir = vim.fn.stdpath 'data' .. '/site'
     vim.opt.runtimepath:prepend(parser_install_dir)
     opts.parser_install_dir = parser_install_dir
 
@@ -89,7 +89,7 @@ return {
       local query = vim.treesitter and vim.treesitter.query
       if query and query.get and query.set then
         local ok, err = pcall(query.get, 'python', 'highlights')
-        if not ok and err:find('Invalid node type "except%*"') then
+        if not ok and err:find 'Invalid node type "except%*"' then
           local files = vim.api.nvim_get_runtime_file('queries/python/highlights.scm', true)
           if #files > 0 then
             local parts = {}

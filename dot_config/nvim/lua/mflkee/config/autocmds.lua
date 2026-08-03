@@ -7,6 +7,7 @@ local modules = {
   'mflkee.config.autocmds.language',
   'mflkee.config.autocmds.sql',
   'mflkee.config.autocmds.plantuml',
+  'mflkee.config.autocmds.autosave',
 }
 
 for _, module in ipairs(modules) do

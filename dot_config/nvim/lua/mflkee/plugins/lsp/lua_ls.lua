@@ -11,14 +11,14 @@ end
 
 local function resolve_lua_ls_cmd()
   -- Use PATH command when available.
-  if vim.fn.executable('lua-language-server') == 1 then
+  if vim.fn.executable 'lua-language-server' == 1 then
     return nil
   end
 
   local candidates = {
-    vim.fn.expand('~/.local/bin/lua-language-server'),
-    vim.fn.stdpath('data') .. '/mason/bin/lua-language-server',
-    vim.fn.stdpath('data') .. '/mason/packages/lua-language-server/bin/lua-language-server',
+    vim.fn.expand '~/.local/bin/lua-language-server',
+    vim.fn.stdpath 'data' .. '/mason/bin/lua-language-server',
+    vim.fn.stdpath 'data' .. '/mason/packages/lua-language-server/bin/lua-language-server',
   }
 
   for _, cmd in ipairs(candidates) do

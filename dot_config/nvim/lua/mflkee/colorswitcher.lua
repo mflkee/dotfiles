@@ -52,7 +52,7 @@ local themes = {
 }
 
 local current_index = 1
-local state_file = vim.fn.stdpath('state') .. '/colorscheme.txt'
+local state_file = vim.fn.stdpath 'state' .. '/colorscheme.txt'
 local theme_ids_by_colorscheme = {}
 local find_index
 
@@ -75,7 +75,7 @@ local function save_theme(theme)
     return
   end
 
-  local state_dir = vim.fn.stdpath('state')
+  local state_dir = vim.fn.stdpath 'state'
   if vim.fn.isdirectory(state_dir) == 0 then
     vim.fn.mkdir(state_dir, 'p')
   end
@@ -100,7 +100,7 @@ local function persist_current_colorscheme()
   end
 
   current_index = find_index(theme_id) or current_index
-  save_theme({ id = theme_id })
+  save_theme { id = theme_id }
 end
 
 find_index = function(id)
@@ -213,11 +213,15 @@ function M.setup(opts)
   vim.api.nvim_create_user_command('ThemePick', M.pick, { desc = 'Pick colorscheme from a list' })
   vim.api.nvim_create_user_command('ThemeSet', function(cmd)
     M.set(cmd.args)
-  end, { desc = 'Set colorscheme by id', nargs = 1, complete = function()
-    return vim.tbl_map(function(theme)
-      return theme.id
-    end, themes)
-  end })
+  end, {
+    desc = 'Set colorscheme by id',
+    nargs = 1,
+    complete = function()
+      return vim.tbl_map(function(theme)
+        return theme.id
+      end, themes)
+    end,
+  })
 end
 
 return M

@@ -2,7 +2,7 @@ return {
   {
     'voldikss/vim-translator',
     config = function()
-      local cyrillic_pattern = vim.regex([=[\v[А-Яа-яЁё]]=])
+      local cyrillic_pattern = vim.regex [=[\v[А-Яа-яЁё]]=]
       local preview_max_height = 10
 
       local function configure_translation_window()
@@ -21,7 +21,7 @@ return {
           return nil
         end
 
-        local start_pos = vim.fn.getpos('v')
+        local start_pos = vim.fn.getpos 'v'
         local cursor = vim.api.nvim_win_get_cursor(0)
         local start_row, start_col = start_pos[2], start_pos[3]
         local end_row, end_col = cursor[1], cursor[2] + 1
@@ -86,7 +86,7 @@ return {
       configure_translation_window()
 
       vim.keymap.set('v', '<leader>t', function()
-        translate_visual_selection('window')
+        translate_visual_selection 'window'
       end, {
         noremap = true,
         silent = true,
@@ -94,7 +94,7 @@ return {
       })
 
       vim.keymap.set('v', '<leader>T', function()
-        translate_visual_selection('echo')
+        translate_visual_selection 'echo'
       end, {
         noremap = true,
         silent = true,

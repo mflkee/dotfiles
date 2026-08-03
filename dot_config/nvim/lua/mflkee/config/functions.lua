@@ -34,7 +34,7 @@ local function find_markdown_link_under_cursor()
 end
 
 local function resolve_markdown_target(target)
-  local path, anchor = target:match('^(.-)#(.+)$')
+  local path, anchor = target:match '^(.-)#(.+)$'
 
   if not path then
     if target:sub(1, 1) == '#' then
@@ -52,7 +52,7 @@ local function resolve_markdown_target(target)
     return current_file, anchor
   end
 
-  if path:match('^/') then
+  if path:match '^/' then
     return path, anchor
   end
 
@@ -66,7 +66,7 @@ local function jump_to_markdown_anchor(anchor)
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
   for index, line in ipairs(lines) do
-    local heading = line:match('^#+%s+(.+)$')
+    local heading = line:match '^#+%s+(.+)$'
     if heading and slugify_heading(heading) == target then
       vim.api.nvim_win_set_cursor(0, { index, 0 })
       return true
@@ -127,9 +127,9 @@ function M.move_line(direction)
 end
 
 function M.db_set_connection()
-  local input = vim.fn.input('DB (service name or full DSN): ')
+  local input = vim.fn.input 'DB (service name or full DSN): '
   local function build_dsn(s)
-    if s and s:match('://') then
+    if s and s:match '://' then
       return s
     end
     if s and s ~= '' then

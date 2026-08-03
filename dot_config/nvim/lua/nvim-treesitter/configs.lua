@@ -70,14 +70,14 @@ function M.setup(opts)
     return
   end
 
-  treesitter.setup({})
+  treesitter.setup {}
 
   local indent_disabled = {}
   for _, ft in ipairs(as_list(opts.indent and opts.indent.disable)) do
     indent_disabled[ft] = true
   end
 
-  vim.api.nvim_clear_autocmds({ group = group })
+  vim.api.nvim_clear_autocmds { group = group }
   vim.api.nvim_create_autocmd({ 'FileType', 'BufWinEnter' }, {
     group = group,
     callback = function(args)
@@ -88,7 +88,6 @@ function M.setup(opts)
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
     enable_for_buffer(bufnr, opts, indent_disabled)
   end
-
 end
 
 function M.get_module(name)

@@ -5,4 +5,5 @@ return {
   sql = vim.api.nvim_create_augroup('SQL', { clear = true }),
   plantuml = vim.api.nvim_create_augroup('PlantUML', { clear = true }),
   format = vim.api.nvim_create_augroup('Format', { clear = true }),
+  autosave = vim.api.nvim_create_augroup('Autosave', { clear = true }),
 }

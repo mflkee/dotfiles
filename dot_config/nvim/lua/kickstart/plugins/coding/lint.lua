@@ -5,12 +5,12 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
       local lint = require 'lint'
-      local parser = require('lint.parser')
+      local parser = require 'lint.parser'
 
       local markdown_linters = {}
-      if vim.fn.executable('markdownlint-cli2') == 1 then
+      if vim.fn.executable 'markdownlint-cli2' == 1 then
         markdown_linters[#markdown_linters + 1] = 'markdownlint-cli2'
-      elseif vim.fn.executable('mdl') == 1 then
+      elseif vim.fn.executable 'mdl' == 1 then
         lint.linters.mdl = {
           cmd = 'mdl',
           stdin = false,
