@@ -8,4 +8,9 @@ return {
       vim.cmd.colorscheme("vscode")
     end,
   },
+  -- additional themes for the picker (lazy-loaded on demand via :colorscheme)
+  { "catppuccin/nvim", lazy = true },
+  { "rebelot/kanagawa.nvim", lazy = true },
+  { "sainnhe/gruvbox-material", lazy = true },
+  { "maxmx03/dracula.nvim", lazy = true },
 }
