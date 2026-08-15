@@ -11,18 +11,39 @@ max_width = 1200
 max_height = 1800
 
 [opener]
-default = [{ run = "xdg-open", block = false, orphan = true }]
+default = [
+	{ run = 'xdg-open "$@"', orphan = true, desc = "Open" },
+]
 
+office = [
+	{ run = 'libreoffice "$@"', orphan = true, desc = "LibreOffice" },
+]
+
+pdf = [
+	{ run = 'okular "$@"', orphan = true, desc = "Okular" },
+]
+
+[open]
 rules = [
-    { name = "*.pdf",  run = "okular",  block = false, orphan = true },
-    { name = "*.doc",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.docx", run = "libreoffice", block = false, orphan = true },
-    { name = "*.xls",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.xlsx", run = "libreoffice", block = false, orphan = true },
-    { name = "*.ppt",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.pptx", run = "libreoffice", block = false, orphan = true },
-    { name = "*.odt",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.ods",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.odp",  run = "libreoffice", block = false, orphan = true },
-    { name = "*.rtf",  run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/pdf", use = "pdf" },
+	{ mime = "application/msword", use = "office" },
+	{ mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", use = "office" },
+	{ mime = "application/vnd.ms-excel", use = "office" },
+	{ mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use = "office" },
+	{ mime = "application/vnd.ms-powerpoint", use = "office" },
+	{ mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation", use = "office" },
+	{ mime = "application/vnd.oasis.opendocument.text", use = "office" },
+	{ mime = "application/vnd.oasis.opendocument.spreadsheet", use = "office" },
+	{ mime = "application/vnd.oasis.opendocument.presentation", use = "office" },
+	{ mime = "application/rtf", use = "office" },
+	{ name = "*.doc", use = "office" },
+	{ name = "*.docx", use = "office" },
+	{ name = "*.xls", use = "office" },
+	{ name = "*.xlsx", use = "office" },
+	{ name = "*.ppt", use = "office" },
+	{ name = "*.pptx", use = "office" },
+	{ name = "*.odt", use = "office" },
+	{ name = "*.ods", use = "office" },
+	{ name = "*.odp", use = "office" },
+	{ name = "*.rtf", use = "office" },
 ]
