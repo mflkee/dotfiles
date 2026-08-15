@@ -1,12 +1,12 @@
 machines:
   archlinux-mkair:
-    wm: ""
+    wm: niri
     desktop: ""
     has_gsettings: false
     arch: x86_64
     browser: ""
     has_anaconda: false
-    has_niri: false
+    has_niri: true
     noctalia:
       wallhaven_query: ""
       network_view: "wifi"
