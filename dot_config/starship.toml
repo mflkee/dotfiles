@@ -1,6 +1,11 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 palette = "noctalia"
 
+[character]
+success_symbol = "[$](bold green)"
+error_symbol = "[$](bold red)"
+vicmd_symbol = "[$](green)"
+
 [aws]
 format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
 
