@@ -17,4 +17,6 @@ alias zf="zoxide-fzf"
 alias wcopy='wl-copy'
 alias dt='~/.config/scripts/utils/dt.sh'
 alias zb='zen-browser'
+alias qbt="sudo systemctl restart qbittorrent-nox@mflkee"
+alias qbtui="xdg-open http://localhost:8080"
 alias um="sudo reflector --country Russia --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist && sudo pacman -Sy && echo '✓ Зеркала обновлены'"
