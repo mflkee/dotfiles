@@ -12,38 +12,42 @@ max_height = 1800
 
 [opener]
 default = [
-	{ run = 'xdg-open "$@"', orphan = true, desc = "Open" },
+	{ run = "xdg-open", block = false, orphan = true },
 ]
 
-office = [
-	{ run = 'libreoffice "$@"', orphan = true, desc = "LibreOffice" },
-]
-
-pdf = [
-	{ run = 'okular "$@"', orphan = true, desc = "Okular" },
-]
-
-[open]
 rules = [
-	{ mime = "application/pdf", use = "pdf" },
-	{ mime = "application/msword", use = "office" },
-	{ mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", use = "office" },
-	{ mime = "application/vnd.ms-excel", use = "office" },
-	{ mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use = "office" },
-	{ mime = "application/vnd.ms-powerpoint", use = "office" },
-	{ mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation", use = "office" },
-	{ mime = "application/vnd.oasis.opendocument.text", use = "office" },
-	{ mime = "application/vnd.oasis.opendocument.spreadsheet", use = "office" },
-	{ mime = "application/vnd.oasis.opendocument.presentation", use = "office" },
-	{ mime = "application/rtf", use = "office" },
-	{ name = "*.doc", use = "office" },
-	{ name = "*.docx", use = "office" },
-	{ name = "*.xls", use = "office" },
-	{ name = "*.xlsx", use = "office" },
-	{ name = "*.ppt", use = "office" },
-	{ name = "*.pptx", use = "office" },
-	{ name = "*.odt", use = "office" },
-	{ name = "*.ods", use = "office" },
-	{ name = "*.odp", use = "office" },
-	{ name = "*.rtf", use = "office" },
+	# text & code → editor (blocking, works on every machine)
+	{ mime = "text/*", run = "$EDITOR \"$@\"", block = true },
+	{ name = "*.json", run = "$EDITOR \"$@\"", block = true },
+	{ name = "*.jsonc", run = "$EDITOR \"$@\"", block = true },
+	{ name = "*.yaml", run = "$EDITOR \"$@\"", block = true },
+	{ name = "*.yml", run = "$EDITOR \"$@\"", block = true },
+	{ name = "*.toml", run = "$EDITOR \"$@\"", block = true },
+	{ name = "*.xml", run = "$EDITOR \"$@\"", block = true },
+
+	# pdf → okular
+	{ mime = "application/pdf", run = "okular", block = false, orphan = true },
+	{ name = "*.pdf", run = "okular", block = false, orphan = true },
+
+	# office → libreoffice
+	{ mime = "application/msword", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.ms-excel", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.ms-powerpoint", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.oasis.opendocument.text", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.oasis.opendocument.spreadsheet", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/vnd.oasis.opendocument.presentation", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/rtf", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.doc", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.docx", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.xls", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.xlsx", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.ppt", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.pptx", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.odt", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.ods", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.odp", run = "libreoffice", block = false, orphan = true },
+	{ name = "*.rtf", run = "libreoffice", block = false, orphan = true },
 ]
