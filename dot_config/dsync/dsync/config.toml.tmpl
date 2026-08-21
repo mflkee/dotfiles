@@ -11,6 +11,8 @@ address = "100.89.126.211:42069"
 path = "/home/mflkee/projects/dsync"
 branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+# rebuild + replace client binary after pull (hub binary is updated manually)
+post_pull = "cargo build --release --quiet && cp -f target/release/dsync ~/.local/bin/dsync"
 
 [projects.dotfiles]
 path = "/home/mflkee/dotfiles"
