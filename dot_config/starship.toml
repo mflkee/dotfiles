@@ -22,7 +22,7 @@ format = "@[$hostname](bold #aaaaaa)"
 [directory]
 truncation_length = 3
 truncate_to_repo = false
-style = "bold #aaaaaa"
+style = "bold #dddddd"
 
 [kubernetes]
 disabled = true
