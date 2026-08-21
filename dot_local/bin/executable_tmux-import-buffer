@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # tmux-import-buffer: restore tmux sessions from the snapshot pushed to ~/buffer
-# by another machine. Restarts the tmux server cleanly.
+# by another machine.
+#   - nobody attached to tmux -> clean server restart + full restore
+#   - tmux in use             -> non-destructive merge (existing sessions kept)
 set -euo pipefail
 
 SRC="${HOME}/buffer/tmux-session.txt"
@@ -12,13 +14,14 @@ if [[ ! -f "$SRC" ]]; then
 fi
 
 mkdir -p "$RESURRECT_DIR"
-
-# Stop any running server so restore starts clean (avoids duplicate sessions)
-tmux kill-server 2>/dev/null || true
-sleep 1
-
-# Point resurrect's "last" at the synced snapshot and restore
 ln -sfn "$SRC" "$RESURRECT_DIR/last"
-"${HOME}/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
 
+attached="$(tmux list-clients 2>/dev/null | grep -c . || true)"
+if [[ "${attached:-0}" -eq 0 ]]; then
+  # Nobody attached — safe to start from a clean slate
+  tmux kill-server 2>/dev/null || true
+  sleep 1
+fi
+
+"${HOME}/.tmux/plugins/tmux-resurrect/scripts/restore.sh"
 printf 'Restored tmux sessions from %s\n' "$SRC"
