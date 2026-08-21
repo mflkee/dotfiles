@@ -12,17 +12,17 @@ vimcmd_symbol = "[＄](bold #ffd75f)"
 
 [username]
 disabled = false
-style_user = "bold #4be3c3"
+style_user = "bold #9fe8b0"
 
 [hostname]
 disabled = false
-style = "bold #4be3c3"
-format = "@[$hostname](bold #4be3c3)"
+style = "bold #9fe8b0"
+format = "@[$hostname](bold #9fe8b0)"
 
 [directory]
 truncation_length = 3
 truncate_to_repo = false
-style = "bold #4be3c3"
+style = "bold #ffb86c"
 
 [kubernetes]
 disabled = true

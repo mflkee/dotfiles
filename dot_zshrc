@@ -73,7 +73,7 @@ ZSH_HIGHLIGHT_STYLES[command]=fg=#00ff41,bold
 ZSH_HIGHLIGHT_STYLES[precommand]=fg=#ffd75f
 ZSH_HIGHLIGHT_STYLES[commandseparator]=fg=#ff5f56
 ZSH_HIGHLIGHT_STYLES[hashed-command]=fg=#00ff41,bold
-ZSH_HIGHLIGHT_STYLES[path]=fg=#4be3c3,underline
+ZSH_HIGHLIGHT_STYLES[path]=fg=#ffb86c,underline
 ZSH_HIGHLIGHT_STYLES[path_prefix]=none
 ZSH_HIGHLIGHT_STYLES[globbing]=fg=#ff79c6
 ZSH_HIGHLIGHT_STYLES[history-expansion]=fg=#ff79c6
@@ -86,8 +86,9 @@ ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]=fg=#66ff99
 ZSH_HIGHLIGHT_STYLES[assign]=fg=#b8e6c0
 ZSH_HIGHLIGHT_STYLES[autodirectory]=fg=#ff79c6
 
-# Mint directories for ls/lsd (matches hacker theme)
-export LS_COLORS='di=1;96:ln=1;95:ex=1;92'
+# Hacker LS_COLORS: dirs bright green, executables amber, archives red,
+# media magenta/cyan, code green, configs yellow, docs white
+export LS_COLORS='di=1;92:ln=1;95:ex=1;93:bd=1;96:cd=1;96:su=1;91:sg=1;91:tw=1;92:ow=1;92:*.tar=0;91:*.tgz=0;91:*.zip=0;91:*.7z=0;91:*.gz=0;91:*.xz=0;91:*.zst=0;91:*.rar=0;91:*.jpg=0;95:*.jpeg=0;95:*.png=0;95:*.gif=0;95:*.webp=0;95:*.svg=0;95:*.ico=0;95:*.mp4=0;95:*.mkv=0;95:*.avi=0;95:*.mp3=0;95:*.flac=0;95:*.wav=0;96:*.pdf=0;96:*.rs=1;92:*.go=1;92:*.py=1;92:*.js=1;92:*.ts=1;92:*.c=1;92:*.cpp=1;92:*.sh=1;92:*.lua=1;92:*.nix=1;92:*.toml=0;93:*.yaml=0;93:*.yml=0;93:*.json=0;93:*.ini=0;93:*.conf=0;93:*.env=0;93:*.lock=0;90:*.md=0;97:*.txt=0;97:*.log=0;90'
 zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-autosuggestions
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#2e4a36"

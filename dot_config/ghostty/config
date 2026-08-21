@@ -6,8 +6,8 @@ font-family = "Iosevka Nerd Font Mono"
 font-feature = "calt"
 font-size = 14
 
-# Background transparency
-background-opacity = 0.95
+# Background
+background-opacity = 1.0
 
 # Cursor
 cursor-style = block
