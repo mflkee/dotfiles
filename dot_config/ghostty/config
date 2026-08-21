@@ -1,7 +1,4 @@
 # Ghostty config
-# Colors are managed by Noctalia (generated file: themes/noctalia).
-# IMPORTANT: do NOT set background/foreground/palette here — explicit colors
-# in the config override the theme file, which is why the theme wasn't applying.
 
 # Fonts
 font-family = "FiraCode Nerd Font Mono"
@@ -31,5 +28,5 @@ mouse-scroll-multiplier = discrete:0.5
 # Minimum contrast for readability
 minimum-contrast = 1.1
 
-# Noctalia theme (written to themes/noctalia by noctalia, ignored by chezmoi)
-theme = noctalia
+# Hacker green theme (own file, not managed by Noctalia)
+theme = hacker
