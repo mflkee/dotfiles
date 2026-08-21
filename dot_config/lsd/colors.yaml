@@ -1,0 +1,29 @@
+# Monochrome (noctalia community) colors for lsd
+user: dddddd
+group: aaaaaa
+permission:
+  read: cccccc
+  write: dddddd
+  exec: ffffff
+  stick: 828282
+  setuid: dddddd
+  setgid: dddddd
+  other_read: cccccc
+  other_write: dddddd
+  other_exec: ffffff
+date:
+  hour-old: dddddd
+  day-old: aaaaaa
+  older: 828282
+size:
+  none: 3c3c3c
+  small: cccccc
+  medium: dddddd
+  large: ffffff
+inode:
+  valid: 828282
+  invalid: dddddd
+links:
+  valid: aaaaaa
+  invalid: dddddd
+tree-edge: 3c3c3c
