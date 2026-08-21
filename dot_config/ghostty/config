@@ -28,5 +28,5 @@ mouse-scroll-multiplier = discrete:0.5
 # Minimum contrast for readability
 minimum-contrast = 1.1
 
-# Hacker green theme (own file, not managed by Noctalia)
-theme = hacker
+# Kemuri Susu theme (smoke-gray, matches Noctalia)
+theme = kemuri-susu
