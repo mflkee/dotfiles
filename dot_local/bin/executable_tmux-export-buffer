@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# tmux-export-buffer: save current tmux state and push snapshot to ~/buffer
+# (~/buffer is a Syncthing folder shared across all machines)
+set -euo pipefail
+
+RESURRECT_DIR="${HOME}/.local/share/tmux/resurrect"
+DST="${HOME}/buffer/tmux-session.txt"
+
+# Fresh save so the snapshot reflects right now (no-op if tmux is not running)
+if pgrep -x tmux >/dev/null 2>&1; then
+  "${HOME}/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+fi
+
+latest="$(ls -1t "${RESURRECT_DIR}"/tmux_resurrect_*.txt 2>/dev/null | head -1 || true)"
+if [[ -z "$latest" ]]; then
+  printf 'No resurrect snapshots in %s (press prefix+C-s inside tmux first)\n' "$RESURRECT_DIR" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$DST")"
+cp "$latest" "$DST"
+printf 'Exported %s -> %s\n' "$(basename "$latest")" "$DST"
