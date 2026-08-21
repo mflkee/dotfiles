@@ -7,7 +7,7 @@ font-feature = "calt"
 font-size = 14
 
 # Background
-background-opacity = 1.0
+background-opacity = 0.95
 
 # Cursor
 cursor-style = block
