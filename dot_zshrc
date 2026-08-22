@@ -280,3 +280,4 @@ dh() {
   python3 /home/mflkee/projects/domainHub/main.py "$1" --with-playwright "${@:2}"
 }
 
+# e2e check 14:28:17
