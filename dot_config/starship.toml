@@ -1,7 +1,7 @@
 palette = "noctalia"
 format = '''
-[┌──\(](#5f5f5f)$username[㉿](#828282)$hostname[\)-\[](#dddddd)$directory[\)](#5f5f5f)
-[└─](#5f5f5f)$character'''
+[┌──\(](#828282)$username[㉿](#828282)$hostname[\)-\[](#828282)$directory[\]](#828282)
+[└─](#828282)$character'''
 
 [character]
 success_symbol = "[＄](#dddddd)"
