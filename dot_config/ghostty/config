@@ -29,4 +29,4 @@ mouse-scroll-multiplier = discrete:0.5
 minimum-contrast = 1.1
 
 # Kemuri Susu theme (smoke-gray, matches Noctalia)
-theme = kemuri-susu
+theme = noctalia
