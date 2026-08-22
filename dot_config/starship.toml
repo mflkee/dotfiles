@@ -1,6 +1,6 @@
 palette = "noctalia"
 format = '''
-[┌──\(](#828282)$username[㉿](#828282)$hostname[\)-\[](#828282)$directory[\]](#828282)
+[┌──\(](#828282)$username[](#1793d1)$hostname[\)-\[](#828282)$directory[\]](#828282)
 [└─](#828282)$character'''
 
 [character]
