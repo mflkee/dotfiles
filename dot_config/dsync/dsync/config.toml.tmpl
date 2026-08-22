@@ -18,7 +18,7 @@ post_pull = "cargo build --release --quiet && cp -f target/release/dsync ~/.loca
 path = "/home/mflkee/dotfiles"
 branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
-post_pull = "chezmoi apply"
+post_pull = "chezmoi apply --force"
 
 {{ if eq .chezmoi.hostname "archlinux-server" }}
 [hub]
