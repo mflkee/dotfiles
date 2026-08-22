@@ -1,0 +1,6 @@
+[Unit]
+Description=dot-autosync: pick up live dotfile edits into chezmoi/git
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/dot-autosync
