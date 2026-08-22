@@ -4,9 +4,9 @@ format = '''
 [└─](#828282)$character'''
 
 [character]
-success_symbol = "[$](#1793d1)"
-error_symbol = "[$](#ff5555)"
-vimcmd_symbol = "[$](#aaaaaa)"
+success_symbol = '[\$](#1793d1)'
+error_symbol = '[\$](#ff5555)'
+vimcmd_symbol = '[\$](#aaaaaa)'
 
 [username]
 show_always = true
