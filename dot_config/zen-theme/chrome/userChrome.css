@@ -1,1 +1,7 @@
 @import "/home/mflkee/.cache/noctalia/zen-browser/zen-userChrome.css";
+
+/* Transparent UI so niri blur shows through.
+   Requires: browser.tabs.allow_transparent_browser + zen.widget.linux.transparency */
+:root {
+  --zen-themed-toolbar-bg-transparent: transparent !important;
+}
