@@ -4,7 +4,7 @@
 - `init.lua`: entry point; bootstraps `lazy.nvim` via `lua/config/lazy.lua`.
 - `lua/config/lazy.lua`: LazyVim setup (core + extras: python, rust, markdown; imports `plugins`).
 - `lua/config/options.lua`, `lua/config/keymaps.lua`: core options and keymaps (auto-loaded by LazyVim).
-- `lua/plugins/`: Lazy plugin specs (`colorscheme.lua` = cyberdream, `base16.lua`, `vim-translator.lua`).
+- `lua/plugins/`: Lazy plugin specs (`colorscheme.lua` = cyberdream + theme persistence via state file, `base16.lua`, `vim-translator.lua`).
 - `lua/matugen.lua`: matugen → base16 dynamic colorscheme helper (required by `plugins/base16.lua`).
 - `lua/mflkee/config/functions.lua`: helpers used by `ftplugin/markdown.lua` and `ftplugin/quarto.lua`. Keep this path stable.
 - `after/plugin/`: highlight overrides loaded after plugins (e.g., `rainbow_highlights.lua`).
