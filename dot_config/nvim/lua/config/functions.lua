@@ -14,6 +14,10 @@ function M.save_colorscheme(name)
   vim.fn.writefile({ name }, colorscheme_state)
 end
 
+function M.forget_colorscheme()
+  os.remove(colorscheme_state)
+end
+
 function M.apply_colorscheme(name)
   local ok, err = pcall(vim.cmd.colorscheme, name)
   if not ok then

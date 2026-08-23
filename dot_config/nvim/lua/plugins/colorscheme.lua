@@ -1,8 +1,9 @@
--- persist user-initiated colorscheme changes (native <leader>uC, :colorscheme);
--- startup defaults (cyberdream) and the matugen base16 palette are not persisted
+-- persist every user-initiated colorscheme change (native <leader>uC,
+-- :colorscheme); startup defaults don't count because nothing fires before
+-- vim.g.colorscheme_ready is set by the restore below
 vim.api.nvim_create_autocmd('ColorScheme', {
   callback = function(args)
-    if vim.g.colorscheme_ready and not args.match:find '^base16' then
+    if vim.g.colorscheme_ready then
       require('config.functions').save_colorscheme(args.match)
     end
   end,
@@ -14,11 +15,18 @@ vim.api.nvim_create_autocmd('ColorScheme', {
 vim.defer_fn(function()
   local fn = require 'config.functions'
   local saved = fn.get_saved_colorscheme()
-  if saved then
-    fn.apply_colorscheme(saved)
+  if saved and not fn.apply_colorscheme(saved) then
+    fn.forget_colorscheme()
   end
   vim.g.colorscheme_ready = true
 end, 200)
+
+-- drop the manual pick and go back to system/matugen-driven theming
+vim.api.nvim_create_user_command('ThemeAuto', function()
+  require('config.functions').forget_colorscheme()
+  require('matugen').setup()
+  vim.notify 'Theme: following matugen/system colors'
+end, { desc = 'Follow system matugen theme' })
 
 return {
   {
@@ -36,4 +44,5 @@ return {
   { 'sainnhe/gruvbox-material', lazy = true },
   { 'maxmx03/dracula.nvim', lazy = true },
   { 'Mofiqul/vscode.nvim', lazy = true },
+  { 'navarasu/onedark.nvim', lazy = true },
 }
