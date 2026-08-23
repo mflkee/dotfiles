@@ -4,4 +4,4 @@
 
 -- Spell check English + Russian (incl. ё), so Russian words aren't flagged red.
 -- Spell files: ~/.local/share/nvim/site/spell/ru.utf-8.{spl,sug}
-vim.opt.spelllang = { "en", "ru_yo" }
+vim.opt.spelllang = { 'en', 'ru_yo' }
