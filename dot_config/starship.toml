@@ -1,6 +1,10 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 palette = "noctalia"
 
+[character]
+success_symbol = '[\$](bold green)'
+error_symbol = '[\$](bold red)'
+vicmd_symbol = '[\$](green)'
 
 [aws]
 format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
@@ -290,40 +294,40 @@ format = '\[[$symbol($version)]($style)\]'
 
 [palettes.noctalia]
 # Standard colors
-blue      = "#6dcbfa"
-red       = "#ed8274"
-green     = "#87d96c"
-yellow    = "#facc6e"
-cyan      = "#90e1c6"
-magenta   = "#dabafa"
-white     = "#c7c7c7"
-black     = "#171b24"
+blue      = "#78824b"
+red       = "#685742"
+green     = "#5f875f"
+yellow    = "#b36d43"
+cyan      = "#c9a554"
+magenta   = "#bb7744"
+white     = "#d7c483"
+black     = "#000000"
 
 # Extended palette (Catppuccin-compatible names)
-rosewater = "#ffd173"
-flamingo  = "#f28779"
-pink      = "#dfbfff"
-mauve     = "#dabafa"
-maroon    = "#f28779"
-peach     = "#ffd173"
-teal      = "#90e1c6"
-sky       = "#95e6cb"
-sapphire  = "#73d0ff"
-lavender  = "#dfbfff"
+rosewater = "#d08f5f"
+flamingo  = "#8a6f5c"
+pink      = "#d89a66"
+mauve     = "#bb7744"
+maroon    = "#8a6f5c"
+peach     = "#d08f5f"
+teal      = "#c9a554"
+sky       = "#e0c080"
+sapphire  = "#95a064"
+lavender  = "#d89a66"
 
 # Text shades
-text      = "#d1d1c7"
-subtext1  = "#c7c7c7"
-subtext0  = "#686868"
+text      = "#c2c2b0"
+subtext1  = "#d7c483"
+subtext0  = "#666666"
 
 # Surface shades
-overlay2  = "#686868"
-overlay1  = "#686868"
-overlay0  = "#171b24"
-surface2  = "#171b24"
-surface1  = "#171b24"
-surface0  = "#1f2430"
-base      = "#1f2430"
-mantle    = "#1f2430"
-crust     = "#1f2430"
+overlay2  = "#666666"
+overlay1  = "#666666"
+overlay0  = "#000000"
+surface2  = "#000000"
+surface1  = "#000000"
+surface0  = "#222222"
+base      = "#222222"
+mantle    = "#222222"
+crust     = "#222222"
 # <<< NOCTALIA STARSHIP PALETTE <<<
