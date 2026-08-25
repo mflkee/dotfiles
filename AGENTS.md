@@ -33,6 +33,38 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - `obsidian-memory` MCP — reads vault files locally (via Syncthing)
 - `obsidian-second-brain` MCP — points to `archlinux-mkair:27123` (running Obsidian with plugins)
 
+## UPS / ИБП на mkair-server-tmn (NUT)
+- **Сервер**: `mkair-server-tmn` (Netbird IP: `100.89.18.223`)
+- **ИБП**: APC Smart-UPS 1500 (FW 653.19.I), подключён по USB (vendor `051d`, product `0002`)
+- **ПО**: NUT 2.8.5 (`pacman -S nut`)
+- **Скрипт завершения**: `/usr/local/bin/graceful-shutdown` — останавливает Docker-контейнеры (SIGTERM, 60с), sync, `systemctl poweroff`
+- **Логика**: питание пропало → ИБП на батарее → 10 минут (OFFDURATION 600) → graceful-shutdown → poweroff
+
+### Конфиги NUT
+| Файл | Описание |
+|------|----------|
+| `/etc/nut/nut.conf` | `MODE=standalone` |
+| `/etc/nut/ups.conf` | `[apc-ups]`, driver=`usbhid-ups`, port=`auto` |
+| `/etc/nut/upsmon.conf` | `MONITOR apc-ups@localhost 1 monuser nutmon master`, `OFFDURATION 600`, `SHUTDOWNCMD "/usr/local/bin/graceful-shutdown"` |
+| `/etc/nut/upsd.conf` | `LISTEN 127.0.0.1 3493` |
+| `/etc/nut/upsd.users` | пользователь `monuser` |
+| `/etc/udev/rules.d/99-nut-usbups.rules` | доступ к USB для группы `nut` |
+
+### Сервисы (systemd)
+```
+nut-driver@apc-ups.service   enabled + active
+nut-server.service           enabled + active
+nut-monitor.service          enabled + active
+```
+
+### Проверка
+```bash
+ssh mkair-server-tmn "upsc apc-ups"           # статус ИБП
+ssh mkair-server-tmn "upsc apc-ups ups.status"  # OL = от сети, OB = батарея
+ssh mkair-server-tmn "upsc apc-ups battery.charge"  # процент заряда
+ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
+```
+
 ## NetBird MCP (machine management)
 - Opencode has a built-in NetBird MCP tool (`netbird` MCP server).
 - Requires `NETBIRD_API_KEY` env var (personal access token from NetBird dashboard).

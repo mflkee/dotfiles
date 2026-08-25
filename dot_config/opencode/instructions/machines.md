@@ -9,6 +9,7 @@
 | archlinux-server | `ssh archlinux-server` | 100.89.126.211 | connected |
 | archlinux-mkair | `ssh archlinux-mkair` | 100.89.59.195 | connected |
 | antix1 | `ssh antix1` | 100.89.195.135 | connected |
+| mkair-server-tmn | `ssh mkair-server-tmn` | 100.89.18.223 | connected |
 
 ## MCP-серверы
 
@@ -34,3 +35,11 @@
 | archlinux-notebook | `servers/archlinux-notebook.md` |
 | archlinux-desktop | `servers/archlinux-desktop.md` |
 | antix1 | `servers/antix1.md` |
+
+## mkair-server-tmn — ИБП (NUT)
+
+- ИБП: APC Smart-UPS 1500 по USB
+- NUT 2.8.5, драйвер `usbhid-ups`
+- Graceful shutdown через `/usr/local/bin/graceful-shutdown` (Docker stop → sync → poweroff)
+- Задержка до shutdown: 10 мин (OFFDURATION 600)
+- Проверка: `ssh mkair-server-tmn "upsc apc-ups"`
