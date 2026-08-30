@@ -38,6 +38,11 @@ use = "grappas/wl-clipboard"
 rev = "8cc5524"
 hash = "5c587834c274dca9059092714ece1f18"
 
+[[plugin.deps]]
+use = "WhoSowSee/whoosh"
+rev = "43f3202"
+hash = "da14dfe482886e756150ae4f5c2bb23"
+
 [[flavor.deps]]
 use = "yazi-rs/flavors:catppuccin-mocha"
 rev = "0670801"

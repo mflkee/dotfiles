@@ -67,4 +67,11 @@ keymap = [
 	{ on = "G", run = "arrow bot", desc = "Bottom" },
 	{ on = "z", run = "plugin fzf", desc = "Fzf" },
 	{ on = "Z", run = "plugin zoxide", desc = "Zoxide" },
+
+	{ on = [ "m", "m" ], run = "plugin whoosh jump_by_key",    desc = "Bookmarks menu" },
+	{ on = [ "m", "f" ], run = "plugin whoosh jump_by_fzf",    desc = "Bookmarks fzf" },
+	{ on = [ "m", "s" ], run = "plugin whoosh save_cwd",       desc = "Bookmark current dir" },
+	{ on = [ "m", "d" ], run = "plugin whoosh delete_by_key",  desc = "Delete bookmark" },
+	{ on = [ "m", "D" ], run = "plugin whoosh delete_by_fzf",  desc = "Delete bookmarks (fzf)" },
+	{ on = [ "m", "r" ], run = "plugin whoosh rename_by_key",  desc = "Rename bookmark" },
 ]
