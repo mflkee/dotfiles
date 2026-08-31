@@ -64,13 +64,12 @@ keymap = [
 	{ on = "w", run = "tasks:show", desc = "Tasks" },
 
 	{ on = "~", run = "help", desc = "Help" },
-	{ on = "g", run = "arrow parent", desc = "Parent dir" },
 	{ on = "gg", run = "arrow top", desc = "Top" },
 	{ on = "G", run = "arrow bot", desc = "Bottom" },
 	{ on = "g h", run = "cd ~", desc = "Go home" },
 	{ on = "g c", run = "cd ~/.config", desc = "Go config" },
 	{ on = "g d", run = "cd ~/Downloads", desc = "Go downloads" },
-	{ on = "g Space", run = "cd", desc = "Input path" },
+	{ on = "g <Space>", run = "cd", desc = "Input path" },
 	{ on = "z", run = "plugin fzf", desc = "Fzf" },
 	{ on = "Z", run = "plugin zoxide", desc = "Zoxide" },
 
