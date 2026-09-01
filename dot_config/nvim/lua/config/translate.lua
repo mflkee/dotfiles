@@ -4,15 +4,9 @@ local cyrillic = vim.regex [=[\v[А-Яа-яЁё]]=]
 local preview_max_height = 10
 
 local function ensure_globals()
-  if not vim.g.translator_source_lang then
-    vim.g.translator_source_lang = 'auto'
-  end
-  if not vim.g.translator_target_lang then
-    vim.g.translator_target_lang = 'ru'
-  end
-  if not vim.g.translator_default_engines then
-    vim.g.translator_default_engines = { 'google', 'bing' }
-  end
+  vim.g.translator_source_lang = 'auto'
+  vim.g.translator_target_lang = 'ru'
+  vim.g.translator_default_engines = { 'google', 'bing' }
 end
 
 local function configure_window()
