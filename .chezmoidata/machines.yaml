@@ -36,7 +36,7 @@ machines:
     desktop: gnome
     has_gsettings: true
     arch: x86_64
-    browser: zen-browser
+    browser: firefox
     has_anaconda: true
     has_niri: true
     has_vpntel: true
@@ -53,7 +53,7 @@ machines:
     desktop: gnome
     has_gsettings: true
     arch: x86_64
-    browser: zen-browser
+    browser: firefox
     has_anaconda: false
     has_niri: true
     has_vpntel: true

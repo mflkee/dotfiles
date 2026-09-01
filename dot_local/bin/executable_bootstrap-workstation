@@ -58,7 +58,6 @@ AUR_PACKAGES=(
   quarto-cli-bin
   ttf-firacode-nerd
   ttf-iosevka-nerd
-  zen-browser-bin
 )
 
 paru -S --noconfirm --needed --skipreview --removemake --cleanafter --noconfirm --skipreview "${REPO_PACKAGES[@]}" "${AUR_PACKAGES[@]}"

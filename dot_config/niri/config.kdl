@@ -319,14 +319,6 @@ window-rule {
     clip-to-geometry true
 }
 
-// Blur behind Zen Browser (requires transparent browser UI).
-window-rule {
-    match app-id=r#"^zen"#
-    background-effect {
-        blur true
-    }
-}
-
 // Global blur settings (defaults shown).
 blur {
     passes 3
@@ -377,7 +369,7 @@ binds {
         spawn "noctalia" "msg" "panel-toggle" "session"
     }
     Mod+Ctrl+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
-    Mod+Z hotkey-overlay-title="Open Zen Browser" { spawn "zen-browser"; }
+    Mod+Z hotkey-overlay-title="Open Firefox" { spawn "firefox"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
