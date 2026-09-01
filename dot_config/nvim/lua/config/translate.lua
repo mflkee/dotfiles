@@ -45,27 +45,32 @@ local function show_window(query, translation)
   end
   vim.list_extend(lines, vim.split(translation, '\n', { plain = true }))
   local height = math.min(preview_max_height, #lines)
-  local width = math.min(60, math.max(20, vim.api.nvim_win_get_width(0) - 4))
+  local width = math.min(120, math.max(20, vim.api.nvim_win_get_width(0) - 4))
 
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(buf, 'filetype', 'translator')
   vim.api.nvim_buf_set_option(buf, 'bufhidden', 'wipe')
+  vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
-  local win = vim.api.nvim_open_win(buf, false, {
+  local win = vim.api.nvim_open_win(buf, true, {
     relative = 'editor',
     width = width,
     height = height,
-    row = (vim.o.lines - height) / 2,
+    row = vim.o.lines - height - 1,
     col = (vim.o.columns - width) / 2,
     style = 'minimal',
     border = 'rounded',
-    title = ' translate ',
+    title = ' translate — q/Esc/Enter to close ',
     title_pos = 'center',
   })
-  local hidemap = '<cmd>lua vim.api.nvim_win_close(0, true)<CR>'
-  vim.api.nvim_buf_set_keymap(buf, 'n', 'q', hidemap, { nowait = true })
-  vim.api.nvim_buf_set_keymap(buf, 'n', '<Esc>', hidemap, { nowait = true })
+  local close = function()
+    vim.api.nvim_win_close(win, true)
+  end
+  local opts = { buffer = buf, nowait = true }
+  vim.keymap.set('n', 'q', close, opts)
+  vim.keymap.set('n', '<Esc>', close, opts)
+  vim.keymap.set('n', '<CR>', close, opts)
   return win
 end
 
