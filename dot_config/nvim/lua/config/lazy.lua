@@ -20,6 +20,7 @@ require('lazy').setup {
     { 'LazyVim/LazyVim', import = 'lazyvim.plugins' },
     -- language extras
     { import = 'lazyvim.plugins.extras.lang.python' },
+    { import = 'lazyvim.plugins.extras.dap.core' },
     { import = 'lazyvim.plugins.extras.lang.rust' },
     { import = 'lazyvim.plugins.extras.lang.markdown' },
     -- import/override with your plugins
