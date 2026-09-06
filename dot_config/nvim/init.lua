@@ -217,7 +217,37 @@ do
   -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
   -- or just use <C-\><C-n> to exit terminal mode
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+  -- Terminal
+  local terminal_buf = nil
+  local terminal_win = nil
 
+  local function toggle_terminal()
+    -- Terminal is already open → close it
+    if terminal_win and vim.api.nvim_win_is_valid(terminal_win) then
+      vim.api.nvim_win_close(terminal_win, true)
+      terminal_win = nil
+      return
+    end
+
+    -- Create bottom split
+    vim.cmd 'botright 12split'
+
+    terminal_win = vim.api.nvim_get_current_win()
+
+    -- Reuse existing terminal buffer
+    if terminal_buf and vim.api.nvim_buf_is_valid(terminal_buf) then
+      vim.api.nvim_win_set_buf(terminal_win, terminal_buf)
+    else
+      vim.cmd 'terminal'
+      terminal_buf = vim.api.nvim_get_current_buf()
+    end
+
+    vim.cmd 'startinsert'
+  end
+
+  vim.keymap.set('n', '<leader>tt', toggle_terminal, {
+    desc = '[T]oggle [T]erminal',
+  })
   -- TIP: Disable arrow keys in normal mode
   -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
   -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
