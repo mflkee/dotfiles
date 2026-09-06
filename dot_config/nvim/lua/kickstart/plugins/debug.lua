@@ -15,22 +15,7 @@ local dapui = require 'dapui'
 -- KEYMAPS
 -- ============================================================
 
-vim.keymap.set('n', '<F5>', dap.continue, {
-  desc = 'Debug: Start / Continue',
-})
-
-vim.keymap.set('n', '<F1>', dap.step_into, {
-  desc = 'Debug: Step Into',
-})
-
-vim.keymap.set('n', '<F2>', dap.step_over, {
-  desc = 'Debug: Step Over',
-})
-
-vim.keymap.set('n', '<F3>', dap.step_out, {
-  desc = 'Debug: Step Out',
-})
-
+-- Breakpoints
 vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, {
   desc = 'Debug: Toggle Breakpoint',
 })
@@ -39,10 +24,34 @@ vim.keymap.set('n', '<leader>B', function() dap.set_breakpoint(vim.fn.input 'Bre
   desc = 'Debug: Conditional Breakpoint',
 })
 
-vim.keymap.set('n', '<F7>', dapui.toggle, {
-  desc = 'Debug: Toggle UI',
+-- Debug control
+vim.keymap.set('n', '<leader>dd', dap.continue, {
+  desc = '[D]ebug [D]ebug / Continue',
 })
 
+vim.keymap.set('n', '<leader>di', dap.step_into, {
+  desc = '[D]ebug Step [I]nto',
+})
+
+vim.keymap.set('n', '<leader>do', dap.step_over, {
+  desc = '[D]ebug Step [O]ver',
+})
+
+vim.keymap.set('n', '<leader>du', dap.step_out, {
+  desc = '[D]ebug Step O[u]t',
+})
+
+vim.keymap.set('n', '<leader>dt', dap.terminate, {
+  desc = '[D]ebug [T]erminate',
+})
+
+vim.keymap.set('n', '<leader>dU', dapui.toggle, {
+  desc = '[D]ebug Toggle [U]I',
+})
+
+vim.keymap.set('n', '<leader>dr', dap.restart, {
+  desc = '[D]ebug [R]estart',
+})
 -- ============================================================
 -- MASON DAP
 -- ============================================================
