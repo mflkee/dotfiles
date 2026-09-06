@@ -11,7 +11,10 @@ vim.pack.add {
 local dap = require 'dap'
 local dapui = require 'dapui'
 
--- Keymaps
+-- ============================================================
+-- KEYMAPS
+-- ============================================================
+
 vim.keymap.set('n', '<F5>', dap.continue, {
   desc = 'Debug: Start / Continue',
 })
@@ -40,17 +43,28 @@ vim.keymap.set('n', '<F7>', dapui.toggle, {
   desc = 'Debug: Toggle UI',
 })
 
--- Mason DAP integration.
--- debugpy and codelldb are installed by mason-tool-installer
--- in the main LSP configuration.
+-- ============================================================
+-- MASON DAP
+-- ============================================================
+
+-- debugpy и codelldb устанавливаются через mason-tool-installer
+-- в основном init.lua.
+--
+-- mason-nvim-dap здесь нужен только для интеграции с nvim-dap.
 require('mason-nvim-dap').setup {
-  automatic_installation = false,
   ensure_installed = {},
+  automatic_installation = false,
   handlers = {},
 }
 
+-- ============================================================
 -- DAP UI
-dapui.setup {
+-- ============================================================
+
+---@type dapui.Config
+local dapui_config = {
+  wrap = false,
+
   icons = {
     expanded = '▾',
     collapsed = '▸',
@@ -82,6 +96,7 @@ dapui.setup {
       size = 40,
       position = 'left',
     },
+
     {
       elements = {
         { id = 'repl', size = 0.5 },
@@ -96,15 +111,10 @@ dapui.setup {
     max_height = nil,
     max_width = nil,
     border = 'rounded',
+
     mappings = {
       close = { 'q', '<Esc>' },
     },
-  },
-
-  render = {
-    max_type_length = nil,
-    max_value_lines = 100,
-    indent = 1,
   },
 
   controls = {
@@ -120,21 +130,29 @@ dapui.setup {
       step_back = 'b',
       run_last = '▶▶',
       terminate = '⏹',
-      disconnect = '⏏',
     },
   },
 
-  wrap = false,
+  render = {
+    max_type_length = nil,
+    max_value_lines = 100,
+    indent = 1,
+  },
 }
 
--- Open DAP UI automatically
+dapui.setup(dapui_config)
+
+-- Automatically open/close DAP UI.
 dap.listeners.after.event_initialized['dapui_config'] = function() dapui.open() end
 
 dap.listeners.before.event_terminated['dapui_config'] = function() dapui.close() end
 
 dap.listeners.before.event_exited['dapui_config'] = function() dapui.close() end
 
--- Python
+-- ============================================================
+-- PYTHON
+-- ============================================================
+
 dap.adapters.python = {
   type = 'executable',
   command = vim.fn.stdpath 'data' .. '/mason/bin/debugpy-adapter',
@@ -158,7 +176,10 @@ dap.configurations.python = {
   },
 }
 
--- Rust
+-- ============================================================
+-- RUST
+-- ============================================================
+
 dap.adapters.codelldb = {
   type = 'executable',
   command = vim.fn.stdpath 'data' .. '/mason/bin/codelldb',
