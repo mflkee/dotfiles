@@ -808,7 +808,9 @@ do
     -- You can add other tools here that you want Mason to install
   })
 
-  require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+  require('mason-tool-installer').setup {
+    ensure_installed = ensure_installed,
+  }
 
   for name, server in pairs(servers) do
     vim.lsp.config(name, server)
@@ -955,7 +957,32 @@ do
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
   -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+  local parsers = {
+    'bash',
+    'c',
+    'diff',
+    'html',
+
+    'lua',
+    'luadoc',
+
+    'python',
+    'rust',
+
+    'json',
+    'yaml',
+    'toml',
+    'regex',
+    'gitignore',
+
+    'markdown',
+    'markdown_inline',
+
+    'query',
+    'vim',
+    'vimdoc',
+  }
+
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
