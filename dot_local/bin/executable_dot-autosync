@@ -23,6 +23,7 @@ WATCH=(
   ".config/kitty/kitty.conf"
   ".config/lsd"
   ".config/htop/htoprc"
+  ".config/nvim"
 )
 
 mkdir -p "$CACHE"
