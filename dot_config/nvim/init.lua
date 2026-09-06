@@ -1,5 +1,4 @@
 --[[
-
 =====================================================================
 ==================== READ THIS BEFORE CONTINUING ====================
 =====================================================================
@@ -743,8 +742,7 @@ do
     --    https://github.com/mrcjkb/rustaceanvim
     --
     -- But for many setups, the LSP (`rust_analyzer`) will work just fine
-    -- rust_analyzer = {},
-
+    rust_analyzer = {},
     -- stylua = {}, -- Used to format Lua code
 
     -- Special Lua Config, as recommended by neovim help docs
@@ -841,11 +839,14 @@ do
       lsp_format = 'fallback', -- Use external formatters if configured below, otherwise use LSP formatting. Set to `false` to disable LSP formatting entirely.
     },
     -- You can also specify external formatters in here.
+    -- formatters_by_ft = {
     formatters_by_ft = {
-      rust = { 'rustfmt' },
       lua = { 'stylua' },
+      python = { 'ruff_format' },
+      rust = { 'rustfmt' },
+
       -- Conform can also run multiple formatters sequentially
-      python = { "isort", "black" },
+      --python = { "isort", "black" },
       --
       -- You can use 'stop_after_first' to run the first available formatter from the list
       -- javascript = { "prettierd", "prettier", stop_after_first = true },
