@@ -220,12 +220,12 @@ do
   -- Terminal
   local terminal_buf = nil
   local terminal_win = nil
+  local terminal_job_id = nil
 
-  local function toggle_terminal()
-    -- Terminal is already open → close it
+  local function open_terminal()
+    -- Terminal window already exists
     if terminal_win and vim.api.nvim_win_is_valid(terminal_win) then
-      vim.api.nvim_win_close(terminal_win, true)
-      terminal_win = nil
+      vim.api.nvim_set_current_win(terminal_win)
       return
     end
 
@@ -238,10 +238,80 @@ do
     if terminal_buf and vim.api.nvim_buf_is_valid(terminal_buf) then
       vim.api.nvim_win_set_buf(terminal_win, terminal_buf)
     else
+      -- Create terminal
       vim.cmd 'terminal'
+
       terminal_buf = vim.api.nvim_get_current_buf()
+      terminal_job_id = vim.b.terminal_job_id
+    end
+  end
+  -- Code Runner
+  local function run_in_terminal(command)
+    open_terminal()
+
+    if not terminal_job_id then
+      vim.notify('Terminal job is not available', vim.log.levels.ERROR)
+      return
     end
 
+    vim.api.nvim_chan_send(terminal_job_id, command .. '\n')
+    vim.cmd 'startinsert'
+  end
+
+  local function run_current_file()
+    local ft = vim.bo.filetype
+    local file = vim.fn.expand '%:p'
+    local filename = vim.fn.shellescape(file)
+
+    local commands = {
+      python = 'python3 ' .. filename,
+      bash = 'bash ' .. filename,
+      sh = 'bash ' .. filename,
+      javascript = 'node ' .. filename,
+      typescript = 'npx tsx ' .. filename,
+      lua = 'lua ' .. filename,
+      ruby = 'ruby ' .. filename,
+      perl = 'perl ' .. filename,
+
+      c = 'gcc ' .. filename .. ' -o /tmp/nvim_run && /tmp/nvim_run',
+      cpp = 'g++ ' .. filename .. ' -o /tmp/nvim_run && /tmp/nvim_run',
+    }
+
+    -- Rust projects use Cargo
+    if ft == 'rust' then
+      run_in_terminal 'cargo run'
+      return
+    end
+
+    local command = commands[ft]
+
+    if not command then
+      vim.notify('No runner configured for filetype: ' .. ft, vim.log.levels.WARN)
+      return
+    end
+
+    run_in_terminal(command)
+  end
+
+  -- Run current file
+  vim.keymap.set('n', '<leader>rt', run_current_file, {
+    desc = '[R]un in [T]erminal',
+  })
+
+  -- Debug
+  vim.keymap.set('n', '<leader>rd', function() require('dap').continue() end, {
+    desc = '[R]un [D]ebugger',
+  })
+
+  local function toggle_terminal()
+    -- Terminal is already open → close window
+    if terminal_win and vim.api.nvim_win_is_valid(terminal_win) then
+      vim.api.nvim_win_close(terminal_win, true)
+      terminal_win = nil
+      return
+    end
+
+    open_terminal()
     vim.cmd 'startinsert'
   end
 
