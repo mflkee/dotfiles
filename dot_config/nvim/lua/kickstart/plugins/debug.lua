@@ -31,14 +31,8 @@ vim.keymap.set('n', '<F7>', dapui.toggle, {
 
 -- Mason DAP
 require('mason-nvim-dap').setup {
-  automatic_installation = true,
-
+  automatic_installation = false,
   handlers = {},
-
-  ensure_installed = {
-    'debugpy',
-    'codelldb',
-  },
 }
 
 -- DAP UI
