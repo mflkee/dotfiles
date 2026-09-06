@@ -47,3 +47,4 @@ dot_config/qt6ct/colors/
 .local/share/noctalia/
 .config/noctalia/settings.json
 .config/nvim/.git
+.config/nvim/nvim-pack-lock.json
