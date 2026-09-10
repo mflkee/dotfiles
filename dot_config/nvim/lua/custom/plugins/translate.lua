@@ -1,5 +1,5 @@
 -- Translation ru<->en using vim-translator (desktop solution, ported to kickstart)
-vim.pack.add { gh 'voldikss/vim-translator' }
+vim.pack.add { 'https://github.com/voldikss/vim-translator' }
 
 local cyrillic_pattern = vim.regex([=[\v[А-Яа-яЁё]]=])
 
