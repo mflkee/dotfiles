@@ -1,5 +1,15 @@
 -- ru<->en translation for visual selection using translate-shell (`trans`)
 -- Single persistent window (updates in place, no stacking) + stale-result guard.
+local LOG = vim.fn.stdpath 'cache' .. '/translate.log'
+
+local function log(msg)
+  local f = io.open(LOG, 'a')
+  if f then
+    f:write(os.date('%F %T') .. ' ' .. msg .. '\n')
+    f:close()
+  end
+end
+
 local win = nil
 
 local function ensure_win(title, text)
@@ -13,11 +23,7 @@ local function ensure_win(title, text)
   if win and vim.api.nvim_win_is_valid(win) then
     local buf = vim.api.nvim_win_get_buf(win)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.api.nvim_win_set_config(win, {
-      width = width,
-      height = height,
-      title = title,
-    })
+    vim.api.nvim_win_set_config(win, { width = width, height = height, title = title })
   else
     local buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -44,7 +50,7 @@ end
 
 local gen = 0
 
-local function translate_selection(mode)
+local function translate_selection()
   local s = vim.fn.getpos("'<")
   local e = vim.fn.getpos("'>")
   local lines = vim.fn.getline(s[2], e[2])
@@ -64,26 +70,27 @@ local function translate_selection(mode)
   gen = gen + 1
   local my = gen
   local target = text:match '[а-яА-ЯёЁ]' and 'en' or 'ru'
+  log('req#' .. my .. '[' .. target .. ']: ' .. text:gsub('\n', '\\n'))
 
-  if my ~= gen then
-    return
-  end
   ensure_win('→ ' .. target:upper() .. ' (перевожу…)', text)
 
   vim.system({ 'trans', '-b', ':' .. target, text }, function(finish)
     vim.schedule(function()
       if my ~= gen then
+        log('req#' .. my .. ' STALE (gen=' .. gen .. ') ignored')
         return
       end
       local result = finish.stdout and finish.stdout:gsub('%s+$', '') or ''
       if finish.code ~= 0 or result == '' then
+        log('req#' .. my .. ' ERROR code=' .. finish.code .. ' stderr=' .. (finish.stderr or ''):gsub('\n', '\\n'))
         ensure_win('Translate — ошибка', 'translate-shell ошибка (code ' .. finish.code .. ').\nПроверь сеть и trans (pacman -S translate-shell).')
         return
       end
+      log('req#' .. my .. ' OK: ' .. result:gsub('\n', '\\n'))
       ensure_win('→ ' .. target:upper(), result)
     end)
   end)
 end
 
-vim.keymap.set('v', '<leader>t', function() translate_selection('window') end, { desc = 'Translate ru<->en (window)' })
-vim.keymap.set('v', '<leader>T', function() translate_selection('echo') end, { desc = 'Translate ru<->en (echo)' })
+vim.keymap.set('v', '<leader>t', translate_selection, { desc = 'Translate ru<->en (window)' })
+vim.keymap.set('v', '<leader>T', translate_selection, { desc = 'Translate ru<->en (echo)' })
