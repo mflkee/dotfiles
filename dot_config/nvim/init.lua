@@ -525,12 +525,20 @@ do
   vim.pack.add { gh 'scottmckendry/cyberdream.nvim' }
   ---@diagnostic disable-next-line: missing-fields
   require('cyberdream').setup {
-    transparent = true,
     italic_comments = false,
   }
 
   -- Load the colorscheme here.
   vim.cmd.colorscheme 'cyberdream'
+
+  -- Markdown preview rendering (github-style)
+  vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
+  require('render-markdown').setup {
+    code = { sign = false, width = 'block', right_pad = 1 },
+    heading = { sign = false, icons = {} },
+    checkbox = { enabled = false },
+  }
+  vim.keymap.set('n', '<leader>um', '<cmd>RenderMarkdown toggle<cr>', { desc = 'Render Markdown' })
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -839,7 +847,7 @@ do
     --    https://github.com/mrcjkb/rustaceanvim
     --
     -- But for many setups, the LSP (`rust_analyzer`) will work just fine
-    -- rust_analyzer = {},
+    rust_analyzer = {},
     -- stylua = {}, -- Used to format Lua code
 
     -- Special Lua Config, as recommended by neovim help docs
