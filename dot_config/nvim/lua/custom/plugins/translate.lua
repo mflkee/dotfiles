@@ -27,7 +27,7 @@ local function ensure_win(title, text)
   else
     local buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    win = vim.api.nvim_open_win(buf, true, {
+    win = vim.api.nvim_open_win(buf, false, {
       relative = 'editor',
       row = math.floor((screen_h - height) / 2),
       col = math.floor((screen_w - width) / 2),
