@@ -1,78 +1,90 @@
-local LOG = vim.fn.stdpath 'cache' .. '/translate.log'
+-- Translation ru<->en using vim-translator (desktop solution, ported to kickstart)
+vim.pack.add { gh 'voldikss/vim-translator' }
 
-local function log(msg)
-  io.open(LOG, 'a'):write(os.date('%F %T') .. ' ' .. msg .. '\n')
+local cyrillic_pattern = vim.regex([=[\v[А-Яа-яЁё]]=])
+
+local function configure_translation_window()
+  local current_width = vim.api.nvim_win_get_width(0)
+  vim.g.translator_window_type = 'preview'
+  vim.g.translator_window_max_width = math.max(1, current_width - 4)
+  vim.g.translator_window_max_height = 10
 end
 
-local function show_float(title, text)
-  local buf = vim.api.nvim_create_buf(false, true)
-  local lines = vim.split(text, '\n')
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  local screen = vim.api.nvim_list_uis()[1]
-  local screen_w = screen and screen.width or 120
-  local screen_h = screen and screen.height or 30
-  local width = math.min(math.max(#text:gsub('\n.*', ''), 20) + 4, screen_w - 4)
-  local height = math.min(#lines + 2, screen_h - 4)
-  local win, err = vim.api.nvim_open_win(buf, true, {
-    relative = 'editor',
-    row = math.floor((screen_h - height) / 2),
-    col = math.floor((screen_w - width) / 2),
-    width = width,
-    height = height,
-    border = 'rounded',
-    title = title,
-    title_pos = 'center',
-    style = 'minimal',
-  })
-  if not win then
-    log('nvim_open_win failed: ' .. tostring(err))
-    vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO, { title = 'Translate' })
-    return
+local function get_visual_selection()
+  local visual_mode = vim.fn.mode()
+  if visual_mode == '\22' then
+    vim.notify('Blockwise translation is not supported', vim.log.levels.WARN)
+    return nil
   end
-  vim.wo[win].wrap = false
-  vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, desc = 'Close' })
-  vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, desc = 'Close' })
-  vim.keymap.set('n', 'y', function()
-    vim.fn.setreg('+', text)
-    vim.api.nvim_win_close(win, true)
-  end, { buffer = buf, desc = 'Copy to clipboard' })
+
+  local start_pos = vim.fn.getpos('v')
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local start_row, start_col = start_pos[2], start_pos[3]
+  local end_row, end_col = cursor[1], cursor[2] + 1
+
+  if start_row == 0 or end_row == 0 then
+    return nil
+  end
+
+  if visual_mode == 'V' then
+    start_col = 1
+    end_col = #vim.fn.getline(end_row)
+  end
+
+  if start_row > end_row or (start_row == end_row and start_col > end_col) then
+    start_row, end_row = end_row, start_row
+    start_col, end_col = end_col, start_col
+  end
+
+  local lines = vim.fn.getline(start_row, end_row)
+  if vim.tbl_isempty(lines) then
+    return nil
+  end
+
+  if start_row == end_row then
+    lines[1] = string.sub(lines[1], start_col, end_col)
+  else
+    lines[1] = string.sub(lines[1], start_col)
+    lines[#lines] = string.sub(lines[#lines], 1, end_col)
+  end
+
+  return table.concat(lines, '\n')
 end
 
-local function translate_selection()
-  local s = vim.fn.getpos("'<")
-  local e = vim.fn.getpos("'>")
-  local lines = vim.fn.getline(s[2], e[2])
-
-  if #lines == 0 then
-    log('no lines')
+local function translate_visual_selection(display_mode)
+  local selection = get_visual_selection()
+  if not selection or vim.trim(selection) == '' then
+    vim.notify('Nothing selected for translation', vim.log.levels.WARN)
     return
   end
 
-  lines[#lines] = string.sub(lines[#lines], 1, e[3])
-  lines[1] = string.sub(lines[1], s[3])
-
-  local text = table.concat(lines, '\n')
-  if text == '' then
-    log('empty selection')
-    return
+  local source_lang, target_lang = 'en', 'ru'
+  if cyrillic_pattern:match_str(selection) then
+    source_lang, target_lang = 'ru', 'en'
   end
 
-  local target = text:match '[а-яА-ЯёЁ]' and 'en' or 'ru'
-  log('requested[' .. target .. ']: ' .. text:gsub('\n', '\\n'))
-  show_float('→ ' .. target:upper() .. ' (перевожу…)', text)
+  if display_mode == 'window' then
+    configure_translation_window()
+  end
 
-  vim.system({ 'trans', '-b', ':' .. target, text }, function(finish)
-    vim.schedule(function()
-      local result = finish.stdout and finish.stdout:gsub('%s+$', '') or ''
-      if finish.code ~= 0 then
-        log('trans failed code=' .. finish.code .. ' stderr=' .. (finish.stderr or '') .. ' stdout=' .. (finish.stdout or ''))
-        show_float('Translate — ошибка', 'translate-shell ошибка (code ' .. finish.code .. ').\n' .. (finish.stderr or 'Проверь сеть и trans (pacman -S translate-shell).'))
-        return
-      end
-      log('ok: ' .. result:gsub('\n', '\\n'))
-      show_float('→ ' .. target:upper(), result)
-    end)
-  end)
+  vim.fn['translator#logger#init']()
+  vim.fn['translator#translate']({
+    text = vim.fn['translator#util#text_proc'](selection),
+    source_lang = source_lang,
+    target_lang = target_lang,
+    engines = vim.g.translator_default_engines,
+  }, display_mode)
 end
 
-vim.keymap.set('v', '<leader>t', translate_selection, { desc = 'Translate ru<->en (selection)' })
+vim.g.translator_source_lang = 'auto'
+vim.g.translator_target_lang = 'ru'
+vim.g.translator_default_engines = { 'google', 'bing' }
+configure_translation_window()
+
+vim.keymap.set('v', '<leader>t', function()
+  translate_visual_selection('window')
+end, { noremap = true, silent = true, desc = 'Translate selection ru/en in window' })
+
+vim.keymap.set('v', '<leader>T', function()
+  translate_visual_selection('echo')
+end, { noremap = true, silent = true, desc = 'Translate selection ru/en in command line' })
