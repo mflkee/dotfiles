@@ -529,6 +529,7 @@ do
   vim.keymap.set('n', '<S-l>', '<cmd>BufferLineCycleNext<cr>', { desc = 'Next buffer' })
   vim.keymap.set('n', ']b', '<cmd>BufferLineCycleNext<cr>', { desc = 'Next buffer' })
   vim.keymap.set('n', '[b', '<cmd>BufferLineCyclePrev<cr>', { desc = 'Previous buffer' })
+  vim.keymap.set('n', '<leader>c', '<cmd>BufferLineBufferClose<cr>', { desc = 'Close buffer' })
 
   -- [[ Colorscheme ]]
   -- You can easily change to a different colorscheme.
