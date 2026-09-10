@@ -94,3 +94,5 @@ end
 
 vim.keymap.set('v', '<leader>t', translate_selection, { desc = 'Translate ru<->en (window)' })
 vim.keymap.set('v', '<leader>T', translate_selection, { desc = 'Translate ru<->en (echo)' })
+
+log('translate module loaded (v8, enter-fixed)')
