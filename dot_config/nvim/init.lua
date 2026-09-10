@@ -516,6 +516,20 @@ do
     },
   }
 
+  -- Buffer line at the top: cycle with `S-h` / `S-l` (or `]b` / `[b`)
+  vim.pack.add { gh 'akinsho/bufferline.nvim' }
+  local bufferline = require 'bufferline'
+  bufferline.setup {
+    options = {
+      style_preset = bufferline.style_preset.no_italic,
+      diagnostics = 'nvim_lsp',
+    },
+  }
+  vim.keymap.set('n', 'S-h', '<cmd>BufferLineCyclePrev<cr>', { desc = 'Previous buffer' })
+  vim.keymap.set('n', 'S-l', '<cmd>BufferLineCycleNext<cr>', { desc = 'Next buffer' })
+  vim.keymap.set('n', ']b', '<cmd>BufferLineCycleNext<cr>', { desc = 'Next buffer' })
+  vim.keymap.set('n', '[b', '<cmd>BufferLineCyclePrev<cr>', { desc = 'Previous buffer' })
+
   -- [[ Colorscheme ]]
   -- You can easily change to a different colorscheme.
   -- Change the name of the colorscheme plugin below, and then
