@@ -26,8 +26,7 @@ local function show_float(title, text)
   })
   if not win then
     log('nvim_open_win failed: ' .. tostring(err))
-    local lines_str = table.concat(lines, '\n')
-    vim.notify(lines_str, vim.log.levels.INFO, { title = 'Translate' })
+    vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO, { title = 'Translate' })
     return
   end
   vim.wo[win].wrap = false
@@ -63,14 +62,16 @@ local function translate_selection()
   show_float('→ ' .. target:upper() .. ' (перевожу…)', text)
 
   vim.system({ 'trans', '-b', ':' .. target, text }, function(finish)
-    local result = finish.stdout and finish.stdout:gsub('%s+$', '') or ''
-    if finish.code ~= 0 then
-      log('trans failed code=' .. finish.code .. ' stderr=' .. (finish.stderr or '') .. ' stdout=' .. (finish.stdout or ''))
-      show_float('Translate — ошибка', 'translate-shell ошибка (code ' .. finish.code .. ').\n' .. (finish.stderr or 'Проверь сеть и trans (pacman -S translate-shell).'))
-      return
-    end
-    log('ok: ' .. result:gsub('\n', '\\n'))
-    show_float('→ ' .. target:upper(), result)
+    vim.schedule(function()
+      local result = finish.stdout and finish.stdout:gsub('%s+$', '') or ''
+      if finish.code ~= 0 then
+        log('trans failed code=' .. finish.code .. ' stderr=' .. (finish.stderr or '') .. ' stdout=' .. (finish.stdout or ''))
+        show_float('Translate — ошибка', 'translate-shell ошибка (code ' .. finish.code .. ').\n' .. (finish.stderr or 'Проверь сеть и trans (pacman -S translate-shell).'))
+        return
+      end
+      log('ok: ' .. result:gsub('\n', '\\n'))
+      show_float('→ ' .. target:upper(), result)
+    end)
   end)
 end
 
