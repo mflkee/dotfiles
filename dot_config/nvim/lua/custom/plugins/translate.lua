@@ -54,8 +54,10 @@ local function translate_selection()
   local s = vim.fn.getpos("'<")
   local e = vim.fn.getpos("'>")
   local lines = vim.fn.getline(s[2], e[2])
+  log('DBG invoke mode=' .. vim.fn.mode() .. ' buf=' .. vim.fn.bufname('%') .. " '<=" .. vim.inspect(s) .. " '>=" .. vim.inspect(e))
 
   if #lines == 0 then
+    log('DBG early-return: #lines==0 (s=' .. s[2] .. ', e=' .. e[2] .. ')')
     return
   end
 
