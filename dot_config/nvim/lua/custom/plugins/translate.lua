@@ -52,6 +52,13 @@ end
 
 local gen = 0
 
+local function close_float()
+  if win and vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_win_close(win, true)
+  end
+end
+vim.keymap.set('n', '<C-x>', close_float, { desc = 'Close translate window' })
+
 local M = {}
 function M.run()
   local text = vim.fn.getreg('z')
