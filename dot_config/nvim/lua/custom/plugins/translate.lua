@@ -1,5 +1,7 @@
 -- ru<->en translation for visual selection using translate-shell (`trans`)
 -- Single persistent window (updates in place, no stacking) + stale-result guard.
+-- Selection via yank to register z ("zy) — nvim 0.12 leaves '< '>' marks ZERO during
+-- active visual mode, so getpos-based approaches silently fail.
 local LOG = vim.fn.stdpath 'cache' .. '/translate.log'
 
 local function log(msg)
@@ -50,22 +52,13 @@ end
 
 local gen = 0
 
-local function translate_selection()
-  local s = vim.fn.getpos("'<")
-  local e = vim.fn.getpos("'>")
-  local lines = vim.fn.getline(s[2], e[2])
-  log('DBG invoke mode=' .. vim.fn.mode() .. ' buf=' .. vim.fn.bufname('%') .. " '<=" .. vim.inspect(s) .. " '>=" .. vim.inspect(e))
+local M = {}
+function M.run()
+  local text = vim.fn.getreg('z')
+  log('DBG invoke mode=' .. vim.fn.mode() .. ' reg_z=' .. (text == '' and '<empty>' or text:gsub('\n', '\\n')))
 
-  if #lines == 0 then
-    log('DBG early-return: #lines==0 (s=' .. s[2] .. ', e=' .. e[2] .. ')')
-    return
-  end
-
-  lines[#lines] = string.sub(lines[#lines], 1, e[3])
-  lines[1] = string.sub(lines[1], s[3])
-
-  local text = table.concat(lines, '\n')
   if text == '' then
+    log('DBG early-return: empty register z')
     return
   end
 
@@ -94,7 +87,9 @@ local function translate_selection()
   end)
 end
 
-vim.keymap.set('v', '<leader>t', translate_selection, { desc = 'Translate ru<->en (window)' })
-vim.keymap.set('v', '<leader>T', translate_selection, { desc = 'Translate ru<->en (echo)' })
+vim.keymap.set('v', '<leader>t', [["zy<Cmd>lua require('custom.plugins.translate').run()<CR>]], { desc = 'Translate ru<->en (window)' })
+vim.keymap.set('v', '<leader>T', [["zy<Cmd>lua require('custom.plugins.translate').run()<CR>]], { desc = 'Translate ru<->en (reverse)' })
 
-log('translate module loaded (v8, enter-fixed)')
+log('translate module loaded (v9, register-yank)')
+
+return M
