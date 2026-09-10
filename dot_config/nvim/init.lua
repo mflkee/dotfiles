@@ -546,9 +546,11 @@ do
   vim.cmd.colorscheme 'cyberdream'
 
   -- Markdown preview rendering (github-style)
+  -- nvim-web-devicons provides per-language icons in code block headers (rust, python, js, ...)
+  vim.pack.add { gh 'nvim-tree/nvim-web-devicons' }
   vim.pack.add { gh 'MeanderingProgrammer/render-markdown.nvim' }
   require('render-markdown').setup {
-    code = { sign = false, width = 'block', right_pad = 1 },
+    code = { sign = true, width = 'block', right_pad = 1 },
     heading = { sign = false, icons = {} },
     checkbox = { enabled = false },
   }
