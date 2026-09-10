@@ -1,6 +1,7 @@
 local function show_float(title, text)
   local buf = vim.api.nvim_create_buf(false, true)
   local lines = vim.split(text, '\n')
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   local vim_updates = vim.api.nvim_list_uis()
   local screen = vim_updates[1]
   local screen_w = screen and screen.width or 120
