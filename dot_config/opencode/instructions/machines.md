@@ -18,6 +18,7 @@
 | `obsidian` | local | Чтение/запись vault |
 | `github` | local | Репозитории |
 | `netbird` | local | Управление пирами NetBird |
+| `sync-ops` | local | Syncthing (папки/устройства/статус) + dsync (status/doctor/push/pull). Источник: `scripts/sync-ops-mcp.js` |
 
 ## dsync
 

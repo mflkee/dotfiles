@@ -78,6 +78,11 @@
       "environment": {
         "NETBIRD_API_KEY": "{env:NETBIRD_API_KEY}"
       }
+    },
+    "sync-ops": {
+      "type": "local",
+      "command": ["node", "/home/mflkee/.config/opencode/scripts/sync-ops-mcp.js"],
+      "enabled": true
     }
   },
   "experimental": {
