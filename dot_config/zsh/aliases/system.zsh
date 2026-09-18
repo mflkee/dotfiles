@@ -1,5 +1,5 @@
 # System utilities
-alias szsh="source ~/.zshrc"
+alias szsh="source ~/.zshenv; source ~/.zshrc"
 alias sysoff="sudo shutdown now"
 alias du="dust"
 alias cat="bat"
