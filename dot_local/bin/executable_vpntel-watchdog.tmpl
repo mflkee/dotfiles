@@ -1,0 +1,236 @@
+#!/bin/bash
+# vim: ft=bash
+# Watchdog для vpntel: держит tun2socks живым и включает маршрут через
+# туннель только когда прокси на телефоне жив. Если прокси умер — сеть
+# автоматически возвращается на прямое соединение.
+#
+# Управляется chezmoi. Устанавливается в /usr/local/bin через
+# run_onchange_after_install-vpntel.sh.tmpl.
+#
+# Ключевые особенности:
+#   * tun0 — IPv4-only, поэтому на время работы туннеля IPv6 на PROXY_IF
+#     выключается, иначе IPv6-трафик уходит мимо туннеля (утечка).
+#   * /etc/resolv.conf НЕ трогается: им управляют NetworkManager/Tailscale/
+#     NetBird. Более ранняя версия ставила `chattr +i` и жёстко писала свой
+#     nameserver — это ломало DNS во всей системе (файл становился
+#     неизменяемым, NM/Tailscale не могли его обновить, DNS умирал целиком).
+#     Починка требовала ручного `chattr -i` или перезагрузки.
+#   * NAS bypass: WebDAV к NAS через HTTP-прокси телефона не проходит,
+#     поэтому его адреса ведутся напрямую через PROXY_IF.
+
+PROXY_IP=192.168.43.1
+PROXY_PORT=8080
+DEV=tun0
+{{- $m := dict }}
+{{- if hasKey .machines .chezmoi.hostname }}
+{{-   $m = index .machines .chezmoi.hostname }}
+{{- end }}
+PROXY_IF="{{ $m.vpntel_proxy_if | default "wlo1" }}"
+TUN_IP=10.0.0.1
+TUN_MTU=1400
+
+# Хост NAS, который надо вести в обход туннеля. Пусто = отключено.
+NAS_HOST="{{ $m.vpntel_nas_host | default "" }}"
+
+LOG=/var/log/vpntel-watchdog.log
+TUN2SOCKS_LOG=/var/log/vpntel-tun2socks.log
+RESOLV=/etc/resolv.conf
+
+# tun2socks: предпочитаем системный (пакет), иначе локальный бинарник.
+if command -v tun2socks >/dev/null 2>&1; then
+  TUN2SOCKS=$(command -v tun2socks)
+elif [ -x "${HOME}/.local/bin/tun2socks" ]; then
+  TUN2SOCKS="${HOME}/.local/bin/tun2socks"
+else
+  TUN2SOCKS=$(command -v tun2socks 2>/dev/null)
+fi
+
+NAS_IPS=""
+LOOP=0
+STATE=off
+
+log() { echo "$(date '+%F %T') $*" >> "${LOG}"; }
+
+# Ротация без внешних зависимостей: logrotate в системе может отсутствовать,
+# а лог при мёртвом прокси растёт быстро. Раз в ~10 минут подрезаем до 2000 строк.
+rotate_logs() {
+  local f max=$((5 * 1024 * 1024)) size
+  for f in "${LOG}" "${TUN2SOCKS_LOG}"; do
+    [ -f "$f" ] || continue
+    size=$(stat -c%s "$f" 2>/dev/null || echo 0)
+    if [ "${size}" -gt "${max}" ]; then
+      # Подрезка НА МЕСТЕ (не mv!): tun2socks держит fd открытым и после
+      # замены inode продолжил бы писать в удалённый файл.
+      tail -2000 "$f" > "$f.tmp" 2>/dev/null && cat "$f.tmp" > "$f" && rm -f "$f.tmp"
+      log "rotated $(basename "$f") (was $((size / 1024 / 1024))MB)"
+    fi
+  done
+}
+
+check_proxy() {
+  timeout 3 bash -c "echo > /dev/tcp/${PROXY_IP}/${PROXY_PORT}" 2>/dev/null
+}
+
+# Отличает живой прокси от «залипшего» (порт открыт, но данные не ходят).
+check_proxy_deep() {
+  timeout 12 curl -s -o /dev/null --max-time 10 \
+    -x "http://${PROXY_IP}:${PROXY_PORT}" \
+    "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null
+}
+
+# --- IPv6 -------------------------------------------------------------------
+# tun2socks умеет только IPv4, поэтому при активном туннеле IPv6 на PROXY_IF
+# гасится — иначе трафик уходил бы мимо туннеля (утечка).
+#
+# ВАЖНО: не отключаем IPv6 глобально (net.ipv6.conf.all.disable_ipv6=1).
+# Tailscale держит IPv6-адрес на tailscale0 и может брать DNS по IPv6 —
+# глобальное выключение ломает его.
+ipv6_off() {
+  [ "$(cat /proc/sys/net/ipv6/conf/${PROXY_IF}/disable_ipv6 2>/dev/null)" = "1" ] && return
+  sysctl -qw net.ipv6.conf.${PROXY_IF}.disable_ipv6=1 2>/dev/null
+  ip -6 addr flush dev ${PROXY_IF} scope global 2>/dev/null
+  ip -6 route flush dev ${PROXY_IF} 2>/dev/null
+  log "IPv6 OFF on ${PROXY_IF} (leak protection)"
+}
+
+ipv6_on() {
+  [ "$(cat /proc/sys/net/ipv6/conf/${PROXY_IF}/disable_ipv6 2>/dev/null)" = "0" ] && return
+  sysctl -qw net.ipv6.conf.${PROXY_IF}.disable_ipv6=0 2>/dev/null
+  log "IPv6 ON on ${PROXY_IF}"
+}
+
+# --- DNS --------------------------------------------------------------------
+# vpntel сознательно НЕ управляет /etc/resolv.conf: телефонный DNS приходит
+# по DHCP и прописывается NetworkManager'ом, а NetBird/Tailscale добавляют свои.
+dns_on()  { :; }
+dns_off() { :; }
+
+# Аварийная починка: снять залипший immutable-флаг, оставшийся от старых версий.
+dns_repair() {
+  if lsattr "${RESOLV}" 2>/dev/null | grep -q -- '----i'; then
+    chattr -i "${RESOLV}" 2>/dev/null && log "removed stale immutable flag on ${RESOLV}"
+  fi
+}
+
+# --- MTU / MSS --------------------------------------------------------------
+# Инкапсуляция в HTTP-прокси уменьшает полезный размер пакета. Подрезаем MSS
+# ТОЛЬКО для трафика в tun0 (не глобально — иначе задеваем NetBird/Tailscale/LAN).
+mss_clamp_on() {
+  local chain
+  for chain in OUTPUT FORWARD; do
+    iptables -t mangle -C "${chain}" -o ${DEV} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null \
+      || iptables -t mangle -A "${chain}" -o ${DEV} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null
+  done
+}
+
+mss_clamp_off() {
+  local chain
+  for chain in OUTPUT FORWARD; do
+    iptables -t mangle -D "${chain}" -o ${DEV} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null
+  done
+}
+
+# --- NAS bypass -------------------------------------------------------------
+nas_bypass() {
+  [ -z "${NAS_HOST}" ] && return
+  local resolved ip
+  if [ -z "${NAS_IPS}" ] || [ $((LOOP % 60)) -eq 0 ]; then
+    resolved=$(getent ahostsv4 "${NAS_HOST}" 2>/dev/null | awk '{print $1}' | sort -u)
+    [ -n "${resolved}" ] && NAS_IPS="${resolved}"
+  fi
+  for ip in ${NAS_IPS}; do
+    if ! ip route show "${ip}" | grep -q "dev ${PROXY_IF}"; then
+      ip route replace "${ip}" via "${PROXY_IP}" dev "${PROXY_IF}" metric 50 2>/dev/null \
+        && log "NAS bypass ON: ${ip} via ${PROXY_IP} dev ${PROXY_IF}"
+    fi
+  done
+}
+
+nas_bypass_remove() {
+  local ip
+  for ip in ${NAS_IPS}; do
+    ip route del "${ip}" via "${PROXY_IP}" dev "${PROXY_IF}" 2>/dev/null
+  done
+}
+
+# --- tun2socks --------------------------------------------------------------
+start_tun2socks() {
+  if [ -z "${TUN2SOCKS}" ] || [ ! -x "${TUN2SOCKS}" ]; then
+    log "ERROR: tun2socks not found; install it (paru -S tun2socks)"
+    return 1
+  fi
+  ${TUN2SOCKS} -device ${DEV} -proxy http://${PROXY_IP}:${PROXY_PORT} -loglevel warn \
+    -tun-post-up "/bin/sh -c 'ip addr add ${TUN_IP}/24 dev ${DEV}; ip link set ${DEV} mtu ${TUN_MTU}; ip link set ${DEV} up'" \
+    >> "${TUN2SOCKS_LOG}" 2>&1 &
+  TUN2SOCKS_PID=$!
+}
+
+tunnel_on() {
+  [ "${STATE}" = "on" ] && return
+  ip link set ${DEV} up 2>/dev/null
+  ip route replace default dev ${DEV} metric 100 2>/dev/null
+  ipv6_off
+  dns_on
+  mss_clamp_on
+  STATE=on
+  log "tunnel ON"
+}
+
+tunnel_off() {
+  [ "${STATE}" = "off" ] && return
+  ip route del default dev ${DEV} 2>/dev/null
+  nas_bypass_remove
+  mss_clamp_off
+  dns_off
+  ipv6_on
+  STATE=off
+  log "tunnel OFF (proxy down)"
+}
+
+cleanup() {
+  ip route del default dev ${DEV} 2>/dev/null
+  nas_bypass_remove
+  mss_clamp_off
+  dns_off
+  ipv6_on
+  ip link del ${DEV} 2>/dev/null
+  exit 0
+}
+trap cleanup INT TERM
+
+log "=== vpntel watchdog started (iface=${PROXY_IF}, proxy=${PROXY_IP}:${PROXY_PORT}) ==="
+
+if ! start_tun2socks; then
+  log "fatal: cannot start tun2socks; exiting so systemd can retry"
+  exit 1
+fi
+
+# Аварийная починка после жёсткого завершения прошлого запуска.
+dns_repair
+ipv6_on
+
+while true; do
+  LOOP=$((LOOP + 1))
+  [ $((LOOP % 120)) -eq 0 ] && rotate_logs
+
+  if ! kill -0 ${TUN2SOCKS_PID} 2>/dev/null; then
+    log "tun2socks died, restarting"
+    start_tun2socks
+    STATE=off
+  fi
+
+  if check_proxy; then
+    # Раз в минуту — глубокая проверка, чтобы отличить живой прокси от залипшего.
+    if [ "${STATE}" = "on" ] && [ $((LOOP % 12)) -eq 0 ] && ! check_proxy_deep; then
+      log "proxy deep check FAILED"
+      tunnel_off
+    else
+      tunnel_on
+      [ "${STATE}" = "on" ] && nas_bypass
+    fi
+  else
+    tunnel_off
+  fi
+
+  sleep 5
+done

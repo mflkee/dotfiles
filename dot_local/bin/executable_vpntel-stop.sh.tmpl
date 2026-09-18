@@ -1,0 +1,45 @@
+#!/bin/bash
+# vim: ft=bash
+# Очистка после остановки vpntel. Вызывается из ExecStopPost юнита.
+# Нужна на случай SIGKILL watchdog'а, когда его собственный trap не сработал.
+# Управляется chezmoi.
+set +e
+
+DEV=tun0
+PROXY_IP=192.168.43.1
+{{- $m := dict }}
+{{- if hasKey .machines .chezmoi.hostname }}
+{{-   $m = index .machines .chezmoi.hostname }}
+{{- end }}
+PROXY_IF="{{ $m.vpntel_proxy_if | default "wlo1" }}"
+NAS_HOST="{{ $m.vpntel_nas_host | default "" }}"
+RESOLV=/etc/resolv.conf
+
+# 1. Маршруты туннеля и обхода NAS
+ip route del default dev ${DEV} 2>/dev/null
+if [ -n "${NAS_HOST}" ]; then
+    for ip in $(getent ahostsv4 "${NAS_HOST}" 2>/dev/null | awk '{print $1}' | sort -u); do
+        ip route del "$ip" via ${PROXY_IP} dev ${PROXY_IF} 2>/dev/null
+    done
+fi
+
+# 2. MSS clamping: текущий вариант (только tun0) + старый глобальный из
+#    версий до 18.09.2026 — на случай обновления поверх.
+for chain in OUTPUT FORWARD; do
+    iptables -t mangle -D ${chain} -o ${DEV} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null
+    iptables -t mangle -D ${chain} -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null
+done
+
+# 3. DNS: снять залипший immutable-флаг. Сам файл НЕ трогаем — им управляют
+#    NetworkManager/Tailscale/NetBird; навязывание своего содержимого
+#    приводило к полной потере DNS.
+chattr -i ${RESOLV} 2>/dev/null
+
+# 4. IPv6 обратно, иначе останется выключенным до ручного вмешательства
+sysctl -qw net.ipv6.conf.${PROXY_IF}.disable_ipv6=0 2>/dev/null
+
+# 5. Интерфейс и процесс
+ip link del ${DEV} 2>/dev/null
+pkill -x tun2socks 2>/dev/null
+
+exit 0
