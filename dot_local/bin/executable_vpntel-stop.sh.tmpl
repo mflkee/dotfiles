@@ -11,8 +11,8 @@ PROXY_IP=192.168.43.1
 {{- if hasKey .machines .chezmoi.hostname }}
 {{-   $m = index .machines .chezmoi.hostname }}
 {{- end }}
-PROXY_IF="{{ $m.vpntel_proxy_if | default "wlo1" }}"
-NAS_HOST="{{ $m.vpntel_nas_host | default "" }}"
+PROXY_IF="{{ index $m "vpntel_proxy_if" | default "wlo1" }}"
+NAS_HOST="{{ index $m "vpntel_nas_host" | default "" }}"
 RESOLV=/etc/resolv.conf
 
 # 1. Маршруты туннеля и обхода NAS

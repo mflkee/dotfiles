@@ -25,12 +25,12 @@ DEV=tun0
 {{- if hasKey .machines .chezmoi.hostname }}
 {{-   $m = index .machines .chezmoi.hostname }}
 {{- end }}
-PROXY_IF="{{ $m.vpntel_proxy_if | default "wlo1" }}"
+PROXY_IF="{{ index $m "vpntel_proxy_if" | default "wlo1" }}"
 TUN_IP=10.0.0.1
 TUN_MTU=1400
 
 # Хост NAS, который надо вести в обход туннеля. Пусто = отключено.
-NAS_HOST="{{ $m.vpntel_nas_host | default "" }}"
+NAS_HOST="{{ index $m "vpntel_nas_host" | default "" }}"
 
 LOG=/var/log/vpntel-watchdog.log
 TUN2SOCKS_LOG=/var/log/vpntel-tun2socks.log
