@@ -19,8 +19,8 @@ set -euo pipefail
 # с нулём. Если расходится, а sudo недоступен (например, в неинтерактивной
 # dsync-сессии) — выходит с ошибкой, чтобы chezmoi повторил установку позже.
 
-TARGET_VP="${HOME}/.local/bin/vpntel-watchdog"
-TARGET_STOP="${HOME}/.local/bin/vpntel-stop.sh"
+TARGET_VP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-watchdog"
+TARGET_STOP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-stop.sh"
 UNIT=/etc/systemd/system/vpntel.service
 
 # --- Что нужно поставить ----------------------------------------------------
@@ -51,14 +51,12 @@ EOF
 fi
 
 # --- Зависимость: tun2socks -------------------------------------------------
-if ! command -v tun2socks >/dev/null 2>&1 && [ ! -x "${HOME}/.local/bin/tun2socks" ]; then
+# Ставим через paru от имени пользователя: paru отказывается работать под root.
+if ! command -v tun2socks >/dev/null 2>&1 \
+   && [ ! -x "{{ .chezmoi.homeDir }}/.local/bin/tun2socks" ]; then
     echo "[chezmoi] vpntel: tun2socks не найден, ставлю из AUR..."
-    if command -v paru >/dev/null 2>&1; then
-        paru -S --needed --noconfirm tun2socks \
-            || echo "[chezmoi] WARNING: не удалось поставить tun2socks"
-    else
-        echo "[chezmoi] WARNING: paru не найден, поставь tun2socks вручную"
-    fi
+    sudo -u "{{ .chezmoi.username }}" paru -S --needed --noconfirm tun2socks \
+        || echo "[chezmoi] WARNING: не удалось поставить tun2socks"
 fi
 
 # --- Скрипты ----------------------------------------------------------------
