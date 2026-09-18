@@ -6,7 +6,12 @@ Wants=network-online.target
 [Service]
 Type=notify
 ExecStart=/home/mflkee/.local/bin/rclone mount syno: /home/mflkee/nas --vfs-cache-mode full --vfs-cache-max-size 20G --vfs-cache-max-age 720h --dir-cache-time 24h --attr-timeout 1h --timeout 30s --contimeout 10s --low-level-retries 2 --allow-non-empty --log-file /home/mflkee/.local/state/rclone-syno.log --log-level INFO
-# rclone сам снимает моунт по SIGTERM; команды `rclone unmount` в v1.74 больше нет.
+# Ленивое снятие моунта (fusermount3 -u -z). Без него, если WebDAV недоступен,
+# процессы встают в непрерываемый D-state на FUSE и блокируют umount /home,
+# suspend и выключение: в логах "Freezing user space processes failed
+# (12 tasks refusing to freeze)" с request_wait_answer -> fuse_chan_send.
+ExecStop=/bin/sh -c 'fusermount3 -u -z /home/mflkee/nas 2>/dev/null || umount -l /home/mflkee/nas 2>/dev/null || true'
+TimeoutStopSec=15
 Restart=on-failure
 RestartSec=10
 

@@ -7,6 +7,9 @@ machines:
     browser: ""
     has_anaconda: false
     has_niri: true
+    has_vpntel: true
+    vpntel_proxy_if: wlo1
+    vpntel_nas_host: "webdav.mkair.ru"
     noctalia:
       wallhaven_query: ""
       network_view: "wifi"
@@ -35,6 +38,9 @@ machines:
     browser: zen-browser
     has_anaconda: true
     has_niri: true
+    has_vpntel: true
+    vpntel_proxy_if: wlo1
+    vpntel_nas_host: "webdav.mkair.ru"
     noctalia:
       wallhaven_query: "berserk"
       network_view: "ethernet"
@@ -49,6 +55,9 @@ machines:
     browser: zen-browser
     has_anaconda: false
     has_niri: true
+    has_vpntel: true
+    vpntel_proxy_if: wlo1
+    vpntel_nas_host: "webdav.mkair.ru"
     noctalia:
       wallhaven_query: ""
       network_view: "wifi"
