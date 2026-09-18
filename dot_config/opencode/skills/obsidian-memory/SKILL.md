@@ -61,6 +61,13 @@ updated: YYYY-MM-DD
 - YYYY-MM-DD: project — what was done
 ```
 
+## Vault rules
+
+If unsure where a note belongs / how to name it / what format to use, read
+`opencode-memory/RULES.md` — it is the source of truth for vault structure:
+folders, frontmatter, naming, session logs, tasks index. RULES.md is small
+(~300 tokens) and only read when needed.
+
 ## MCP tools reference
 
 - `obsidian-api_vault_read(path, targetType, target)` — read section
