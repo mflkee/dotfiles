@@ -17,6 +17,15 @@
 #     Починка требовала ручного `chattr -i` или перезагрузки.
 #   * NAS bypass: WebDAV к NAS через HTTP-прокси телефона не проходит,
 #     поэтому его адреса ведутся напрямую через PROXY_IF.
+#   * Фиксы «инет пропал» (флап): туннель включается ТОЛЬКО после успешной
+#     ГЛУБОКОЙ проверки (реальные данные прошли через прокси), а не после
+#     голого TCP-коннекта — полудохлый прокси (порт открыт, данные не гонит)
+#     больше не уводит весь трафик в пустоту. После каждого падения — cooldown
+#     с удвоением (30с → 60с → … → 300с), чтобы watchdog не дёргал маршрут
+#     каждые 5 секунд. Пока туннель активен, глубокая проверка идёт каждый цикл.
+#   * SSID-гейт (PHONE_SSID, опционально): туннель возможен только когда
+#     активная Wi-Fi сеть — хотспот телефона. На любой другой сети watchdog
+#     не трогает маршрут по умолчанию.
 
 PROXY_IP=192.168.43.1
 PROXY_PORT=8080
@@ -31,6 +40,10 @@ TUN_MTU=1400
 
 # Хост NAS, который надо вести в обход туннеля. Пусто = отключено.
 NAS_HOST="{{ index $m "vpntel_nas_host" | default "" }}"
+
+# SSID хотспота телефона, на котором можно включать туннель. Пусто = без
+# гейта (тогда туннель может включиться на любой сети с живым прокси).
+PHONE_SSID="{{ index $m "vpntel_ssid" | default "" }}"
 
 LOG=/var/log/vpntel-watchdog.log
 TUN2SOCKS_LOG=/var/log/vpntel-tun2socks.log
@@ -50,6 +63,12 @@ fi
 NAS_IPS=""
 LOOP=0
 STATE=off
+
+# Cooldown/backoff после падений прокси (сек): 30 → 60 → 120 → 240 → 300 max.
+# Нужен, чтобы полудохлый прокси не включал-выключал туннель каждые 5 секунд.
+COOLDOWN_BASE=30
+COOLDOWN_MAX=300
+COOLDOWN=0
 
 log() { echo "$(date '+%F %T') $*" >> "${LOG}"; }
 
@@ -78,6 +97,27 @@ check_proxy_deep() {
   timeout 12 curl -s -o /dev/null --max-time 10 \
     -x "http://${PROXY_IP}:${PROXY_PORT}" \
     "http://connectivitycheck.gstatic.com/generate_204" 2>/dev/null
+}
+
+# SSID активной Wi-Fi сети через NetworkManager (без root).
+current_ssid() {
+  local con
+  con=$(nmcli -t -f NAME,DEVICE,STATE con show --active 2>/dev/null \
+    | awk -F: -v dev="${PROXY_IF}" '$2==dev && $3=="activated" {print $1; exit}')
+  [ -n "${con}" ] || return 1
+  nmcli -g 802-11-wireless.ssid con show "${con}" 2>/dev/null
+}
+
+reset_backoff() { COOLDOWN=0; }
+
+bump_backoff() {
+  if [ "${COOLDOWN}" -eq 0 ]; then
+    COOLDOWN=${COOLDOWN_BASE}
+  else
+    COOLDOWN=$((COOLDOWN * 2))
+    [ "${COOLDOWN}" -gt "${COOLDOWN_MAX}" ] && COOLDOWN=${COOLDOWN_MAX}
+  fi
+  log "backoff set to ${COOLDOWN}s"
 }
 
 # --- IPv6 -------------------------------------------------------------------
@@ -200,7 +240,7 @@ cleanup() {
 }
 trap cleanup INT TERM
 
-log "=== vpntel watchdog started (iface=${PROXY_IF}, proxy=${PROXY_IP}:${PROXY_PORT}) ==="
+log "=== vpntel watchdog started (iface=${PROXY_IF}, proxy=${PROXY_IP}:${PROXY_PORT}, phone_ssid=${PHONE_SSID:-none}) ==="
 
 if ! start_tun2socks; then
   log "fatal: cannot start tun2socks; exiting so systemd can retry"
@@ -221,17 +261,52 @@ while true; do
     STATE=off
   fi
 
-  if check_proxy; then
-    # Раз в минуту — глубокая проверка, чтобы отличить живой прокси от залипшего.
-    if [ "${STATE}" = "on" ] && [ $((LOOP % 12)) -eq 0 ] && ! check_proxy_deep; then
+  # SSID-гейт: вне сети телефона туннель не трогаем вообще.
+  if [ -n "${PHONE_SSID}" ]; then
+    cur_ssid=$(current_ssid) || cur_ssid=""
+    if [ "${cur_ssid}" != "${PHONE_SSID}" ]; then
+      if [ "${STATE}" = "on" ]; then
+        log "not on phone network (ssid='${cur_ssid:-none}'), tunnel OFF"
+        tunnel_off
+      fi
+      sleep 15
+      continue
+    fi
+  fi
+
+  if [ "${STATE}" = "on" ]; then
+    # Туннель активен — глубокая проверка каждый цикл, чтобы быстро снять
+    # маршрут, если прокси умер.
+    if ! check_proxy_deep; then
       log "proxy deep check FAILED"
       tunnel_off
+      bump_backoff
     else
-      tunnel_on
-      [ "${STATE}" = "on" ] && nas_bypass
+      reset_backoff
+      nas_bypass
     fi
   else
-    tunnel_off
+    # Туннель выключен.
+    if [ "${COOLDOWN}" -gt 0 ]; then
+      log "proxy unreliable, cooldown ${COOLDOWN}s"
+      sleep "${COOLDOWN}"
+      COOLDOWN=0
+      continue
+    fi
+    if check_proxy; then
+      # Поверхностная проверка прошла — включаем ТОЛЬКО после реальных данных.
+      if check_proxy_deep; then
+        reset_backoff
+        tunnel_on
+        nas_bypass
+      else
+        log "proxy shallow OK but deep FAILED (half-dead)"
+        bump_backoff
+        tunnel_off
+      fi
+    else
+      tunnel_off
+    fi
   fi
 
   sleep 5
