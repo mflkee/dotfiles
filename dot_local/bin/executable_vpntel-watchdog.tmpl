@@ -37,10 +37,12 @@ TUN2SOCKS_LOG=/var/log/vpntel-tun2socks.log
 RESOLV=/etc/resolv.conf
 
 # tun2socks: предпочитаем системный (пакет), иначе локальный бинарник.
+# Путь к домашнему каталогу подставляем на этапе рендера: под systemd
+# переменная HOME может быть не задана, и "${HOME}/..." не раскроется.
 if command -v tun2socks >/dev/null 2>&1; then
   TUN2SOCKS=$(command -v tun2socks)
-elif [ -x "${HOME}/.local/bin/tun2socks" ]; then
-  TUN2SOCKS="${HOME}/.local/bin/tun2socks"
+elif [ -x "{{ .chezmoi.homeDir }}/.local/bin/tun2socks" ]; then
+  TUN2SOCKS="{{ .chezmoi.homeDir }}/.local/bin/tun2socks"
 else
   TUN2SOCKS=$(command -v tun2socks 2>/dev/null)
 fi
