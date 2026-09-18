@@ -1,6 +1,6 @@
 #!/bin/bash
 # vim: ft=bash
-# run_onchange hash-vpntel: {{ printf "%s%s" (include "dot_local/bin/executable_vpntel-watchdog.tmpl") (include "dot_local/bin/executable_vpntel-stop.sh.tmpl") | sha256sum }}
+# run_onchange hash-vpntel: {{ printf "%s%s%s" (include "dot_local/bin/executable_vpntel-watchdog.tmpl") (include "dot_local/bin/executable_vpntel-stop.sh.tmpl") (include "dot_local/bin/executable_vpntel-install.sh.tmpl") | sha256sum }}
 {{- $m := dict }}
 {{- if hasKey .machines .chezmoi.hostname }}
 {{-   $m = index .machines .chezmoi.hostname }}
@@ -10,88 +10,35 @@ echo "vpntel не включён для {{ .chezmoi.hostname }}, пропуск�
 exit 0
 {{- end }}
 
-set -euo pipefail
+set -uo pipefail
 
-# Установка vpntel: watchdog + stop-скрипт + systemd unit.
-# Root-компоненты (/usr/local/bin, /etc/systemd/system) кладём через sudo.
+# Установка root-части vpntel (/usr/local/bin + /etc/systemd/system).
 #
-# Скрипт идемпотентен: если всё уже установлено и совпадает с эталоном — выходит
-# с нулём. Если расходится, а sudo недоступен (например, в неинтерактивной
-# dsync-сессии) — выходит с ошибкой, чтобы chezmoi повторил установку позже.
+# Вся установка живёт в ~/.local/bin/vpntel-install.sh — обычном управляемом
+# файле, который можно запустить руками: sudo ~/.local/bin/vpntel-install.sh
+#
+# Здесь только: есть ли sudo. В неинтерактивной dsync-сессии пароль ввести
+# нельзя, поэтому просто предупреждаем и выходим с нулём — при следующем
+# обычном apply (когда пароль доступен) установка доедет.
 
-TARGET_VP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-watchdog"
-TARGET_STOP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-stop.sh"
-UNIT=/etc/systemd/system/vpntel.service
+INSTALL="{{ .chezmoi.homeDir }}/.local/bin/vpntel-install.sh"
 
-# --- Что нужно поставить ----------------------------------------------------
-needs_install=false
-
-if ! cmp -s "${TARGET_VP}"   /usr/local/bin/vpntel-watchdog 2>/dev/null; then needs_install=true; fi
-if ! cmp -s "${TARGET_STOP}" /usr/local/bin/vpntel-stop.sh  2>/dev/null; then needs_install=true; fi
-if [ ! -f "${UNIT}" ]; then needs_install=true; fi
-
-if [ "${needs_install}" = false ]; then
-    echo "[chezmoi] vpntel уже установлен и актуален."
+if [ ! -x "${INSTALL}" ]; then
+    echo "[chezmoi] vpntel: ${INSTALL} не найден, пропускаю."
     exit 0
 fi
 
-# --- Нужен root -------------------------------------------------------------
-if ! sudo -n true 2>/dev/null; then
-    cat <<'EOF'
-[chezmoi] vpntel: для установки нужен root, а sudo без пароля недоступен.
-Выполни один раз:
-    chezmoi apply --sudo
-или вручную:
-    sudo install -m755 ~/.local/bin/vpntel-watchdog /usr/local/bin/vpntel-watchdog
-    sudo install -m755 ~/.local/bin/vpntel-stop.sh  /usr/local/bin/vpntel-stop.sh
-    sudo systemctl daemon-reload && sudo systemctl enable --now vpntel.service
-EOF
-    # Ненулевой код: chezmoi повторит попытку при следующем apply.
-    exit 1
-fi
-
-# --- Зависимость: tun2socks -------------------------------------------------
-# Ставим через paru от имени пользователя: paru отказывается работать под root.
-if ! command -v tun2socks >/dev/null 2>&1 \
-   && [ ! -x "{{ .chezmoi.homeDir }}/.local/bin/tun2socks" ]; then
-    echo "[chezmoi] vpntel: tun2socks не найден, ставлю из AUR..."
-    sudo -u "{{ .chezmoi.username }}" paru -S --needed --noconfirm tun2socks \
-        || echo "[chezmoi] WARNING: не удалось поставить tun2socks"
-fi
-
-# --- Скрипты ----------------------------------------------------------------
-sudo install -m 755 "${TARGET_VP}"   /usr/local/bin/vpntel-watchdog
-sudo install -m 755 "${TARGET_STOP}" /usr/local/bin/vpntel-stop.sh
-
-# --- systemd unit -----------------------------------------------------------
-sudo tee "${UNIT}" >/dev/null <<'SERVICE'
-[Unit]
-Description=Phone VPN tunnel via tun2socks -> phone HTTP proxy (192.168.43.1:8080)
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/vpntel-watchdog
-ExecStopPost=/usr/local/bin/vpntel-stop.sh
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-SERVICE
-
-sudo systemctl daemon-reload
-sudo systemctl enable vpntel.service >/dev/null 2>&1 || true
-
-# Перезапускаем только если сервис уже был активен: при первой установке
-# телефон может быть недоступен — это нормально, watchdog сам включит туннель,
-# когда прокси появится.
-if systemctl is-active --quiet vpntel.service; then
-    sudo systemctl restart vpntel.service
-    echo "[chezmoi] vpntel перезапущен"
+if sudo -n true 2>/dev/null; then
+    sudo "${INSTALL}"
 else
-    echo "[chezmoi] vpntel установлен и включён (запустится при загрузке)"
+    # Если всё уже стоит — не шумим.
+    if cmp -s "{{ .chezmoi.homeDir }}/.local/bin/vpntel-watchdog" /usr/local/bin/vpntel-watchdog 2>/dev/null \
+       && cmp -s "{{ .chezmoi.homeDir }}/.local/bin/vpntel-stop.sh" /usr/local/bin/vpntel-stop.sh 2>/dev/null; then
+        exit 0
+    fi
+    cat <<EOF
+[chezmoi] vpntel: нужен root для установки, sudo без пароля недоступен.
+Выполни один раз (пароль спросится):
+    sudo ${INSTALL}
+EOF
 fi
-
-echo "[chezmoi] vpntel setup complete"

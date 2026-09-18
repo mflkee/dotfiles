@@ -1,0 +1,83 @@
+#!/bin/bash
+# vim: ft=bash
+# Установка vpntel: watchdog + stop-скрипт + systemd unit.
+# ВАЖНО: запускать от root (или через sudo). Внутри sudo НЕ вызывается.
+#
+#   sudo ~/.local/bin/vpntel-install.sh
+#
+# Скрипт идемпотентен: если всё уже совпадает с эталоном, просто выходит.
+# Управляется chezmoi; вызывается из run_onchange_after_install-vpntel.sh.tmpl.
+set -euo pipefail
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Ошибка: запусти от root:  sudo $0" >&2
+    exit 1
+fi
+
+SRC_VP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-watchdog"
+SRC_STOP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-stop.sh"
+DST_VP=/usr/local/bin/vpntel-watchdog
+DST_STOP=/usr/local/bin/vpntel-stop.sh
+UNIT=/etc/systemd/system/vpntel.service
+
+# --- Что нужно поставить ----------------------------------------------------
+needs_install=false
+cmp -s "${SRC_VP}"   "${DST_VP}"   2>/dev/null || needs_install=true
+cmp -s "${SRC_STOP}" "${DST_STOP}" 2>/dev/null || needs_install=true
+[ -f "${UNIT}" ] || needs_install=true
+
+if [ "${needs_install}" = false ]; then
+    echo "[vpntel] уже установлен и актуален."
+    exit 0
+fi
+
+# --- Зависимость: tun2socks -------------------------------------------------
+# Ставим через paru от имени пользователя: paru не работает под root.
+if ! command -v tun2socks >/dev/null 2>&1 \
+   && [ ! -x "{{ .chezmoi.homeDir }}/.local/bin/tun2socks" ]; then
+    echo "[vpntel] tun2socks не найден, ставлю из AUR..."
+    paru_bin=$(command -v paru || true)
+    if [ -n "${paru_bin}" ]; then
+        sudo -u "{{ .chezmoi.username }}" "${paru_bin}" -S --needed --noconfirm tun2socks \
+            || echo "[vpntel] WARNING: не удалось поставить tun2socks"
+    else
+        echo "[vpntel] WARNING: paru не найден, поставь tun2socks вручную"
+    fi
+fi
+
+# --- Скрипты ----------------------------------------------------------------
+install -m 755 "${SRC_VP}"   "${DST_VP}"
+install -m 755 "${SRC_STOP}" "${DST_STOP}"
+
+# --- systemd unit -----------------------------------------------------------
+tee "${UNIT}" >/dev/null <<'SERVICE'
+[Unit]
+Description=Phone VPN tunnel via tun2socks -> phone HTTP proxy (192.168.43.1:8080)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/vpntel-watchdog
+ExecStopPost=/usr/local/bin/vpntel-stop.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+systemctl daemon-reload
+systemctl enable vpntel.service >/dev/null 2>&1 || true
+
+# Перезапускаем, только если сервис уже был активен: при первой установке
+# телефон может быть недоступен — это нормально, watchdog сам включит туннель,
+# когда прокси появится.
+if systemctl is-active --quiet vpntel.service; then
+    systemctl restart vpntel.service
+    echo "[vpntel] перезапущен"
+else
+    echo "[vpntel] установлен и включён (запустится при загрузке)"
+fi
+
+echo "[vpntel] setup complete"
