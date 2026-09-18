@@ -23,13 +23,15 @@ archlinux-server). Сначала определи машину: `hostname`.
 
 | Путь | Назначение |
 |------|-----------|
-| `~/projects/` | ВСЕ кодовые проекты (git-репы, dsync-проекты, клоны) |
+| `~/projects/` | ТВОИ кодовые проекты (git-репы, dsync-проекты); чужие клоны — в `~/tools/` |
+| `~/tools/` | Сторонние утилиты / vendor-клоны (напр. `keenetic-antifilter` — качается ради `routes/` для Keenetic-роутера) |
+| `~/keebs/` | Клавиатурное: прошивки (`.uf2`), раскладки (VIA `.vil`) — ErgoHaven и др. |
 | `~/Documents/reports/` | Отчёты (xlsx/zip/pdf отчёты о работах) |
-| `~/Documents/` | Документы, книги-не-синк, черновики |
+| `~/Documents/` | Документы, черновики (syncthing-корень — см. ограничения) |
 | `~/Downloads/` | Только свежие загрузки; музыка → `~/Music/`, отчёты → `~/Documents/reports/` |
 | `~/Music/`, `~/Pictures/`, `~/Videos/` | Медиа по XDG |
 | `~/obs_main/` | Obsidian-хранилище (Syncthing-корень) |
-| `~/esp/`, `~/esp32-backups/`, `~/.espressif/`, `~/.espup/`, `~/export-esp.sh` | ESP32 тулчейн (export-esp.sh — стандарт espup, НЕ удалять) |
+| `~/esp/`, `~/esp32-backups/`, `~/.espressif/`, `~/.espup/`, `~/export-esp.sh` | ESP32 тулчейн (export-esp.sh — стандарт espup, НЕ удалять). EH/**не** esp32 — это ErgoHaven-клавиатура → `~/keebs/` |
 | `~/go/` | GOPATH (GOPATH/pkg) |
 | `~/nas/`, `~/mnt/`, `~/Menu/`, `~/apps/` | Точки монтирования / root-owned — НЕ трогать |
 | `~/dotfiles/` | chezmoi source repo |
@@ -100,7 +102,8 @@ archlinux-server). Сначала определи машину: `hostname`.
 
 ## Известные паттерны захламления (чек-лист)
 
-- [ ] Код-проекты в корне `~` → `~/projects/<name>/`
+- [ ] Свой код-проект в корне `~` → `~/projects/<name>/`; чужой клон/утилита → `~/tools/<name>/`
+- [ ] Клавиатурные прошивки (`.uf2`) / раскладки (`.vil`) в корне или esp32-backups → `~/keebs/<brand>/`
 - [ ] Отчёты (`report_*`, `interim_report_*`, `Отчет*.pdf`) → `~/Documents/reports/`
 - [ ] mp3/музыка в `~/Downloads/` → `~/Music/`
 - [ ] `.zshrc.bak*`, `.bashrc.bak*` → подтвердить и удалить
