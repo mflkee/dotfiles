@@ -4,9 +4,6 @@
   "instructions": [
     "instructions/machines.md"
   ],
-  "plugin": [
-  "@devcxl/opencode-spec"
-  ],
   "skills": {
     "paths": ["~/.config/opencode/skills"]
   },
