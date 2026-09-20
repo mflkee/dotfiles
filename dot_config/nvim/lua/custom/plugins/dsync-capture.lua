@@ -19,7 +19,9 @@ local last_fired = {}
 local DEBOUNCE_NS = 2_000_000_000 -- 2s на путь, чтобы не спамить при повторных :w
 
 local function enabled()
-  if vim.g.dsync_capture_enabled == v:false then
+  -- vimscript `let g:dsync_capture_enabled = v:false` приходит в Lua как false;
+  -- 0 — тоже считаем выключенным.
+  if vim.g.dsync_capture_enabled == false or vim.g.dsync_capture_enabled == 0 then
     return false
   end
   -- молча пропускаем, если dsync не установлен (например, на машине без него)
