@@ -21,6 +21,13 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 post_pull = "chezmoi apply --force"
 
+# Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
+# Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
+# а исключения уже встроены (шаблоны .tmpl, темы, ~/Pictures и т.п.).
+# [capture]
+# watch = ["~/.zshrc", "~/.config", "~/.local/bin"]
+# exclude = ["~/.config/ghostty/themes"]
+
 {{ if eq .chezmoi.hostname "archlinux-server" }}
 [hub]
 bind = "0.0.0.0:42069"

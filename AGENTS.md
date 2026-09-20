@@ -29,6 +29,18 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - **Source**: `~/projects/dsync`; build: `cargo build --release`, deploy binary to `~/.local/bin/dsync` (client) / `dsync-hub` (server)
 - **Note**: binary is a single ~18MB ELF with rustls (no cert verification)
 
+### Dotfiles: no `chezmoi edit` needed (auto-capture)
+- Любую правку живого файла (~/.zshrc, ~/.config/...) или исходника в
+  `~/dotfiles` можно делать напрямую (nvim, bash, sed) — `dsync` сам забирает
+  её в репозиторий при каждом `dsync push` (сравнение sha256 по
+  `~/.local/share/dsync/capture-state.json`, погнал `chezmoi re-add`; правки
+  исходников применяются локально через `chezmoi apply --force`).
+- nvim-хук `~/.config/nvim/lua/custom/plugins/dsync-capture.lua` делает это
+  мгновенно на каждое `:w` (вызов `dsync capture <path>`). Отключить:
+  `let g:dsync_capture_enabled = v:false`.
+- Не захватываются: файлы с исходником `.tmpl` (правь шаблон), сгенерированные
+  темы/`.desktop`, `~/Pictures`, вложенные git-репо и не-managed файлы.
+
 ### How to access Obsidian from any machine
 - `obsidian-memory` MCP — reads vault files locally (via Syncthing)
 - `obsidian-second-brain` MCP — points to `archlinux-mkair:27123` (running Obsidian with plugins)
