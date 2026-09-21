@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Bootstrap dsync-synced project repos on a machine.
+#
+# Why: dsync only *pulls* projects that already exist as git repos
+# (`cd <path> && git pull --rebase origin <branch>`); it does not clone
+# missing ones. Run this once on a new/empty machine, then `dsync push`
+# keeps everything up to date.
+#
+# Idempotent: existing repos are left untouched.
+
+PROJECTS=(
+  "dsync|https://github.com/mflkee/dsync.git|$HOME/projects/dsync"
+  "dotfiles|https://github.com/mflkee/dotfiles.git|$HOME/dotfiles"
+  "mushroomchess|git@github.com:mflkee/mycelium.git|$HOME/projects/mushroomchess"
+)
+
+command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 1; }
+
+cloned=0
+for entry in "${PROJECTS[@]}"; do
+  IFS='|' read -r name url path <<<"$entry"
+  if [ -d "$path/.git" ]; then
+    echo "ok      $name  ($path)"
+  else
+    echo "clone   $name  -> $path"
+    mkdir -p "$(dirname "$path")"
+    git clone "$url" "$path"
+    cloned=$((cloned + 1))
+  fi
+done
+
+echo
+if [ "$cloned" -eq 0 ]; then
+  echo "Все проекты уже на месте."
+else
+  echo "Склонировано: $cloned. Дальше: dsync push"
+fi
