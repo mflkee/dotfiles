@@ -22,6 +22,10 @@ keymap = [
 	{ on = "<Enter>", run = "plugin smart-enter", desc = "Smart enter" },
 	{ on = "<S-Enter>", run = "open --interactive", desc = "Open interactive" },
 
+	# Archive creation (extraction on <Enter> via smart-enter / openers)
+	{ on = "<C-z>", run = 'shell "zip" "-r" "$1.zip" "$@"', desc = "Zip selection" },
+	{ on = "<C-t>", run = 'shell "tar" "-czf" "$1.tar.gz" "$@"', desc = "Tar.gz selection" },
+
 	{ on = "y", run = "yank", desc = "Yank" },
 	{ on = "x", run = "yank --cut", desc = "Cut" },
 	{ on = "p", run = "paste", desc = "Paste" },
