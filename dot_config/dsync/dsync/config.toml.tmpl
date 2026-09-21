@@ -27,11 +27,18 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 
 # Zen browser MCP bridge (tabs in containers + JS console).
-# При первом разворачивании на машине каталог надо склонировать вручную
-# (hub делает только git pull): git clone git@github.com:mflkee/zen-mcp.git
-#   ~/projects/zen-mcp && bash ~/projects/zen-mcp/install.sh
+# При первом разворачивании hub сам склонирует проект (clone-if-missing).
 [projects.zen-mcp]
 path = "/home/mflkee/projects/zen-mcp"
+branch = "main"
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+
+# Авто-развёртывание новых git-проектов из ~/projects: любую новую папку с
+# .git dsync сам анонсирует флоту при push — hub клонирует её на машины, где
+# каталога ещё нет, и дальше держит обычным pull --rebase --autostash.
+# Автокоммит «project sync: …» остаётся только за явными [projects.*].
+[auto_projects]
+root = "~/projects"
 branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 
