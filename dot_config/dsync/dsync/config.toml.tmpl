@@ -21,6 +21,11 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 post_pull = "chezmoi apply --force"
 
+[projects.mushroomchess]
+path = "/home/mflkee/projects/mushroomchess"
+branch = "main"
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
 # Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
 # а исключения уже встроены (шаблоны .tmpl, темы, ~/Pictures и т.п.).
