@@ -23,8 +23,9 @@ keymap = [
 	{ on = "<S-Enter>", run = "open --interactive", desc = "Open interactive" },
 
 	# Archive creation (extraction on <Enter> via smart-enter / openers)
-	{ on = "<C-z>", run = 'shell "zip" "-r" "$1.zip" "$@"', desc = "Zip selection" },
-	{ on = "<C-t>", run = 'shell "tar" "-czf" "$1.tar.gz" "$@"', desc = "Tar.gz selection" },
+	# v26 syntax: shell -- <raw command>, vars: %h (hovered), %s (selected|hovered)
+	{ on = "<C-z>", run = 'shell -- zip -r %h.zip %s', desc = "Zip selection" },
+	{ on = "<C-t>", run = 'shell -- tar -czf %h.tar.gz %s', desc = "Tar.gz selection" },
 
 	{ on = "y", run = "yank", desc = "Yank" },
 	{ on = "x", run = "yank --cut", desc = "Cut" },
