@@ -24,10 +24,11 @@ cd ~/obs_main && git add -A && git commit -m "description"
 ## dsync v2 (Rust, replaces old Python v1)
 - **Hub**: `archlinux-server:42069` (QUIC), systemd user unit `dsync-hub.service`, `loginctl enable-linger mflkee` enabled. Data: `~/.local/share/dsync-hub/machines.json`
 - **Clients**: `~/.local/bin/dsync`, config `~/.config/dsync/dsync/config.toml` (chezmoi template), 15-min `dsync.timer` on desktop/mkair/notebook
-- **Flow**: client pushes zen + projects → hub stores → hub SSH-pulls projects on all other machines + runs `post_pull` (dotfiles: `chezmoi apply`)
+- **Flow**: client pushes zen + projects → hub stores → hub SSH-pulls projects on all other machines (`git pull --rebase --autostash` — незакоммиченная работа не теряется) + runs `post_pull` (dotfiles: `chezmoi apply`)
 - **Machine names**: desktop, notebook, archlinux-mkair, archlinux-server. Hostname mapping: archlinux-desktop→desktop, archlinux-notebook→notebook, archlinux-mkair→archlinux-mkair, archlinux-server→archlinux-server. Notebook SSH-pull by IP `100.89.198.212`
 - **Source**: `~/projects/dsync`; build: `cargo build --release`, deploy binary to `~/.local/bin/dsync` (client) / `dsync-hub` (server)
 - **Note**: binary is a single ~18MB ELF with rustls (no cert verification)
+- **Секреты**: per-machine токен хаба — sidecar `~/.config/dsync/dsync/tokens.toml` (0600, chezmoi-ignored, в git не попадает). Новой машине его надо завести вручную (`[hub_connect] token = "…"` из `[hub] tokens` на сервере), иначе хаб отвергнет запросы и машина будет «offline».
 
 ### Dotfiles: no `chezmoi edit` needed (auto-capture)
 - Любую правку живого файла (~/.zshrc, ~/.config/...) или исходника в
@@ -40,6 +41,23 @@ cd ~/obs_main && git add -A && git commit -m "description"
   `let g:dsync_capture_enabled = v:false`.
 - Не захватываются: файлы с исходником `.tmpl` (правь шаблон), сгенерированные
   темы/`.desktop`, `~/Pictures`, вложенные git-репо и не-managed файлы.
+
+### Синхронизация состояния: tmux + сессии opencode
+- Управляется секцией `[state]` в конфиге (chezmoi-шаблон) и работает
+  автоматически в `dsync push`/`pull`/`watch` — через хаб (сообщения
+  `state_push`/`state_pull`, хранилище `~/.local/share/dsync-hub/state/`).
+- **tmux**: синхронизируется последний снапшот tmux-resurrect
+  (`~/.local/share/tmux/resurrect/`); на приёмнике файл раскладывается,
+  восстановить в живой tmux — `prefix + Ctrl-r` (или `tmux_restore = true`).
+- **opencode**: синхронизируются сессии по всем `[projects.*]` (можно сузить:
+  `[state.opencode] projects = ["~/projects/…"]`). На машине-источнике —
+  `session list --format json` → `session export` изменившихся; на других —
+  `session import`. Экспорт идёт с `--standalone` (в V2 экспорт через общий
+  сервис недетерминированно обрезается — баг CLI).
+- Локальный индекс `~/.local/share/dsync/state.json`; сбойные элементы не
+  теряются (seq откатывается), только что импортированное не пере-отправляется.
+- **opencode нужен V2** (`@opencode/cli` → `~/.opencode/bin/opencode`), иначе
+  сессии не синкаются (tmux при этом работает).
 
 ### How to access Obsidian from any machine
 - `obsidian-memory` MCP — reads vault files locally (via Syncthing)
