@@ -42,6 +42,18 @@ machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 # watch = ["~/.zshrc", "~/.config", "~/.local/bin"]
 # exclude = ["~/.config/ghostty/themes"]
 
+# Не-git состояние флота: tmux-раскладка (tmux-resurrect) и сессии opencode.
+# Синхронизируется через хаб (state_push/state_pull). tmux_restore = true
+# запускает resurrect restore в живом tmux после применения чужого снапшота.
+[state]
+tmux = true
+tmux_restore = false
+
+# Сессии opencode: по умолчанию — для всех [projects.*]. Можно ограничить:
+# [state.opencode]
+# projects = ["~/projects/mushroomwars"]
+[state.opencode]
+
 {{ if eq .chezmoi.hostname "archlinux-server" }}
 [hub]
 bind = "0.0.0.0:42069"
