@@ -26,6 +26,15 @@ path = "/home/mflkee/projects/mushroomchess"
 branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 
+# Zen browser MCP bridge (tabs in containers + JS console).
+# При первом разворачивании на машине каталог надо склонировать вручную
+# (hub делает только git pull): git clone git@github.com:mflkee/zen-mcp.git
+#   ~/projects/zen-mcp && bash ~/projects/zen-mcp/install.sh
+[projects.zen-mcp]
+path = "/home/mflkee/projects/zen-mcp"
+branch = "main"
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
 # Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
 # а исключения уже встроены (шаблоны .tmpl, темы, ~/Pictures и т.п.).
