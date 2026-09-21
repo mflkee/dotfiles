@@ -26,6 +26,7 @@ Hub = archlinux-server (Syncthing-хаб + dsync QUIC UDP `0.0.0.0:42069`); dsyn
 | `github` | local | Репозитории |
 | `netbird` | local | Управление пирами NetBird |
 | `sync-ops` | local | Syncthing (папки/устройства/статус) + dsync (status/doctor/push/pull). Источник: `scripts/sync-ops-mcp.js` |
+| `voxbuilder` | local | Создание/рисование `.vox`-моделей (`npx -y voxbuilder-mcp-local`). Тулы: `create`, `setVoxels`, `getVoxels`, `exportVox`. Просмотр файлов — `goxel` |
 
 ## dsync
 
