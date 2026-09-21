@@ -28,6 +28,7 @@ Hub = archlinux-server (Syncthing-хаб + dsync QUIC UDP `0.0.0.0:42069`); dsyn
 | `sync-ops` | local | Syncthing (папки/устройства/статус) + dsync (status/doctor/push/pull). Источник: `scripts/sync-ops-mcp.js` |
 | `voxbuilder` | local | Создание/рисование `.vox`-моделей (`npx -y voxbuilder-mcp-local`). Тулы: `create`, `setVoxels`, `getVoxels`, `exportVox`. Просмотр файлов — `goxel` |
 | `blender` | local | Управление живым Blender через `uvx mcp-for-blender` (аддон `blender_mcp.py`, сокет 9876). Требует запущенного Blender c аддоном и «Start MCP Server». Без GUI — `xvfb-run -a blender`. Blender 5.2.2 (`extra/blender`) |
+| `zen` | remote | Zen-браузер (`http://127.0.0.1:8877/mcp`): вкладки в контейнерах (`main`), JS-консоль, навигация. Источник: `~/projects/zen-mcp` (dsync-sync; расширение в профиле Zen + systemd user `zen-mcp.service`). Установка на машину: `~/projects/zen-mcp/install.sh` |
 
 ## dsync
 

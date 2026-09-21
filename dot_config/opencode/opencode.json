@@ -93,6 +93,11 @@
       "type": "local",
       "command": ["uvx", "mcp-for-blender"],
       "enabled": true
+    },
+    "zen": {
+      "type": "remote",
+      "url": "http://127.0.0.1:8877/mcp",
+      "enabled": true
     }
   },
   "experimental": {
