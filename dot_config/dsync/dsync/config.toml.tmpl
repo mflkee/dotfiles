@@ -37,10 +37,24 @@ machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 # .git dsync сам анонсирует флоту при push — hub клонирует её на машины, где
 # каталога ещё нет, и дальше держит обычным pull --rebase --autostash.
 # Автокоммит «project sync: …» остаётся только за явными [projects.*].
+# exclude — скретч/учёба/чужое, что НЕ раскатываем по флоту.
 [auto_projects]
 root = "~/projects"
 branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+exclude = [
+  "rustlings",          # учёба (Rustlings)
+  "git-tutorial",       # учёба
+  "study",              # учёба
+  "five_letters",       # чужое репо (Wani4ka)
+  "mathmagic-in-python",# учебный мини-проект
+  "draw.io",            # локальные схемы
+  "tokyo-night-tmux",   # тема tmux
+  "sketch_apr6a",       # скетч-плейграунд (без .git на некоторых машинах)
+  "test-app",           # тестовый клон
+  "testing_app",        # дубль test-app (тот же origin)
+  "bhebdps-ojs",        # разовый плейграунд
+]
 
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
 # Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
