@@ -59,6 +59,10 @@ machines:
     has_vpntel: true
     vpntel_proxy_if: wlo1
     vpntel_nas_host: "webdav.mkair.ru"
+    # Микрофон для hyprwhspr (PipeWire source name). На десктопе default-source
+    # — Focusrite Scarlett Solo с цифровой тишиной на входе, рабочий микрофон —
+    # USB PnP Audio Device (JMTek 0c76:161e).
+    hyprwhspr_audio_device: "alsa_input.usb-0c76_USB_PnP_Audio_Device-00.mono-fallback"
     noctalia:
       wallhaven_query: ""
       network_view: "wifi"
