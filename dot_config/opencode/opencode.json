@@ -84,11 +84,6 @@
       "command": ["node", "/home/mflkee/.config/opencode/scripts/sync-ops-mcp.js"],
       "enabled": true
     },
-    "voxbuilder": {
-      "type": "local",
-      "command": ["npx", "-y", "voxbuilder-mcp-local"],
-      "enabled": true
-    },
     "blender": {
       "type": "local",
       "command": ["uvx", "mcp-for-blender"],
