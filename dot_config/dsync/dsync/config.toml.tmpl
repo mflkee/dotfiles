@@ -21,40 +21,11 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 post_pull = "chezmoi apply --force"
 
-[projects.mushroomchess]
-path = "/home/mflkee/projects/mushroomchess"
-branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
-
-# Zen browser MCP bridge (tabs in containers + JS console).
-# При первом разворачивании hub сам склонирует проект (clone-if-missing).
-[projects.zen-mcp]
-path = "/home/mflkee/projects/zen-mcp"
-branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
-
-# Авто-развёртывание новых git-проектов из ~/projects: любую новую папку с
-# .git dsync сам анонсирует флоту при push — hub клонирует её на машины, где
-# каталога ещё нет, и дальше держит обычным pull --rebase --autostash.
-# Автокоммит «project sync: …» остаётся только за явными [projects.*].
-# exclude — скретч/учёба/чужое, что НЕ раскатываем по флоту.
-[auto_projects]
-root = "~/projects"
-branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
-exclude = [
-  "rustlings",          # учёба (Rustlings)
-  "git-tutorial",       # учёба
-  "study",              # учёба
-  "five_letters",       # чужое репо (Wani4ka)
-  "mathmagic-in-python",# учебный мини-проект
-  "draw.io",            # локальные схемы
-  "tokyo-night-tmux",   # тема tmux
-  "sketch_apr6a",       # скетч-плейграунд (без .git на некоторых машинах)
-  "test-app",           # тестовый клон
-  "testing_app",        # дубль test-app (тот же origin)
-  "bhebdps-ojs",        # разовый плейграунд
-]
+# ~/projects целиком синхронизируется через Syncthing (папка "projects",
+# полное зеркало, включая .git) — см. vault servers/mesh-map.md.
+# Поэтому [auto_projects] и [projects.*] под ~/projects отключены.
+# dsync оставлен только для dotfiles (+ состояние tmux/opencode) и самого
+# репозитория dsync (сборка бинаря через post_pull; в Syncthing исключён .stignore).
 
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
 # Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
