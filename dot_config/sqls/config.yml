@@ -1,0 +1,13 @@
+---
+# Конфиг для SQL LSP (sqls) — ставится через mason (см. ленивый nvim/init.lua).
+# Файл читается LSP-сервером из ~/.config/sqls/config.yml.
+# Тут соединения для локального кластера PostgreSQL (trust/peer, user == $USER).
+# Больше примеров: https://github.com/sqls-server/sqls#postgresql--mysql
+version: 2
+connections:
+  - alias: local
+    driver: postgresql
+    dataSourceName: "host=127.0.0.1 port=5432 user=mflkee dbname=mflkee sslmode=disable"
+  - alias: postgres
+    driver: postgresql
+    dataSourceName: "host=127.0.0.1 port=5432 user=mflkee dbname=postgres sslmode=disable"
