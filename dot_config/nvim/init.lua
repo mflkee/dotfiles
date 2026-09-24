@@ -1190,8 +1190,7 @@ do
   -- require 'custom.plugins.git'
 end
 
+-- matugen/base16 setup lives in `plugins/base16.lua` (runs after lazy loads
+-- the plugin, so `base16-colorscheme` is available; no standalone require here).
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
-
-local ok, matugen = pcall(require, 'matugen')
-if ok then matugen.setup() end
