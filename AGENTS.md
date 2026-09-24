@@ -25,7 +25,7 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - **Hub**: `archlinux-server:42069` (QUIC), systemd user unit `dsync-hub.service`, `loginctl enable-linger mflkee` enabled. Data: `~/.local/share/dsync-hub/machines.json`
 - **Clients**: `~/.local/bin/dsync`, config `~/.config/dsync/dsync/config.toml` (chezmoi template), 15-min `dsync.timer` on desktop/mkair/notebook
 - **Flow**: client pushes state → hub stores → hub SSH-pulls `dotfiles` + `dsync` на все машины (`git pull --rebase --autostash` — незакоммиченная работа не теряется) + runs `post_pull` (dotfiles: `chezmoi apply`, dsync: rebuild бинаря)
-- **`~/projects` = Syncthing (с 2026-09-24)**: вся папка синкается через Syncthing — папка `projects` (id `prj3-8a2ve`, sendreceive, **полное зеркало включая `.git`**, только 4 linux-машины, без nova). `.stignore` в `~/projects` исключает `target/`, `node_modules/`, `.venv/`, кэши и `/dsync` (репо dsync осталось за dsync). **Дисциплина: одно git-репо — одна машина одновременно** (параллельная запись в один `.git` может его побить). `[auto_projects]` и `[projects.*]` под `~/projects` отключены — ренамы/переносы/не-git папки теперь разносятся сами.
+- **`~/projects` — НЕ Syncthing (отменено 2026-09-24)**: Syncthing-папка `projects` удалена со всех машин (синк `.git` файлами — анти-паттерн, рвал `.git`). Теперь **каждая машина сама** работает с репо через **git+GitHub** (`git@github.com:mflkee/…`); dsync только **анонсирует состояния** (`[auto_projects] sync = false`: ветка, dirty, ahead/behind — смотрится в `dsync tui` → Projects), НО не разворачивает и не автокоммитит их. Пулятся только явные `[projects.*]` = `dotfiles` + `dsync`. Дисциплина: git-операции по репо — в один момент на одной машине, при совместной работе — pull/merge через GitHub.
 - **Machine names**: desktop, notebook, archlinux-mkair, archlinux-server. Hostname mapping: archlinux-desktop→desktop, archlinux-notebook→notebook, archlinux-mkair→archlinux-mkair, archlinux-server→archlinux-server. Notebook SSH-pull by IP `100.89.198.212`
 - **Source**: `~/projects/dsync`; build: `cargo build --release`, deploy binary to `~/.local/bin/dsync` (client) / `dsync-hub` (server)
 - **Note**: binary is a single ~18MB ELF with rustls (no cert verification)
@@ -102,3 +102,10 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 - Available tools: `list-peers`, `get-peer`, `get-peer-by-ip`, `rename-peer`.
 - **Secrets**: `NETBIRD_API_KEY` stored in `~/.config/zsh/secrets.zsh` (encrypted via chezmoi+age).
   Source before starting opencode: `source ~/.config/zsh/secrets.zsh`
+
+## AmneziaWG / awgq (терминальный VPN-клиент)
+- **`awgq`** — Python CLI/TUI (`~/projects/awgq`, symlink `~/.local/bin/awgq -> ~/projects/awgq/awgq.sh`, venv в `~/projects/awgq/.venv`). Установлен и настроен на **notebook и archlinux-mkair** (mesh = **NetBird**, `wt0`/table `7120`; Tailscale удалён со всех машин).
+- Конфиги VPN: `/etc/amnezia/amneziawg/configs/` (активный — симлинк `/etc/amnezia/amneziawg/wg0.conf`). Конфиг awgq: `~/.config/awgq/config.yaml` (в chezmoi).
+- **Команды**: `awgq on/off/toggle/restart` (systemd `awg-quick@wg0.service` + netbird-fix), `awgq config <имя>`, `awgq status`, `awgq netbird fix`, `awgq tui`. zsh-обёртка: `~/.config/zsh/functions/awg.zsh`.
+- **Критично**: один конфиг = один ключ = **одно активное устройство одновременно** (у провайдера лимит до 5 устройств, но шарение одного ключа ведёт к «качелям»/лагам по всей сети). Для каждого устройства — свой конфиг/ключ. После разбора 2026-09-24: VPN на ноутах выключен (`disabled`), дом работает на Keenetic.
+- **Пакеты**: `amneziawg-linux` (модуль ядра), `amneziawg-tools` (`awg-quick`), `amneziawg-go` (userspace, опционально). Нужен `openresolv` (иначе `resolvconf: command not found`).
