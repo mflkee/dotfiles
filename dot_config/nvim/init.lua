@@ -864,6 +864,8 @@ do
     -- gopls = {},
     pyright = {},
     ruff = {},
+    -- PostgreSQL (sqls) — автокомплит таблиц/колонок через ~/.config/sqls/config.yml
+    sqls = {},
     -- tsc = {},
     --
     -- Some languages (like rust) have entire language plugins that can be useful:
@@ -961,6 +963,7 @@ do
         lua = true,
         python = true,
         rust = true,
+        sql = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -977,6 +980,8 @@ do
       lua = { 'stylua' },
       python = { 'ruff_format' },
       rust = { 'rustfmt' },
+      -- PostgreSQL: pg_format (пакет pgformatter)
+      sql = { 'pg_format' },
 
       -- Conform can also run multiple formatters sequentially
       --python = { "isort", "black" },
@@ -1096,6 +1101,7 @@ do
 
     'python',
     'rust',
+    'sql',
 
     'json',
     'yaml',
