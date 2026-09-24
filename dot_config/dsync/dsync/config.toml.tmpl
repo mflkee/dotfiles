@@ -21,11 +21,18 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 post_pull = "chezmoi apply --force"
 
-# ~/projects целиком синхронизируется через Syncthing (папка "projects",
-# полное зеркало, включая .git) — см. vault servers/mesh-map.md.
-# Поэтому [auto_projects] и [projects.*] под ~/projects отключены.
-# dsync оставлен только для dotfiles (+ состояние tmux/opencode) и самого
-# репозитория dsync (сборка бинаря через post_pull; в Syncthing исключён .stignore).
+# ~/projects: КОНТРОЛЬ СОСТОЯНИЙ через dsync (без разворота содержимого).
+# Каждая машина при dsync push анонсирует состояния своих git-репо (ветка,
+# dirty, ahead/behind, url, последний коммит); hub копит их — смотришь в
+# `dsync status` / TUI вкладке Projects: видно, где «не закоммичено /
+# не запушено». sync = false → hub НЕ клонирует/пулит на флоте — репо
+# остаются git+GitHub, каждая машина сама. Syncthing-папка projects удалена
+# 2026-09-24 (файлы на диске не тронуты), см. vault servers/mesh-map.md.
+[auto_projects]
+root = "~/projects"
+branch = "main"
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+sync = false
 
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
 # Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
