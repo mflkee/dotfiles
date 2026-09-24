@@ -10,16 +10,20 @@
 --     (настроено в init.lua, секция conform)
 --
 -- Keymaps:
---   <leader>qr  — выполнить выделенное/текущий запрос (dadbod)
+--   <leader>qr  — выполнить выделенное или текущий запрос (dadbod)
 --   <leader>qd  — открыть браузер БД (dadbod-ui)
---   <leader>qp  — открыть pgcli в плавающем терминале (или :Pgsql)
+--   <leader>qp  — открыть pgcli в плавающем терминале (или команда :Pgsql)
 --
--- По умолчанию подключаемся к локальному кластеру PostgreSQL
+-- По умолчанию коннектимся к локальному кластеру PostgreSQL
 -- (user == $USER, база == $PGDATABASE или $USER). Переопределить на лету:
 --   :DB postgres://user:pass@host:5432/db
--- или переменными окружения для pgcli/dadbod (PGHOST, PGDATABASE, ...).
+-- или переменными окружения (PGHOST, PGDATABASE, ...).
 
 local M = {}
+
+local function gh(repo)
+  return 'https://github.com/' .. repo
+end
 
 -- --- Соединение по умолчанию ------------------------------------------
 local function default_url()
@@ -28,34 +32,18 @@ local function default_url()
   return string.format('postgres://%s@127.0.0.1:5432/%s?sslmode=disable', user, db)
 end
 
--- --- lazy-спеки: dadbod + dadbod-ui -----------------------------------
--- custom/plugins грузятся в самом конце init.lua (после lazy.setup),
--- поэтому добавляем спеки через lazy.add — плагины установятся и будут
--- подгружаться лениво по командам/keymaps.
-require('lazy').add({
-  {
-    'tpope/vim-dadbod',
-    cmd = { 'DB', 'DBUI' },
-    keys = {
-      { '<leader>qr', ':<C-U>DB<CR>', mode = { 'n', 'v' }, desc = 'Run SQL query (Dadbod)' },
-      { '<leader>qd', '<cmd>DBUI<CR>', desc = 'DB browser (Dadbod UI)' },
-    },
-    init = function()
-      vim.g.db_default = { url = default_url() }
-    end,
-  },
-  {
-    'kristijanhusak/vim-dadbod-ui',
-    dependencies = { 'tpope/vim-dadbod' },
-    cmd = { 'DBUI', 'DBUIToggle', 'DBUIAddConnection', 'DBUIFindBuffer', 'DBUIRenameBuffer', 'DBUILastQueryInfo' },
-    init = function()
-      vim.g.db_ui_use_nerd_fonts = true
-      vim.g.db_ui_tmp_query_location = vim.fn.stdpath('data') .. '/dadbod_queries'
-    end,
-  },
-})
+-- --- dadbod + dadbod-ui через нативный vim.pack (как остальные плагины) -
+vim.pack.add { gh 'tpope/vim-dadbod' }
+vim.pack.add { gh 'kristijanhusak/vim-dadbod-ui' }
 
--- --- pgcli: интерактивный REPL в терминале ------------------------------
+vim.g.db = default_url() -- dadbod: коннект по умолчанию для :DB
+vim.g.db_default = { url = default_url() } -- dadbod-ui: то же для браузера
+vim.g.db_ui_use_nerd_fonts = true
+
+vim.keymap.set({ 'n', 'v' }, '<leader>qr', ':<C-U>DB<CR>', { desc = 'Run SQL query (Dadbod)' })
+vim.keymap.set('n', '<leader>qd', '<cmd>DBUI<CR>', { desc = 'DB browser (Dadbod UI)' })
+
+-- --- pgcli: интерактивный REPL в терминале -------------------------------
 local function get_db_name()
   return os.getenv 'PGDATABASE' or os.getenv 'USER'
 end
