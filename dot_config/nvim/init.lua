@@ -538,6 +538,9 @@ do
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
   vim.pack.add { gh 'scottmckendry/cyberdream.nvim' }
+  -- Provides the `base16-colorscheme` module used by `matugen` (wallpaper-driven
+  -- dynamic theming, see the setup at the bottom of this file)
+  vim.pack.add { gh 'RRethy/base16-nvim' }
   ---@diagnostic disable-next-line: missing-fields
   require('cyberdream').setup {
     italic_comments = false,
@@ -1190,7 +1193,12 @@ do
   -- require 'custom.plugins.git'
 end
 
--- matugen/base16 setup lives in `plugins/base16.lua` (runs after lazy loads
--- the plugin, so `base16-colorscheme` is available; no standalone require here).
+-- matugen → base16 dynamic colorscheme (wallpaper-driven; live-updates via SIGUSR1).
+-- The `base16-colorscheme` module comes from `RRethy/base16-nvim`, added with
+-- `vim.pack.add` in the Colorscheme section above. Setup is pcall-guarded so a
+-- not-yet-installed pack can never break startup.
+local ok, matugen = pcall(require, 'matugen')
+if ok then pcall(matugen.setup) end
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
