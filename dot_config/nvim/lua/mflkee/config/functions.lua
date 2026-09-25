@@ -68,18 +68,19 @@ local function clean_target(raw)
   return raw:match '^(%S+)'
 end
 
---- First capture of `pattern` that spans the cursor.
+--- First match of `pattern` that spans the cursor: its capture when the
+--- pattern has one, the whole match otherwise.
 ---@param line string
 ---@param col number 1-based byte index
 ---@param pattern string
----@return string|nil capture
+---@return string|nil match
 local function capture_under_cursor(line, col, pattern)
   local from = 1
 
   while true do
     local start_pos, end_pos, capture = line:find(pattern, from)
     if not start_pos then return nil end
-    if col >= start_pos and col <= end_pos then return capture end
+    if col >= start_pos and col <= end_pos then return capture or line:sub(start_pos, end_pos) end
     from = end_pos + 1
   end
 end
@@ -267,6 +268,17 @@ local function open_target(target)
 
   local path, anchor = split_anchor(target)
   path = decode_uri_component(path)
+
+  -- `#heading`: stay in the current file and jump to the heading.
+  if path == '' then
+    local current = vim.api.nvim_buf_get_name(0)
+    if current == '' then
+      vim.notify('No file name in this buffer', vim.log.levels.WARN)
+      return
+    end
+    open_path(current, anchor)
+    return
+  end
 
   local extra_roots = {}
   local root = project_root()
