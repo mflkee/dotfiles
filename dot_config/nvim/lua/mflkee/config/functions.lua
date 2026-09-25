@@ -146,9 +146,11 @@ local function resolve_path(raw, opts)
 
   if raw:sub(1, 1) == '~' then raw = vim.fn.expand(raw) end
 
-  if vim.fn.filereadable(raw) == 1 or vim.fn.isdirectory(raw) == 1 then return vim.fn.fnamemodify(raw, ':p') end
-
-  if raw:sub(1, 1) == '/' then return nil end
+  -- Absolute paths are taken as they are.
+  if raw:sub(1, 1) == '/' then
+    if vim.fn.filereadable(raw) == 1 or vim.fn.isdirectory(raw) == 1 then return vim.fn.fnamemodify(raw, ':p') end
+    return nil
+  end
 
   local roots = { buffer_dir() }
   vim.list_extend(roots, opts.extra_roots or {})
@@ -164,6 +166,9 @@ local function resolve_path(raw, opts)
       if vim.fn.filereadable(full) == 1 or vim.fn.isdirectory(full) == 1 then return vim.fn.fnamemodify(full, ':p') end
     end
   end
+
+  -- Last resort: relative to Neovim's current working directory.
+  if vim.fn.filereadable(raw) == 1 or vim.fn.isdirectory(raw) == 1 then return vim.fn.fnamemodify(raw, ':p') end
 end
 
 --- Obsidian style `[[note]]` links: fall back to a search by file name.
