@@ -7,7 +7,7 @@ local LOG = vim.fn.stdpath 'cache' .. '/translate.log'
 local function log(msg)
   local f = io.open(LOG, 'a')
   if f then
-    f:write(os.date('%F %T') .. ' ' .. msg .. '\n')
+    f:write(os.date '%F %T' .. ' ' .. msg .. '\n')
     f:close()
   end
 end
@@ -53,19 +53,17 @@ end
 local gen = 0
 
 local function close_float()
-  if win and vim.api.nvim_win_is_valid(win) then
-    vim.api.nvim_win_close(win, true)
-  end
+  if win and vim.api.nvim_win_is_valid(win) then vim.api.nvim_win_close(win, true) end
 end
 vim.keymap.set('n', '<C-x>', close_float, { desc = 'Close translate window' })
 
 local M = {}
 function M.run()
-  local text = vim.fn.getreg('z')
+  local text = vim.fn.getreg 'z'
   log('DBG invoke mode=' .. vim.fn.mode() .. ' reg_z=' .. (text == '' and '<empty>' or text:gsub('\n', '\\n')))
 
   if text == '' then
-    log('DBG early-return: empty register z')
+    log 'DBG early-return: empty register z'
     return
   end
 
@@ -85,7 +83,10 @@ function M.run()
       local result = finish.stdout and finish.stdout:gsub('%s+$', '') or ''
       if finish.code ~= 0 or result == '' then
         log('req#' .. my .. ' ERROR code=' .. finish.code .. ' stderr=' .. (finish.stderr or ''):gsub('\n', '\\n'))
-        ensure_win('Translate — ошибка', 'translate-shell ошибка (code ' .. finish.code .. ').\nПроверь сеть и trans (pacman -S translate-shell).')
+        ensure_win(
+          'Translate — ошибка',
+          'translate-shell ошибка (code ' .. finish.code .. ').\nПроверь сеть и trans (pacman -S translate-shell).'
+        )
         return
       end
       log('req#' .. my .. ' OK: ' .. result:gsub('\n', '\\n'))
@@ -97,6 +98,6 @@ end
 vim.keymap.set('v', '<leader>t', [["zy<Cmd>lua require('custom.plugins.translate').run()<CR>]], { desc = 'Translate ru<->en (window)' })
 vim.keymap.set('v', '<leader>T', [["zy<Cmd>lua require('custom.plugins.translate').run()<CR>]], { desc = 'Translate ru<->en (reverse)' })
 
-log('translate module loaded (v9, register-yank)')
+log 'translate module loaded (v9, register-yank)'
 
 return M
