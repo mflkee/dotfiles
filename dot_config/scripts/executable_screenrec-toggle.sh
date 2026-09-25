@@ -1,25 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Toggle recording on Wayland/Hyprland with tofi-driven setup.
+# Toggle recording on Wayland/niri with optional tofi-driven setup.
 # Video flow (Super+Shift+R):
-#   1) Выберите экран (монитор)
-#   2) Включить микрофон? (Да/Нет)
-#   3) Включить системный звук? (Да/Нет)
-#   4) Качество (FPS)
-#   => wf-recorder (или wl-screenrec) + (опционально) виртуальный микс микрофон+система
+#   1) Источник звука (Mic+Sys / Mic / Sys / Mute) — если tofi установлен
+#   2) При отсутствии tofi — дефолты: системный звук, 30 FPS
+#   => wf-recorder + (опционально) виртуальный микс микрофон+система
 # Audio-only flow (Super+Shift+M):
-#   - Источник (Система/Микрофон)
-#   - Качество MP3 (128k/192k/256k/320k)
+#   - Источник (Система/Микрофон); при отсутствии tofi — Система, 192k
+# Требования: wf-recorder (видео), ffmpeg (аудио); tofi — опционально для меню.
 
 MODE="${1:-video}"
 
 state_dir="${XDG_CACHE_HOME:-$HOME/.cache}"
-videos_dir="${XDG_VIDEOS_DIR:-$HOME/videos}"
-music_dir="${XDG_MUSIC_DIR:-$HOME/music}"
+videos_dir="${XDG_VIDEOS_DIR:-$HOME/Videos}"
+music_dir="${XDG_MUSIC_DIR:-$HOME/Music}"
 [[ -d "$music_dir" ]] || music_dir="$videos_dir"
 
 mkdir -p "$state_dir" "$videos_dir" "$music_dir" 2>/dev/null || true
+
+# Best-effort уведомления (Noctalia предоставляет org.freedesktop.Notifications);
+# сбой демона не должен ронять скрипт из-за set -e.
+notify() { notify-send "$@" || true; }
 
 # Will be set per-mode before first use
 pid_file=""
@@ -50,9 +52,8 @@ tofi_pick() {
   if command -v tofi >/dev/null 2>&1; then
     # Respect your drun style entirely (single row, theme-controlled)
     sel=$(printf '%s\n' "$@" | tofi --multi-instance=true --prompt-text "$prompt" 2>/dev/null || true)
-  else
-    notify-send "Запись экрана" "tofi не установлен — выбор параметров недоступен"
   fi
+  # Без tofi возвращаем пусто — вызывающий код подставляет дефолт
   printf '%s' "${sel%$'\n'}"
 }
 
@@ -190,9 +191,14 @@ start_video() {
     "Mic" \
     "Sys" \
     "Mute")
-  # Escape/close -> отмена без записи
+  # Escape/close -> отмена без записи (только когда есть tofi для отмены).
+  # Без tofi используем дефолты, чтобы запись всегда стартовала.
   if [[ -z "$audio_mode" ]]; then
-    notify-send "Запись экрана" "Отменено"; return 0
+    if command -v tofi >/dev/null 2>&1; then
+      notify "Запись экрана" "Отменено"; return 0
+    fi
+    audio_mode="Sys"
+    notify "Запись экрана" "tofi не установлен — системный звук, 30 FPS (по умолчанию)"
   fi
   case "$audio_mode" in
     "Mic+Sys") dev=$(create_mix_sink) ;;
@@ -236,14 +242,14 @@ start_video() {
     wl-screenrec -f "$outfile" >/dev/null 2>&1 &
     recorder_pid=$!
   else
-    notify-send "Запись экрана" "Не найден wf-recorder или wl-screenrec"
+    notify "Запись экрана" "Не найден wf-recorder или wl-screenrec"
     cleanup_mix_sink
     exit 1
   fi
 
   echo "$recorder_pid" > "$pid_file"
   echo "$outfile" > "$last_file"
-  notify-send "Запись экрана" "Началась запись: $(basename "$outfile") — ${fps} FPS"
+  notify "Запись экрана" "Началась запись: $(basename "$outfile") — ${fps} FPS"
 }
 
 start_audio() {
@@ -256,14 +262,14 @@ start_audio() {
   br=$(pick_mp3_bitrate)
   dev=$(resolve_audio_dev "$mode")
   if [[ -z "$dev" ]]; then
-    notify-send "Запись аудио" "Не удалось определить аудио-устройство"
+    notify "Запись аудио" "Не удалось определить аудио-устройство"
     exit 1
   fi
   ffmpeg -hide_banner -loglevel error -f pulse -i "$dev" -c:a libmp3lame -b:a "$br" "$outfile" >/dev/null 2>&1 &
   recorder_pid=$!
   echo "$recorder_pid" > "$pid_file"
   echo "$outfile" > "$last_file"
-  notify-send "Запись аудио" "Начата: $(basename "$outfile") — $br"
+  notify "Запись аудио" "Начата: $(basename "$outfile") — $br"
 }
 
 stop_rec() {
@@ -276,12 +282,12 @@ stop_rec() {
   rm -f "$pid_file"
   if [[ -f "$last_file" ]]; then
     if [[ "$MODE" == "audio" ]]; then
-      notify-send "Запись аудио" "Остановлена: $(basename "$(cat "$last_file")")"
+      notify "Запись аудио" "Остановлена: $(basename "$(cat "$last_file")")"
     else
-      notify-send "Запись экрана" "Остановлена: $(basename "$(cat "$last_file")")"
+      notify "Запись экрана" "Остановлена: $(basename "$(cat "$last_file")")"
     fi
   else
-    notify-send "Запись" "Остановлена"
+    notify "Запись" "Остановлена"
   fi
   # Clean up virtual audio mix (if any)
   cleanup_mix_sink
