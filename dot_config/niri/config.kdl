@@ -243,6 +243,10 @@ spawn-sh-at-startup "sh $HOME/.config/niri/set-outputs.sh"
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
 spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-dracula'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
 
+// Idle: lock after 5 minutes, power off monitors after 10; lock before suspend.
+// Requires: swayidle, swaylock.
+spawn-sh-at-startup "swayidle -w timeout 300 'swaylock -f' timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'swaylock -f'"
+
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
 
@@ -616,7 +620,22 @@ binds {
     Ctrl+Print allow-inhibiting=false { screenshot-screen; }
     Alt+Print allow-inhibiting=false { screenshot-window; }
 
-    // Record the screen with wf-recorder: press once to select a region, press again to stop.
+    // Region screenshot: select any area, save PNG to ~/Pictures/Screenshots and copy to clipboard.
+    // Requires grim + slurp (see ~/.config/scripts/screenshot_region_clipboard.sh).
+    Mod+Shift+S repeat=false hotkey-overlay-title="Screenshot Region (file+clipboard)" {
+        spawn-sh "sh $HOME/.config/scripts/screenshot_region_clipboard.sh"
+    }
+
+    // Screen recording: toggle wf-recorder (dialog-driven setup, see screenrec-toggle.sh).
+    // Requires wf-recorder (+ optionally tofi for interactive prompts).
+    Super+Shift+R repeat=false hotkey-overlay-title="Toggle Screen Recording" {
+        spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh"
+    }
+    Super+Shift+M repeat=false hotkey-overlay-title="Record Audio Only" {
+        spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh audio"
+    }
+
+    // Full OBS Studio session.
     Shift+Ctrl+R { spawn "obs"; }
 
     // Applications such as remote-desktop clients and software KVM switches may

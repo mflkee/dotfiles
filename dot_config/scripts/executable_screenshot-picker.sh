@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-outdir="${XDG_PICTURES_DIR:-$HOME/screenshots}"
+outdir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
 mkdir -p "$outdir"
 ts=$(date +'%Y-%m-%d-%H%M%S')
 

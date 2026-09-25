@@ -173,16 +173,6 @@ export PLANTUML_INCLUDE_PATH="$HOME/.config/plantuml/config.puml"
 # --------------------
 # Настройки приложений
 # --------------------
-export XSECURELOCK_AUTH=auth_x11
-export XSECURELOCK_AUTHPROTO=authproto_pam
-export XSECURELOCK_SHOW_DATETIME=1
-export XSECURELOCK_PASSWORD_PROMPT=emoji
-export XSECURELOCK_BACKGROUND_COLOR="#000000"
-export XSECURELOCK_AUTH_BACKGROUND_COLOR="#000000"
-export XSECURELOCK_AUTH_FOREGROUND_COLOR="#FFFFFF"
-export XSECURELOCK_DIM_COLOR="#000000"
-export XSECURELOCK_DIM_ALPHA=0.5
-export XSECURELOCK_DIM_FPS=60
 
 # --------------------
 # Сторонние инструменты

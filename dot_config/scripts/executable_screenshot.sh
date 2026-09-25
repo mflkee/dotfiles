@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Папка для сохранения скриншотов
-screenshot_dir="$HOME/screenshots"
+# Папка для сохранения скриншотов (общий путь с niri: ~/Pictures/Screenshots)
+screenshot_dir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
 mkdir -p "$screenshot_dir"
 
 # Имя файла скриншота
