@@ -24,14 +24,17 @@ local function decode_uri_component(value)
   return (value:gsub('%%(%x%x)', function(hex) return string.char(tonumber(hex, 16)) end))
 end
 
----@param heading string
+--- Anchor key shared by a heading and the `#anchor` that points at it:
+--- lower case, whitespace becomes a dash, other punctuation is dropped
+--- (dashes are kept, so `#target-heading` matches `## Target heading`).
+---@param value string
 ---@return string
-local function slugify_heading(heading)
-  heading = heading:lower()
-  heading = heading:gsub('`', '')
-  heading = heading:gsub('[%p]', '')
-  heading = heading:gsub('%s+', '-')
-  return heading
+local function anchor_key(value)
+  value = value:lower()
+  value = value:gsub('`', '')
+  value = value:gsub('%s+', '-')
+  value = value:gsub('[-%p]', '')
+  return value
 end
 
 ---@param target string
@@ -194,12 +197,12 @@ end
 ---@param anchor string
 ---@return boolean
 local function jump_to_markdown_anchor(anchor)
-  local target = slugify_heading(anchor)
+  local target = anchor_key(anchor)
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
   for index, line in ipairs(lines) do
     local heading = line:match '^#+%s+(.+)$'
-    if heading and slugify_heading(heading) == target then
+    if heading and anchor_key(heading) == target then
       vim.api.nvim_win_set_cursor(0, { index, 0 })
       vim.cmd 'normal! zz'
       return true
