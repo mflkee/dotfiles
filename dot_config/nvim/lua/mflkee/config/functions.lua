@@ -27,13 +27,15 @@ end
 --- Anchor key shared by a heading and the `#anchor` that points at it:
 --- lower case, whitespace becomes a dash, other punctuation is dropped
 --- (dashes are kept, so `#target-heading` matches `## Target heading`).
+--- `vim.fn.tolower` is used instead of `string.lower` so that non-ASCII
+--- headings (Cyrillic, …) fold case as well.
 ---@param value string
 ---@return string
 local function anchor_key(value)
-  value = value:lower()
+  value = vim.fn.tolower(value)
   value = value:gsub('`', '')
   value = value:gsub('%s+', '-')
-  value = value:gsub('[-%p]', '')
+  value = value:gsub('%p', function(char) return char == '-' and char or '' end)
   return value
 end
 
