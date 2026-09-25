@@ -783,6 +783,12 @@ do
 
   -- Shortcut for searching your Neovim configuration files
   vim.keymap.set('n', '<leader>sn', function() builtin.find_files { cwd = vim.fn.stdpath 'config', follow = true } end, { desc = '[S]earch [N]eovim files' })
+
+  -- Open whatever is under the cursor:
+  --   markdown/quarto: [text](notes/note.md), [[note]], <https://…>, bare URL
+  --   code: "./example.rs", include_str!("…"), mod example;, plain file names
+  -- URLs open in Zen Browser (see `let g:mflkee_browser`), paths and notes as buffers.
+  vim.keymap.set('n', '<leader>o', function() require('mflkee.config.functions').open_target_under_cursor() end, { desc = '[O]pen path/URL under cursor' })
 end
 
 -- ============================================================
