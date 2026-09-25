@@ -628,15 +628,15 @@ binds {
 
     // Screen recording: toggle wf-recorder (dialog-driven setup, see screenrec-toggle.sh).
     // Requires wf-recorder (+ optionally tofi for interactive prompts).
-    Super+Shift+R repeat=false hotkey-overlay-title="Toggle Screen Recording" {
+    Shift+Ctrl+R repeat=false hotkey-overlay-title="Toggle Screen Recording" {
         spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh"
     }
     Super+Shift+M repeat=false hotkey-overlay-title="Record Audio Only" {
         spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh audio"
     }
 
-    // Full OBS Studio session.
-    Shift+Ctrl+R { spawn "obs"; }
+    // Full OBS Studio session (переехал с Shift+Ctrl+R — теперь запись занимает этот бинд).
+    Mod+Shift+O hotkey-overlay-title="Open OBS Studio" { spawn "obs"; }
 
     // Applications such as remote-desktop clients and software KVM switches may
     // request that niri stops processing the keyboard shortcuts defined here
