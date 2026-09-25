@@ -139,7 +139,7 @@ end
 local function guess_connection(bufnr)
   local path = vim.api.nvim_buf_get_name(bufnr)
   local lower_path = path:lower()
-  local header = {}
+  local header = ''
 
   if path ~= '' and vim.uv.fs_stat(path) then
     local ok, lines = pcall(vim.fn.readfile, path, '', 20)

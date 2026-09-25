@@ -243,16 +243,17 @@ local function rust_project_info()
   if not package and #(metadata.packages or {}) == 1 then package = metadata.packages[1] end
   if not package then error('Cargo package for the current file was not found', 0) end
 
-  local binaries = {}
+  local executables = {}
   for _, target in ipairs(package.targets or {}) do
-    if vim.tbl_contains(target.kind or {}, 'bin') then table.insert(binaries, target) end
+    local kind = target.kind or {}
+    if vim.tbl_contains(kind, 'bin') or vim.tbl_contains(kind, 'example') then table.insert(executables, target) end
   end
-  if #binaries == 0 then error(('Cargo package %q has no binary target to debug'):format(package.name), 0) end
+  if #executables == 0 then error(('Cargo package %q has no binary or example target to debug'):format(package.name), 0) end
 
   local value = {
     manifest = manifest,
     package = package,
-    binaries = binaries,
+    executables = executables,
     target_directory = normalize_path(metadata.target_directory or 'target'),
     workspace_root = normalize_path(metadata.workspace_root or vim.fs.dirname(manifest)),
   }
@@ -260,45 +261,52 @@ local function rust_project_info()
   return value
 end
 
-local function choose_rust_binary(info)
+local function choose_rust_executable(info)
   local current_file = normalize_path(vim.api.nvim_buf_get_name(0))
-  for _, target in ipairs(info.binaries) do
+  for _, target in ipairs(info.executables) do
     if target.src_path and normalize_path(target.src_path) == current_file then return target end
   end
 
-  if #info.binaries == 1 then return info.binaries[1] end
+  if #info.executables == 1 then return info.executables[1] end
 
-  local labels = vim.tbl_map(function(target) return ('%s — %s'):format(target.name, target.src_path or '<unknown source>') end, info.binaries)
-  local choice = vim.fn.inputlist(('Debug binary in %s:'):format(info.package.name), labels)
+  local labels = vim.tbl_map(
+    function(target) return ('%s [%s] — %s'):format(target.name, target.kind[1], target.src_path or '<unknown source>') end,
+    info.executables
+  )
+  local choice = vim.fn.inputlist(('Debug executable in %s:'):format(info.package.name), labels)
   if choice == 0 then error('Rust debug launch cancelled', 0) end
-  return info.binaries[choice]
+  return info.executables[choice]
 end
 
 local function rust_debug_program()
   local info = rust_project_info()
-  local target = choose_rust_binary(info)
-  local program = vim.fs.joinpath(info.target_directory, 'debug', target.name)
+  local target = choose_rust_executable(info)
+  local is_example = vim.tbl_contains(target.kind, 'example')
+  local selector = is_example and '--example' or '--bin'
+  local output_dir = vim.fs.joinpath(info.target_directory, 'debug')
+  if is_example then output_dir = vim.fs.joinpath(output_dir, 'examples') end
+  local program = vim.fs.joinpath(output_dir, target.name)
 
-  vim.notify(('Building Rust binary %s for debugging…'):format(target.name), vim.log.levels.INFO)
+  vim.notify(('Building Rust %s %s for debugging…'):format(is_example and 'example' or 'binary', target.name), vim.log.levels.INFO)
   local result = vim
     .system({
       'cargo',
       'build',
       '--manifest-path',
       info.manifest,
-      '--bin',
+      selector,
       target.name,
     }, { cwd = info.workspace_root, text = true })
     :wait()
 
-  if result.code ~= 0 then error(('cargo build --bin %s failed:\n%s'):format(target.name, result.stderr or result.stdout or 'unknown error'), 0) end
+  if result.code ~= 0 then error(('cargo build %s %s failed:\n%s'):format(selector, target.name, result.stderr or result.stdout or 'unknown error'), 0) end
 
   return program
 end
 
 dap.configurations.rust = {
   {
-    name = 'Rust: Debug current Cargo binary',
+    name = 'Rust: Debug current Cargo executable',
     type = 'codelldb',
     request = 'launch',
     program = rust_debug_program,
