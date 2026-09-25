@@ -258,6 +258,29 @@ do
     vim.cmd 'startinsert'
   end
 
+  local function cargo_manifest_dir()
+    local file = vim.fn.expand '%:p'
+    local start = file ~= '' and vim.fs.dirname(file) or vim.fn.getcwd()
+    local manifest = vim.fs.find('Cargo.toml', {
+      upward = true,
+      path = start,
+      type = 'file',
+      limit = 1,
+    })[1]
+
+    if not manifest then
+      vim.notify('Cargo.toml not found above the current file', vim.log.levels.ERROR)
+      return nil
+    end
+    return vim.fs.dirname(manifest)
+  end
+
+  local function run_cargo(subcommand)
+    local manifest_dir = cargo_manifest_dir()
+    if not manifest_dir then return end
+    run_in_terminal(('cd %s && cargo %s'):format(vim.fn.shellescape(manifest_dir), subcommand))
+  end
+
   local function run_current_file()
     local ft = vim.bo.filetype
     local file = vim.fn.expand '%:p'
@@ -277,9 +300,10 @@ do
       cpp = 'g++ ' .. filename .. ' -o /tmp/nvim_run && /tmp/nvim_run',
     }
 
-    -- Rust projects use Cargo
+    -- Rust projects use Cargo from the manifest directory, not from an
+    -- arbitrary Neovim working directory.
     if ft == 'rust' then
-      run_in_terminal 'cargo run'
+      run_cargo 'run'
       return
     end
 
@@ -297,6 +321,18 @@ do
   vim.keymap.set('n', '<leader>rt', run_current_file, {
     desc = '[R]un in [T]erminal',
   })
+
+  local cargo_mappings = {
+    { '<leader>cb', 'build', '[C]argo [B]uild' },
+    { '<leader>cc', 'check --all-targets', '[C]argo [C]heck all targets' },
+    { '<leader>ct', 'test', '[C]argo [T]est' },
+    { '<leader>cl', 'clippy --all-targets -- -D warnings', '[C]argo [C]lippy (deny warnings)' },
+    { '<leader>cr', 'run', '[C]argo [R]un' },
+    { '<leader>cR', 'run --release', '[C]argo [R]un release' },
+  }
+  for _, mapping in ipairs(cargo_mappings) do
+    vim.keymap.set('n', mapping[1], function() run_cargo(mapping[2]) end, { desc = mapping[3] })
+  end
 
   -- Debug
   vim.keymap.set('n', '<leader>rd', function() require('dap').continue() end, {

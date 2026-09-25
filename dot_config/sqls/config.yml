@@ -1,13 +1,17 @@
 ---
-# Конфиг для SQL LSP (sqls) — ставится через mason (см. ленивый nvim/init.lua).
-# Файл читается LSP-сервером из ~/.config/sqls/config.yml.
-# Тут соединения для локального кластера PostgreSQL (trust/peer, user == $USER).
-# Больше примеров: https://github.com/sqls-server/sqls#postgresql--mysql
+# Конфиг SQL LSP (sqls), читаемый из ~/.config/sqls/config.yml.
+# Все подключения указывают на Docker-стенд курса, не на локальный PostgreSQL.
 version: 2
 connections:
-  - alias: local
+  - alias: course
     driver: postgresql
-    dataSourceName: "host=127.0.0.1 port=5432 user=mflkee dbname=mflkee sslmode=disable"
-  - alias: postgres
+    dataSourceName: "host=127.0.0.1 port=15432 user=course password=course dbname=course sslmode=disable"
+  - alias: course_m06
     driver: postgresql
-    dataSourceName: "host=127.0.0.1 port=5432 user=mflkee dbname=postgres sslmode=disable"
+    dataSourceName: "host=127.0.0.1 port=15432 user=course password=course dbname=course_m06 sslmode=disable"
+  - alias: timescale
+    driver: postgresql
+    dataSourceName: "host=127.0.0.1 port=15433 user=course password=course dbname=course sslmode=disable"
+  - alias: capstone
+    driver: postgresql
+    dataSourceName: "host=127.0.0.1 port=15442 user=course password=course dbname=capstone sslmode=disable"

@@ -194,15 +194,115 @@ dap.adapters.codelldb = {
   command = vim.fn.stdpath 'data' .. '/mason/bin/codelldb',
 }
 
+local rust_info_cache
+
+local function normalize_path(path) return vim.fs.normalize(vim.fn.fnamemodify(path or vim.fn.getcwd(), ':p')) end
+
+local function rust_project_info()
+  local file = vim.api.nvim_buf_get_name(0)
+  local cache_key = file ~= '' and normalize_path(file) or vim.fn.getcwd()
+  if rust_info_cache and rust_info_cache.key == cache_key then return rust_info_cache.value end
+
+  if vim.fn.exepath 'cargo' == '' then error('cargo is not installed or is not in PATH', 0) end
+
+  local start = file ~= '' and vim.fs.dirname(file) or vim.fn.getcwd()
+  local manifest = vim.fs.find('Cargo.toml', {
+    upward = true,
+    path = start,
+    type = 'file',
+    limit = 1,
+  })[1]
+  if not manifest then error('Cargo.toml not found above the current Rust file', 0) end
+  manifest = normalize_path(manifest)
+
+  local result = vim
+    .system({
+      'cargo',
+      'metadata',
+      '--no-deps',
+      '--format-version',
+      '1',
+      '--manifest-path',
+      manifest,
+    }, { cwd = vim.fs.dirname(manifest), text = true })
+    :wait()
+
+  if result.code ~= 0 then error(('cargo metadata failed:\n%s'):format(result.stderr or result.stdout or 'unknown error'), 0) end
+
+  local ok, metadata = pcall(vim.json.decode, result.stdout)
+  if not ok then error('cargo metadata returned invalid JSON', 0) end
+
+  local package
+  for _, candidate in ipairs(metadata.packages or {}) do
+    if normalize_path(candidate.manifest_path) == manifest then
+      package = candidate
+      break
+    end
+  end
+
+  if not package and #(metadata.packages or {}) == 1 then package = metadata.packages[1] end
+  if not package then error('Cargo package for the current file was not found', 0) end
+
+  local binaries = {}
+  for _, target in ipairs(package.targets or {}) do
+    if vim.tbl_contains(target.kind or {}, 'bin') then table.insert(binaries, target) end
+  end
+  if #binaries == 0 then error(('Cargo package %q has no binary target to debug'):format(package.name), 0) end
+
+  local value = {
+    manifest = manifest,
+    package = package,
+    binaries = binaries,
+    target_directory = normalize_path(metadata.target_directory or 'target'),
+    workspace_root = normalize_path(metadata.workspace_root or vim.fs.dirname(manifest)),
+  }
+  rust_info_cache = { key = cache_key, value = value }
+  return value
+end
+
+local function choose_rust_binary(info)
+  local current_file = normalize_path(vim.api.nvim_buf_get_name(0))
+  for _, target in ipairs(info.binaries) do
+    if target.src_path and normalize_path(target.src_path) == current_file then return target end
+  end
+
+  if #info.binaries == 1 then return info.binaries[1] end
+
+  local labels = vim.tbl_map(function(target) return ('%s — %s'):format(target.name, target.src_path or '<unknown source>') end, info.binaries)
+  local choice = vim.fn.inputlist(('Debug binary in %s:'):format(info.package.name), labels)
+  if choice == 0 then error('Rust debug launch cancelled', 0) end
+  return info.binaries[choice]
+end
+
+local function rust_debug_program()
+  local info = rust_project_info()
+  local target = choose_rust_binary(info)
+  local program = vim.fs.joinpath(info.target_directory, 'debug', target.name)
+
+  vim.notify(('Building Rust binary %s for debugging…'):format(target.name), vim.log.levels.INFO)
+  local result = vim
+    .system({
+      'cargo',
+      'build',
+      '--manifest-path',
+      info.manifest,
+      '--bin',
+      target.name,
+    }, { cwd = info.workspace_root, text = true })
+    :wait()
+
+  if result.code ~= 0 then error(('cargo build --bin %s failed:\n%s'):format(target.name, result.stderr or result.stdout or 'unknown error'), 0) end
+
+  return program
+end
+
 dap.configurations.rust = {
   {
-    name = 'Rust: Debug',
+    name = 'Rust: Debug current Cargo binary',
     type = 'codelldb',
     request = 'launch',
-
-    program = function() return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/target/debug/', 'file') end,
-
-    cwd = '${workspaceFolder}',
+    program = rust_debug_program,
+    cwd = function() return rust_project_info().workspace_root end,
     stopOnEntry = false,
   },
 }
