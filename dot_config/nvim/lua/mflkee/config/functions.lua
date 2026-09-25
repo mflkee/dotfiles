@@ -68,54 +68,53 @@ local function clean_target(raw)
   return raw:match '^(%S+)'
 end
 
+--- First capture of `pattern` that spans the cursor.
+---@param line string
+---@param col number 1-based byte index
+---@param pattern string
+---@return string|nil capture
+local function capture_under_cursor(line, col, pattern)
+  local from = 1
+
+  while true do
+    local start_pos, end_pos, capture = line:find(pattern, from)
+    if not start_pos then return nil end
+    if col >= start_pos and col <= end_pos then return capture end
+    from = end_pos + 1
+  end
+end
+
 --- Link, autolink or bare URL under the cursor.
 ---@return string|nil target, string|nil kind
 local function link_under_cursor()
   local line = vim.api.nvim_get_current_line()
   local col = vim.api.nvim_win_get_cursor(0)[2] + 1
-  local from = 1
 
   -- [text](target)
-  while true do
-    local start_pos, end_pos, raw = line:find('%[[^%]]*%]%((.-)%)', from)
-    if not start_pos then break end
-    if col >= start_pos and col <= end_pos then
-      local target = clean_target(raw)
-      if target then return decode_uri_component(target), 'link' end
-    end
-    from = end_pos + 1
+  local target = capture_under_cursor(line, col, '%[[^%]]*%]%((.-)%)')
+  if target then
+    target = clean_target(target)
+    if target then return decode_uri_component(target), 'link' end
   end
 
   -- [[note#anchor|alias]] (Obsidian style)
-  while true do
-    local start_pos, end_pos, raw = line:find('%[%[([^%]]+)%]%]', from)
-    if not start_pos then break end
-    if col >= start_pos and col <= end_pos then
-      local target = raw:gsub('|.*$', '')
-      if target ~= '' then return decode_uri_component(target), 'wikilink' end
-    end
-    from = end_pos + 1
+  target = capture_under_cursor(line, col, '%[%[([^%]]+)%]%]')
+  if target then
+    target = target:gsub('|.*$', '')
+    if target ~= '' then return decode_uri_component(target), 'wikilink' end
   end
 
   -- <https://example.com> and <user@example.com>
-  while true do
-    local start_pos, end_pos, raw = line:find('<([^<>]+)>', from)
-    if not start_pos then break end
-    if col >= start_pos and col <= end_pos then
-      raw = raw:gsub('%s+$', '')
-      if raw:match '^[%w%.%+%-_]+@[%w%.%-]+$' then return 'mailto:' .. raw, 'url' end
-      if target_scheme(raw) then return raw, 'url' end
-    end
-    from = end_pos + 1
+  target = capture_under_cursor(line, col, '<([^<>]+)>')
+  if target then
+    target = target:gsub('%s+$', '')
+    if target:match '^[%w%.%+%-_]+@[%w%.%-]+$' then return 'mailto:' .. target, 'url' end
+    if target_scheme(target) then return target, 'url' end
   end
 
   -- bare https://example.com
-  while true do
-    local start_pos, end_pos, url = line:find('https?://[^%s<>"%[%]()]+', from)
-    if not start_pos then break end
-    if col >= start_pos and col <= end_pos then return url:gsub('[,%.:;]+$', ''), 'url' end
-    from = end_pos + 1
-  end
+  target = capture_under_cursor(line, col, 'https?://[^%s<>"%[%]()]+')
+  if target then return target:gsub('[,%.:;]+$', ''), 'url' end
 end
 
 ---@return string
