@@ -255,6 +255,9 @@ spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'pre
 // Requires: swayidle, swaylock (lock = blurred screen via ~/.config/scripts/lock.sh).
 spawn-sh-at-startup "swayidle -w timeout 300 'sh $HOME/.config/scripts/lock.sh' timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'sh $HOME/.config/scripts/lock.sh'"
 
+// Авто-сборка рабочего окружения: zen→ws1, терминалы→ws2, obsidian→ws3.
+spawn-sh-at-startup "sh $HOME/.config/scripts/workspace-layout.sh"
+
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
 
