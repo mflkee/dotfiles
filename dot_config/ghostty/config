@@ -30,6 +30,10 @@ mouse-scroll-multiplier = discrete:0.5
 # niri сам управляет окнами, декорации браузера не нужны.
 gtk-titlebar = false
 
+# Скрыть таб-бар вкладок (auto = показывать при >=2 вкладках; hidden = никогда).
+# Переключение вкладок остаётся: Ctrl+Shift+T новая, Ctrl+Shift+W закрыть, Ctrl+Tab.
+window-show-tab-bar = hidden
+
 # Minimum contrast for readability
 minimum-contrast = 1.1
 
