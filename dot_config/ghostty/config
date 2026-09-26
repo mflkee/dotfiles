@@ -16,7 +16,7 @@ cursor-style-blink = false
 cursor-opacity = 1
 
 # Terminal padding
-window-padding-x = 9
+window-padding-x = 0
 window-padding-y = 0
 
 # Split divider
