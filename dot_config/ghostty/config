@@ -16,8 +16,8 @@ cursor-style-blink = false
 cursor-opacity = 1
 
 # Terminal padding
-window-padding-x = 4
-window-padding-y = 2
+window-padding-x = 0
+window-padding-y = 0
 
 # Split divider
 cursor-click-to-move = true

@@ -79,6 +79,9 @@ input {
 layout {
     // Set gaps around windows in logical pixels.
     gaps 14
+    // Окна вплотную к краям экрана (нет полосы снизу/по бокам).
+    // Зазор между окнами (gaps 14) остаётся.
+    edge-gaps false
 
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
