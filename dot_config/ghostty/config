@@ -26,6 +26,10 @@ cursor-click-to-move = true
 confirm-close-surface = false
 mouse-scroll-multiplier = discrete:0.5
 
+# Убрать GTK-тайтлбар окна (серая полоса с названием "Ghostty" сверху).
+# niri сам управляет окнами, декорации браузера не нужны.
+gtk-titlebar = false
+
 # Minimum contrast for readability
 minimum-contrast = 1.1
 
