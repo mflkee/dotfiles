@@ -19,11 +19,14 @@ require 'mflkee.keymaps'
 require 'mflkee.pack'
 
 require 'mflkee.plugins.core'
+require 'mflkee.plugins.snacks'
 require 'mflkee.plugins.search'
 require 'mflkee.plugins.lsp'
 require 'mflkee.plugins.format'
 require 'mflkee.plugins.completion'
 require 'mflkee.plugins.treesitter'
+require 'mflkee.plugins.oil'
+require 'mflkee.plugins.flash'
 
 -- Optional kickstart examples
 require 'kickstart.plugins.debug'
