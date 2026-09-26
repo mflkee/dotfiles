@@ -8,7 +8,7 @@ font-size = 14
 
 # Background
 # Матовое стекло: прозрачность + глобальный blur в niri.
-background-opacity = 1
+background-opacity = 0.88
 
 # Cursor
 cursor-style = block
@@ -18,7 +18,7 @@ cursor-opacity = 1
 # Terminal padding
 # 0 = текст вплотную к рамке окна, выглядит неопрятно (промпт липнет к краю).
 window-padding-x = 12
-window-padding-y = 30
+window-padding-y = 8
 
 # Split divider
 cursor-click-to-move = true
