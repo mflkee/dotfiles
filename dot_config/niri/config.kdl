@@ -102,7 +102,13 @@ layout {
     }
 
     // You can also customize the heights that "switch-preset-window-height" (Mod+Shift+R) toggles between.
-    // preset-window-heights { }
+    // Пресеты высот окон (цикл по Mod+Shift+R), симметрично ширине колонок.
+    // Вернуть окно на полную высоту: Mod+Ctrl+R (reset-window-height).
+    preset-window-heights {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
 
     // You can change the default width of the new windows.
     default-column-width { proportion 1.0; }
