@@ -323,6 +323,12 @@ window-rule {
     clip-to-geometry true
 }
 
+// Игровые лаунчеры (Heroic, Steam) — плавающие: их диалоги/магазины плохо выглядят в тайле.
+window-rule {
+    match app-id=r#"^(com\.heroicgameslauncher\.hgl|heroic|steam)$"#
+    open-floating true
+}
+
 // Global blur settings (defaults shown).
 blur {
     passes 3
