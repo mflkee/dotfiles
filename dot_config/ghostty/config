@@ -26,6 +26,9 @@ cursor-click-to-move = true
 confirm-close-surface = false
 mouse-scroll-multiplier = discrete:0.5
 
+# Скрыть таб-бар: вкладки работают (Ctrl+Shift+T/W, Ctrl+Tab), полоса не рисуется.
+tab-bar-visibility = hidden
+
 # Minimum contrast for readability
 minimum-contrast = 1.1
 
