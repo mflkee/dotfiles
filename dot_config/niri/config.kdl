@@ -396,10 +396,10 @@ binds {
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
-    // For example, this is a standard bind to toggle the screen reader (orca).
-    Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
 
+    // Voice Dictation: D в русской раскладке — это «в» (Cyrillic_ve), поэтому дубль-бинд.
     Super+Alt+D hotkey-overlay-title="Voice Dictation (hyprwhspr)" { spawn "hyprwhspr" "record" "toggle"; }
+    Super+Alt+Cyrillic_ve hotkey-overlay-title="Voice Dictation (hyprwhspr)" { spawn "hyprwhspr" "record" "toggle"; }
 
     Mod+Ctrl+0 hotkey-overlay-title="Toggle Monitor Rotation (Portrait/Landscape)" { spawn-sh "PATH=\"$HOME/.local/bin:$PATH\" toggle-monitor-rotation"; }
 
