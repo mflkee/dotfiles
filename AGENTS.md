@@ -1,7 +1,7 @@
 # Dotfiles Rules
 
 - This repository is the source of truth for files managed by chezmoi.
-- Never edit live files under `~/.config`, `~/.tmux.conf`, `~/.zshrc`, or similar paths directly when a matching source file exists here.
+- Never edit live files under `~/.config`, `~/.zellij`, `~/.zshrc`, or similar paths directly when a matching source file exists here.
 - Prefer editing files in this repo directly, or use `chezmoi edit <target> --apply`.
 - The chezmoi source repo is `/home/mflkee/dotfiles` (`chezmoi source-path`).
 
@@ -43,13 +43,15 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - Не захватываются: файлы с исходником `.tmpl` (правь шаблон), сгенерированные
   темы/`.desktop`, `~/Pictures`, вложенные git-репо и не-managed файлы.
 
-### Синхронизация состояния: tmux + сессии opencode
+### Синхронизация состояния: Zellij + сессии opencode
 - Управляется секцией `[state]` в конфиге (chezmoi-шаблон) и работает
   автоматически в `dsync push`/`pull`/`watch` — через хаб (сообщения
   `state_push`/`state_pull`, хранилище `~/.local/share/dsync-hub/state/`).
-- **tmux**: синхронизируется последний снапшот tmux-resurrect
-  (`~/.local/share/tmux/resurrect/`); на приёмнике файл раскладывается,
-  восстановить в живой tmux — `prefix + Ctrl-r` (или `tmux_restore = true`).
+- **Zellij**: синхронизируется сериализованная раскладка сессии `main`
+  (`~/.cache/zellij/<contract>/session_info/main/`: metadata + layout +
+  содержимое панелей). На приёмнике файлы раскладываются обратно; если сессия
+  не запущена — `zellij attach main` поднимет её из снапшота (или автоматически
+  при `zellij_restore = true`). Живую занятую сессию не трогаем.
 - **opencode**: синхронизируются сессии по всем `[projects.*]` (можно сузить:
   `[state.opencode] projects = ["~/projects/…"]`). На машине-источнике —
   `session list --format json` → `session export` изменившихся; на других —
@@ -58,7 +60,7 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - Локальный индекс `~/.local/share/dsync/state.json`; сбойные элементы не
   теряются (seq откатывается), только что импортированное не пере-отправляется.
 - **opencode нужен V2** (`@opencode/cli` → `~/.opencode/bin/opencode`), иначе
-  сессии не синкаются (tmux при этом работает).
+  сессии не синкаются (Zellij при этом работает).
 
 ### How to access Obsidian from any machine
 - `obsidian-memory` MCP — reads vault files locally (via Syncthing)

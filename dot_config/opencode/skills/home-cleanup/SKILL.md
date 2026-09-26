@@ -56,7 +56,7 @@ archlinux-server). Сначала определи машину: `hostname`.
 
 ### 2. chezmoi-managed файлы
 - Source of truth: `~/dotfiles/`. Managed пути (проверка: `chezmoi managed | grep <path>`)
-  — `~/.zshrc`, `~/.zshenv`, `~/.tmux.conf`, `~/.config/*` (все, что есть в dotfiles).
+  — `~/.zshrc`, `~/.zshenv`, `~/.config/*` (все, что есть в dotfiles).
 - Если надо поправить managed-файл: `chezmoi edit <target> --apply` или правка
   source-файла в `~/dotfiles/` + `chezmoi apply`.
 - Не редактировать live-файлы напрямую при наличии source.
