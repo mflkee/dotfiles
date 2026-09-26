@@ -53,3 +53,7 @@ dot_config/qt6ct/colors/
 # Главный config.toml управляется chezmoi и перегенерируется при apply —
 # секреты живут в tokens.toml, который chezmoi не трогает и не захватывает.
 dot_config/dsync/dsync/tokens.toml
+
+# Генерируется per-machine скриптом run_onchange_set-outputs.sh.tmpl —
+# не управляется как статичный файл.
+.config/niri/set-outputs.sh
