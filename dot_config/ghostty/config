@@ -30,4 +30,4 @@ mouse-scroll-multiplier = discrete:0.5
 minimum-contrast = 1.1
 
 # Ayu dark (base16-ayu) — палитра всей системы
-theme = ayu
+theme = noctalia
