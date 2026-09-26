@@ -88,17 +88,9 @@ vim.keymap.set('n', '[b', '<cmd>BufferLineCyclePrev<cr>', { desc = 'Previous buf
 vim.keymap.set('n', '<leader>c', '<cmd>bdelete<cr>', { desc = 'Close buffer' })
 
 -- [[ Colorscheme ]]
--- cyberdream as the base colorscheme (change with `:Telescope colorscheme`).
-vim.pack.add { gh 'scottmckendry/cyberdream.nvim' }
--- Provides the `base16-colorscheme` module used by `matugen` (wallpaper-driven
--- dynamic theming; see `lua/matugen.lua`).
+-- Ayu dark (base16-ayu) — общая палитра всей системы.
 vim.pack.add { gh 'RRethy/base16-nvim' }
----@diagnostic disable-next-line: missing-fields
-require('cyberdream').setup {
-  italic_comments = false,
-}
-
-vim.cmd.colorscheme 'cyberdream'
+vim.cmd.colorscheme 'base16-ayu-dark'
 
 -- [[ render-markdown: markdown preview rendering (github-style) ]]
 vim.pack.add { gh 'nvim-tree/nvim-web-devicons' }

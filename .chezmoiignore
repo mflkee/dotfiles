@@ -22,16 +22,12 @@ dot_config/systemd/
 projects/**/.venv/
 dot_config/mimeapps.list
 dot_config/qt6ct/qt6ct.conf
-dot_config/Kvantum/kvantum.kvconfig
 
 # Noctalia v5 manages these via theme templates + apply.sh
 dot_config/noctalia/plugins/
-dot_config/noctalia/colorschemes/
-dot_config/ghostty/themes/
 dot_config/alacritty/themes/
 dot_config/btop/themes/
 dot_config/cava/themes/
-dot_config/foot/themes/
 dot_config/kitty/themes/
 dot_config/helix/themes/
 dot_config/wezterm/colors/
@@ -45,7 +41,6 @@ dot_config/qt5ct/colors/
 dot_config/qt6ct/colors/
 .local/state/noctalia/
 .local/share/noctalia/
-.config/noctalia/settings.json
 .config/nvim/.git
 .config/nvim/nvim-pack-lock.json
 

@@ -1,4 +1,4 @@
-# swaylock config — цвета индикатора (акцент Noctalia #e6b450)
+# swaylock config — цвета индикатора (палитра ayu, акцент #e6b450)
 # Кольцо: idle — тёмно-серый, верный ввод — акцент, ошибка — красный.
 # Фон задаёт скрипт ~/.config/scripts/lock.sh (блюр текущего экрана).
 
@@ -11,22 +11,22 @@ indicator-radius=110
 indicator-thickness=5
 line-uses-inside
 
-ring-color=3b4261
+ring-color=202229
 ring-ver-color=e6b450
-ring-wrong-color=d95757
-ring-clear-color=505050
+ring-wrong-color=f07178
+ring-clear-color=3e4b59
 
 inside-color=0b0e14
 inside-ver-color=0b0e14
 inside-wrong-color=0b0e14
-inside-clear-color=161624
+inside-clear-color=131721
 
 key-hl-color=e6b450
-bs-hl-color=d95757
+bs-hl-color=f07178
 
-text-color=e4ded2
-text-ver-color=e4ded2
-text-wrong-color=d95757
-text-clear-color=e4ded2
+text-color=e6e1cf
+text-ver-color=e6e1cf
+text-wrong-color=f07178
+text-clear-color=e6e1cf
 
 separator-color=00000000

@@ -20,7 +20,7 @@ from ranger.gui.colorscheme import ColorScheme
 
 
 class Scheme(ColorScheme):
-    progress_bar_color = 208
+    progress_bar_color = 220
 
     def use(self, context):  # pylint: disable=too-many-branches,too-many-statements
         fg, bg, attr = default_colors
@@ -41,29 +41,29 @@ class Scheme(ColorScheme):
                 attr = bold
 
             if context.directory:
-                fg = 109
+                fg = 74
                 attr |= bold
             elif context.executable and not any(
                 (context.media, context.container, context.fifo, context.socket)
             ):
-                fg = 142
+                fg = 148
                 attr |= bold
 
             if context.media:
-                fg = 178 if context.image else 175
+                fg = 214 if context.image else 175
             if context.container:
-                fg = 208
+                fg = 220
             if context.socket:
-                fg = 175
+                fg = 183
                 attr |= bold
             if context.fifo or context.device:
-                fg = 178
+                fg = 214
                 attr |= bold if context.device else normal
             if context.link:
-                fg = 109 if context.good else 124
+                fg = 74 if context.good else 124
                 attr |= bold
             if context.tag_marker and not context.selected:
-                fg = 208
+                fg = 220
                 attr |= bold
             if not context.selected and (context.cut or context.copied):
                 fg = 244
@@ -71,11 +71,11 @@ class Scheme(ColorScheme):
 
             if context.main_column:
                 if context.marked:
-                    fg = 178
+                    fg = 214
                     attr |= bold
                 if context.selected:
                     fg = 235
-                    bg = 208
+                    bg = 220
                     attr = bold
 
             if context.badinfo:
@@ -91,17 +91,17 @@ class Scheme(ColorScheme):
             if context.hostname:
                 fg = 124 if context.bad else 142
             elif context.directory:
-                fg = 109
+                fg = 74
             elif context.tab:
                 fg = 235
-                bg = 208 if context.good else 238
+                bg = 220 if context.good else 238
             elif context.link:
-                fg = 109
+                fg = 74
 
         elif context.in_statusbar:
             fg = 250
             if context.permissions:
-                fg = 109 if context.good else 124
+                fg = 74 if context.good else 124
                 attr |= bold if context.bad else normal
             if context.marked:
                 fg = 235
@@ -118,10 +118,10 @@ class Scheme(ColorScheme):
                 fg = 235
                 bg = self.progress_bar_color
             if context.vcsinfo:
-                fg = 109
+                fg = 74
                 attr &= ~bold
             if context.vcscommit:
-                fg = 178
+                fg = 214
                 attr &= ~bold
             if context.vcsdate:
                 fg = 244
@@ -133,11 +133,11 @@ class Scheme(ColorScheme):
         if context.in_taskview:
             fg = 250
             if context.title:
-                fg = 109
+                fg = 74
                 attr |= bold
             if context.selected:
                 fg = 235
-                bg = 208
+                bg = 220
                 attr |= bold
             if context.loaded:
                 bg = self.progress_bar_color

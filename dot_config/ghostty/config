@@ -29,5 +29,5 @@ mouse-scroll-multiplier = discrete:0.5
 # Minimum contrast for readability
 minimum-contrast = 1.1
 
-# Kemuri Susu theme (smoke-gray, matches Noctalia)
-theme = noctalia
+# Ayu dark (base16-ayu) — палитра всей системы
+theme = ayu

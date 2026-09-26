@@ -1,12 +1,12 @@
 appearance:
   theme:
-    gtk: Tokyonight-Dark
+    gtk: adw-gtk3-dark
     gtk_prefer_dark: true
     qt: kvantum
-    kvantum: Kvantum-Tokyo-Night
+    kvantum: KvAdaptaDark
     color_scheme: prefer-dark
   icons:
-    name: Tela-circle-dracula
+    name: Tela-circle-yellow
     fallback: Adwaita
   fonts:
     main: "FiraCode Nerd Font Mono 11"
@@ -22,8 +22,8 @@ appearance:
         gaps: 14
         centerFocusedColumn: on-overflow
         borderWidth: 2
-        borderActiveColor: '#7aa2f7'
-        borderInactiveColor: '#3b4261'
+        borderActiveColor: '#e6b450'
+        borderInactiveColor: '#202229'
         shadowSoftness: 56
         shadowSpread: 2
         shadowOffsetY: 8
@@ -34,8 +34,8 @@ appearance:
         gaps: 14
         centerFocusedColumn: on-overflow
         borderWidth: 2
-        borderActiveColor: '#7aa2f7'
-        borderInactiveColor: '#3b4261'
+        borderActiveColor: '#e6b450'
+        borderInactiveColor: '#202229'
         shadowSoftness: 56
         shadowSpread: 2
         shadowOffsetY: 8

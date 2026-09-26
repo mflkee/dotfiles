@@ -1,29 +1,29 @@
-# Monochrome (noctalia community) colors for lsd
-user: dddddd
-group: aaaaaa
+# Ayu colors for lsd
+user: e6e1cf
+group: bfbdb6
 permission:
-  read: cccccc
-  write: dddddd
-  exec: ffffff
-  stick: 828282
-  setuid: dddddd
-  setgid: dddddd
-  other_read: cccccc
-  other_write: dddddd
-  other_exec: ffffff
+  read: e6e1cf
+  write: ffb454
+  exec: aad94c
+  stick: 3e4b59
+  setuid: e6e1cf
+  setgid: e6e1cf
+  other_read: bfbdb6
+  other_write: ffb454
+  other_exec: aad94c
 date:
-  hour-old: dddddd
-  day-old: aaaaaa
-  older: 828282
+  hour-old: bfbdb6
+  day-old: 848b95
+  older: 3e4b59
 size:
-  none: 3c3c3c
-  small: cccccc
-  medium: dddddd
-  large: ffffff
+  none: 202229
+  small: bfbdb6
+  medium: e6e1cf
+  large: f2f0e7
 inode:
-  valid: 828282
-  invalid: dddddd
+  valid: 3e4b59
+  invalid: f07178
 links:
-  valid: aaaaaa
-  invalid: dddddd
-tree-edge: 3c3c3c
+  valid: 59c2ff
+  invalid: f07178
+tree-edge: 202229
