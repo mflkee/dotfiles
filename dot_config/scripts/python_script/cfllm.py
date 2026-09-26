@@ -197,6 +197,12 @@ def main():
     ap.add_argument("--max-mb", type=float, default=1.5, help="Максимальный размер одного файла в MB (по умолчанию 1.5).")
     ap.add_argument("--include-ext", type=str, default="", help="Доп. расширения через запятую (например: .rs,.go).")
     ap.add_argument("--exclude-dir", type=str, default="", help="Доп. исключаемые папки через запятую.")
+    ap.add_argument("-o", "--output", type=str, default=None,
+                    help="Сохранить результат в указанный файл (можно не в корне, напр. /tmp/out.md).")
+    ap.add_argument("-f", "--file", action="store_true",
+                    help="Сохранить в _llm_export.md в корне проекта (старое поведение).")
+    ap.add_argument("-c", "--clipboard-only", action="store_true",
+                    help="Только буфер обмена, файл не создавать (по умолчанию и так без файла).")
     ap.add_argument("--no-clipboard", action="store_true", help="Не копировать в буфер обмена.")
     args = ap.parse_args()
 
@@ -288,13 +294,24 @@ def main():
     parts = [header] + file_entries
     result = "".join(parts)
 
-    # Пишем в файл на диске
-    out_path = os.path.join(root, "_llm_export.md")
-    try:
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write(result)
-    except Exception as e:
-        print(f"Не удалось записать файл результата: {e}", file=sys.stderr)
+    # Куда писать результат (по умолчанию — файл НЕ создаём)
+    out_path = None
+    if args.output and not args.clipboard_only:
+        out_path = args.output
+    elif args.file and not args.clipboard_only:
+        out_path = os.path.join(root, "_llm_export.md")
+
+    written = False
+    if out_path:
+        out_dir = os.path.dirname(os.path.abspath(out_path))
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+        try:
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(result)
+            written = True
+        except Exception as e:
+            print(f"Не удалось записать файл результата: {e}", file=sys.stderr)
 
     # Буфер обмена
     clipped = False
@@ -306,7 +323,14 @@ def main():
         msg.append("✅ Текст **скопирован в буфер обмена**.")
     else:
         msg.append("ℹ️ Не удалось скопировать в буфер (нет подходящей утилиты или слишком большой объём).")
-    msg.append(f"💾 Результат сохранён в файл: {out_path}")
+    if written:
+        msg.append(f"💾 Результат сохранён в файл: {out_path}")
+    else:
+        msg.append("ℹ️ Файл не создан (по умолчанию). Сохранить: `-o <путь>` или `-f`.")
+    # Если не копировали и не писали — отдаём контент в stdout (удобно для пайпов)
+    if not clipped and not written and args.no_clipboard:
+        print(result)
+        return
     msg.append(f"📦 Всего файлов: {len(selected)}")
     msg.append(f"📏 Всего строк: {total_lines_all}")
     msg.append(f"🧾 Непустых строк: {total_non_empty_all}")
