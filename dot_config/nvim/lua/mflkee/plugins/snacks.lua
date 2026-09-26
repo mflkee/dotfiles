@@ -26,3 +26,7 @@ vim.keymap.set('n', '<leader>.', function() Snacks.scratch() end, { desc = 'Togg
 vim.keymap.set('n', '<C-/>', function() Snacks.terminal() end, { desc = 'Toggle Terminal' })
 vim.keymap.set('n', '<leader>z', function() Snacks.zen() end, { desc = 'Toggle Zen Mode' })
 vim.keymap.set('n', '<leader>n', function() Snacks.notifier.show_history() end, { desc = 'Notification History' })
+
+-- Git: lazygit во флоате (тема автоматически под цветовую схему) + GitHub browse
+vim.keymap.set('n', '<leader>gg', function() Snacks.lazygit() end, { desc = 'Lazygit (float)' })
+vim.keymap.set({ 'n', 'v' }, '<leader>gB', function() Snacks.gitbrowse() end, { desc = 'Git Browse (GitHub)' })
