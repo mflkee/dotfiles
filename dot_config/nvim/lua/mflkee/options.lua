@@ -2,7 +2,8 @@
 -- See `:help option-list` for the full list.
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+-- (FiraCode Nerd Font Mono — системный шрифт терминала, включено).
+vim.g.have_nerd_font = true
 
 -- Make line numbers default
 vim.o.number = true
