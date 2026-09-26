@@ -23,6 +23,10 @@ if timeout 5 grim "$shot" 2>/dev/null && [ -s "$shot" ]; then
   [ -s "$shot" ] || img=""
 fi
 
+# 2.5) Пароль должен вводиться в EN-раскладке: в русской пароль «ломается»,
+#     ошибки ввода уходят в pam_faillock и банят учётку на ~10 минут.
+niri msg action switch-layout 0 >/dev/null 2>&1 || true
+
 # 3) Лок ВСЕГДА запускается
 if [ -n "$img" ]; then
   exec swaylock -f -i "$img"
