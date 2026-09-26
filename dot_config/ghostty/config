@@ -27,7 +27,7 @@ cursor-opacity = 1
 #     не лип к краю. Эти поля заливаются цветом соседней ячейки (extend-always),
 #     поэтому выглядят как продолжение фона, а не как дырка.
 # Прозрачность (background-opacity 0.88) сохраняется.
-window-padding-x = 40
+window-padding-x = 8
 window-padding-y = 0
 window-padding-color = extend-always
 window-padding-balance = true
