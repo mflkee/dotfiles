@@ -581,9 +581,10 @@ binds {
     Mod+Period { expel-window-from-column; }
 
     Mod+R { switch-preset-column-width; }
-    // Cycling through the presets in reverse order is also possible.
-    // Mod+R { switch-preset-column-width-back; }
+    // Обратный цикл пресетов: Alt = «назад» (Mod+Alt+R — ширина, Mod+Shift+Alt+R — высота).
+    Mod+Alt+R { switch-preset-column-width-back; }
     Mod+Shift+R { switch-preset-window-height; }
+    Mod+Shift+Alt+R { switch-preset-window-height-back; }
     Mod+Ctrl+R { reset-window-height; }
     Mod+F { maximize-column; }
     Mod+Shift+F { fullscreen-window; }
