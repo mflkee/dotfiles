@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # export_llm.py
-# Собирает дерево проекта и контент текстовых файлов в единый Markdown и копирует в буфер обмена.
+# Оценка кода проекта (файлы/строки по расширениям) в терминал + опциональный экспорт в Markdown.
 
 import os, sys, re, argparse, datetime, subprocess, shutil, mimetypes
 
@@ -141,69 +141,76 @@ def count_lines(text: str):
     non_empty = sum(1 for line in lines if line.strip())
     return total, non_empty
 
-def try_copy_to_clipboard(text: str) -> bool:
-    # 1) pyperclip
+def _clip_run(cmd: list, data: str) -> bool:
+    """Запуск утилиты буфера с таймаутом, чтобы не зависнуть в headless-окружении."""
     try:
-        import pyperclip  # type: ignore
-        pyperclip.copy(text)
-        return True
+        p = subprocess.run(cmd, input=data.encode("utf-8"), timeout=5,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return p.returncode == 0
     except Exception:
-        pass
-    # 2) Wayland wl-copy
-    if shutil.which("wl-copy"):
-        try:
-            p = subprocess.Popen(["wl-copy"], stdin=subprocess.PIPE)
-            p.communicate(text.encode("utf-8"))
-            return p.returncode == 0
-        except Exception:
-            pass
-    # 3) xclip (X11)
-    if shutil.which("xclip"):
-        try:
-            p = subprocess.Popen(["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE)
-            p.communicate(text.encode("utf-8"))
-            return p.returncode == 0
-        except Exception:
-            pass
-    # 4) xsel
-    if shutil.which("xsel"):
-        try:
-            p = subprocess.Popen(["xsel", "--clipboard", "--input"], stdin=subprocess.PIPE)
-            p.communicate(text.encode("utf-8"))
-            return p.returncode == 0
-        except Exception:
-            pass
-    # 5) macOS pbcopy
-    if shutil.which("pbcopy"):
-        try:
-            p = subprocess.Popen(["pbcopy"], stdin=subprocess.PIPE)
-            p.communicate(text.encode("utf-8"))
-            return p.returncode == 0
-        except Exception:
-            pass
-    # 6) Windows clip
+        return False
+
+def try_copy_to_clipboard(text: str) -> bool:
+    # 1) Wayland wl-copy (только если есть Wayland-сессия)
+    if os.environ.get("WAYLAND_DISPLAY") and shutil.which("wl-copy"):
+        if _clip_run(["wl-copy"], text):
+            return True
+    # 2) X11 xclip (только если есть X-сессия)
+    if os.environ.get("DISPLAY") and shutil.which("xclip"):
+        if _clip_run(["xclip", "-selection", "clipboard"], text):
+            return True
+    # 3) X11 xsel
+    if os.environ.get("DISPLAY") and shutil.which("xsel"):
+        if _clip_run(["xsel", "--clipboard", "--input"], text):
+            return True
+    # 4) macOS pbcopy
+    if sys.platform == "darwin" and shutil.which("pbcopy"):
+        if _clip_run(["pbcopy"], text):
+            return True
+    # 5) Windows clip
     if os.name == "nt":
         try:
-            p = subprocess.Popen("clip", stdin=subprocess.PIPE, shell=True)
-            p.communicate(text.encode("utf-16-le"))
+            p = subprocess.run("clip", input=text.encode("utf-16-le"), timeout=5, shell=True)
             return p.returncode == 0
         except Exception:
             pass
     return False
 
+def print_report(root, selected, ext_stats, total_lines_all, total_non_empty_all):
+    """Краткая оценка кода: файлы и строки по расширениям."""
+    total_files = len(selected)
+    name_w = max([len(k) for k in ext_stats] + [9, 5])
+    print()
+    print(f"📊 Оценка кода: {root}")
+    hdr = f"{'Расширение':<{name_w}} {'Файлы':>6} {'Строк':>10} {'Непустых':>10}"
+    print(hdr)
+    print("-" * len(hdr))
+    for ext, (fc, lc, ne) in sorted(ext_stats.items(), key=lambda kv: kv[1][1], reverse=True):
+        print(f"{ext:<{name_w}} {fc:>6} {lc:>10} {ne:>10}")
+    print("-" * len(hdr))
+    print(f"{'ИТОГО':<{name_w}} {total_files:>6} {total_lines_all:>10} {total_non_empty_all:>10}")
+    print()
+
 def main():
-    ap = argparse.ArgumentParser(description="Экспорт проекта в удобный для LLM Markdown.")
+    ap = argparse.ArgumentParser(
+        description="Оценка кода проекта: файлы и строки по расширениям — в терминал.\n"
+                    "По умолчанию ничего не копирует и не создаёт файлов.\n"
+                    "Полный Markdown-экспорт: -c (буфер) / -o <путь> (файл) / -f (корень) / -s (stdout).",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".", help="Корень проекта (по умолчанию текущая папка).")
     ap.add_argument("--max-mb", type=float, default=1.5, help="Максимальный размер одного файла в MB (по умолчанию 1.5).")
     ap.add_argument("--include-ext", type=str, default="", help="Доп. расширения через запятую (например: .rs,.go).")
     ap.add_argument("--exclude-dir", type=str, default="", help="Доп. исключаемые папки через запятую.")
+    ap.add_argument("-c", "--clipboard", action="store_true",
+                    help="Скопировать полный Markdown в буфер обмена.")
     ap.add_argument("-o", "--output", type=str, default=None,
-                    help="Сохранить результат в указанный файл (можно не в корне, напр. /tmp/out.md).")
+                    help="Сохранить полный Markdown в указанный файл (можно не в корне, напр. /tmp/out.md).")
     ap.add_argument("-f", "--file", action="store_true",
-                    help="Сохранить в _llm_export.md в корне проекта (старое поведение).")
-    ap.add_argument("-c", "--clipboard-only", action="store_true",
-                    help="Только буфер обмена, файл не создавать (по умолчанию и так без файла).")
-    ap.add_argument("--no-clipboard", action="store_true", help="Не копировать в буфер обмена.")
+                    help="Сохранить полный Markdown в _llm_export.md в корне проекта.")
+    ap.add_argument("-s", "--stdout", action="store_true",
+                    help="Вывести полный Markdown в stdout (для пайпов).")
+    ap.add_argument("--no-clipboard", action="store_true",
+                    help="(устарел) буфер и так выключен по умолчанию.")
     args = ap.parse_args()
 
     root = os.path.abspath(args.root)
@@ -256,7 +263,9 @@ def main():
 
     total_lines_all = 0
     total_non_empty_all = 0
+    ext_stats = {}
     file_entries = []
+    export_needed = args.clipboard or args.output or args.file or args.stdout
 
     for i, path in enumerate(sorted(selected), 1):
         rel = os.path.relpath(path, root)
@@ -271,34 +280,42 @@ def main():
         total_lines_all += line_count
         total_non_empty_all += non_empty_count
 
-        file_entries.append(
-            f"\n### {i}. `{rel}`\n\n"
-            f"- Lines: {line_count}\n"
-            f"- Non-empty lines: {non_empty_count}\n\n"
-            f"```{lang}\n{content}\n```\n"
+        ext = ext_of(path).lstrip(".") or "(прочее)"
+        st = ext_stats.setdefault(ext, [0, 0, 0])
+        st[0] += 1
+        st[1] += line_count
+        st[2] += non_empty_count
+
+        if export_needed:
+            file_entries.append(
+                f"\n### {i}. `{rel}`\n\n"
+                f"- Lines: {line_count}\n"
+                f"- Non-empty lines: {non_empty_count}\n\n"
+                f"```{lang}\n{content}\n```\n"
+            )
+
+    result = None
+    if export_needed:
+        header = (
+            f"# Project Export for LLM\n\n"
+            f"- Root: `{root}`\n"
+            f"- Generated: {ts}\n"
+            f"- Files included: {len(selected)}\n"
+            f"- Per-file limit: {args.max_mb} MB\n"
+            f"- Total lines: {total_lines_all}\n"
+            f"- Total non-empty lines: {total_non_empty_all}\n\n"
+            f"## Project Tree\n\n"
+            f"```\n{tree_text}\n```\n\n"
+            f"## Files\n"
         )
+        parts = [header] + file_entries
+        result = "".join(parts)
 
-    header = (
-        f"# Project Export for LLM\n\n"
-        f"- Root: `{root}`\n"
-        f"- Generated: {ts}\n"
-        f"- Files included: {len(selected)}\n"
-        f"- Per-file limit: {args.max_mb} MB\n"
-        f"- Total lines: {total_lines_all}\n"
-        f"- Total non-empty lines: {total_non_empty_all}\n\n"
-        f"## Project Tree\n\n"
-        f"```\n{tree_text}\n```\n\n"
-        f"## Files\n"
-    )
-
-    parts = [header] + file_entries
-    result = "".join(parts)
-
-    # Куда писать результат (по умолчанию — файл НЕ создаём)
+    # Файл — только по явному запросу (-o / -f)
     out_path = None
-    if args.output and not args.clipboard_only:
+    if args.output:
         out_path = args.output
-    elif args.file and not args.clipboard_only:
+    elif args.file:
         out_path = os.path.join(root, "_llm_export.md")
 
     written = False
@@ -313,28 +330,26 @@ def main():
         except Exception as e:
             print(f"Не удалось записать файл результата: {e}", file=sys.stderr)
 
-    # Буфер обмена
+    # Буфер обмена — только если явно попросили (-c)
     clipped = False
-    if not args.no_clipboard:
+    if args.clipboard and not args.no_clipboard:
         clipped = try_copy_to_clipboard(result)
 
-    msg = []
-    if clipped:
-        msg.append("✅ Текст **скопирован в буфер обмена**.")
-    else:
-        msg.append("ℹ️ Не удалось скопировать в буфер (нет подходящей утилиты или слишком большой объём).")
-    if written:
-        msg.append(f"💾 Результат сохранён в файл: {out_path}")
-    else:
-        msg.append("ℹ️ Файл не создан (по умолчанию). Сохранить: `-o <путь>` или `-f`.")
-    # Если не копировали и не писали — отдаём контент в stdout (удобно для пайпов)
-    if not clipped and not written and args.no_clipboard:
+    # Полный Markdown в stdout (-s)
+    if args.stdout:
         print(result)
-        return
-    msg.append(f"📦 Всего файлов: {len(selected)}")
-    msg.append(f"📏 Всего строк: {total_lines_all}")
-    msg.append(f"🧾 Непустых строк: {total_non_empty_all}")
-    print("\n".join(msg))
+
+    # 📊 Оценка кода — всегда в терминал
+    print_report(root, selected, ext_stats, total_lines_all, total_non_empty_all)
+
+    extra = []
+    if args.clipboard:
+        extra.append("✅ Текст **скопирован в буфер обмена**." if clipped
+                     else "ℹ️ Не удалось скопировать в буфер (нет подходящей утилиты или слишком большой объём).")
+    if written:
+        extra.append(f"💾 Полный Markdown сохранён в файл: {out_path}")
+    if extra:
+        print("\n".join(extra))
 
 if __name__ == "__main__":
     main()
