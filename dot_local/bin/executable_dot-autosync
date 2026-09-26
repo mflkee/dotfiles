@@ -16,9 +16,9 @@ EXCLUDE_RE='(^\.config/ghostty/themes/)|(^\.config/kitty/themes/noctalia)|(\.tmp
 WATCH=(
   ".zshrc"
   ".zshenv"
+  ".tmux.conf"
   ".ssh/config"
   ".config/zsh"
-  ".config/zellij"
   ".config/ghostty/config"
   ".config/kitty/kitty.conf"
   ".config/lsd"

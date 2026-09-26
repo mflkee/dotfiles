@@ -45,10 +45,10 @@ REPO_PACKAGES=(
   syncthing
   tldr
   telegram-desktop
+  tmux
   udiskie
   unrar
   wl-clipboard
-  zellij
   zsh
   lua-language-server
 )

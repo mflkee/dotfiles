@@ -19,7 +19,7 @@ REPO_PACKAGES=(
   openssh
   paru
   ripgrep
-  zellij
+  tmux
   zsh
   jq
   yazi

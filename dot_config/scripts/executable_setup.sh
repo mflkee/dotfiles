@@ -42,6 +42,7 @@ link_config_dirs() {
 link_individual_files() {
   # Создаем или перезаписываем символические ссылки для отдельных файлов
   ln -sfn $CONFIG_REPO/.zshrc ~/.zshrc
+  ln -sfn $CONFIG_REPO/.tmux.conf ~/.tmux.conf
   ln -sfn $CONFIG_REPO/user-dirs.locale ~/user-dirs.locale
   ln -sfn $CONFIG_REPO/user-dirs.dirs ~/user-dirs.dirs
   ln -sfn $CONFIG_REPO/.fonts ~/.fonts

@@ -58,7 +58,7 @@ chezmoi init --apply mflkee
 bootstrap-workstation
 ```
 
-Это установит всё из `REPO_PACKAGES` и `AUR_PACKAGES`: neovim, ghostty, niri, zellij,
+Это установит всё из `REPO_PACKAGES` и `AUR_PACKAGES`: neovim, ghostty, niri, tmux,
 nodejs, syncthing, zsh, fzf, bat, lsd, btop, lazygit и т.д.
 
 ## 5. Первый chezmoi apply
@@ -83,10 +83,9 @@ nvim --headless '+Lazy! sync' +qa
 nvim --headless '+checkhealth' +qa
 ```
 
-## 7. Zellij
+## 7. Плагины Tmux
 
-Zellij стартует автоматически (сессия `main`) при открытии любого терминала.
-Плагинов ставить не нужно — конфиг самодостаточный (`~/.config/zellij/config.kdl`).
+Запустить tmux, нажать `prefix + I` (Ctrl+B, Shift+I) — TPM установит плагины.
 
 ## 8. Ноутбук — niri + Noctalia
 
@@ -150,4 +149,4 @@ chezmoi apply && \
 nvim --headless '+Lazy! sync' +qa
 ```
 
-После этого: перелогиниться, открыть терминал (Zellij стартует сам), наслаждаться.
+После этого: перелогиниться, запустить tmux (prefix+I), наслаждаться.

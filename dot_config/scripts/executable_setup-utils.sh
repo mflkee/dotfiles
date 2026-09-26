@@ -17,8 +17,9 @@ yay -S neovim ranger firefox telegram-desktop redshift geoclue2 polybar jq bluez
 # установка смены раскладки
 localectl set-x11-keymap --no-convert us,ru pc105 "" grp:alt_shift_toggle
 
-# Установка zellij (терминальный мультиплексор)
-yay -S zellij
+# Установка tmux и TPM (Tmux Plugin Manager)
+yay -S tmux
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 # Установка zsh и oh-my-zsh
 sudo pacman -S zsh

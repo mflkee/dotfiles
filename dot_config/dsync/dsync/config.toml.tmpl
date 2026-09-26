@@ -41,12 +41,12 @@ sync = false
 # watch = ["~/.zshrc", "~/.config", "~/.local/bin"]
 # exclude = ["~/.config/ghostty/themes"]
 
-# Не-git состояние флота: раскладка Zellij (сессия main) и сессии opencode.
-# Синхронизируется через хаб (state_push/state_pull). zellij_restore = true
-# восстанавливает раскладку в живом Zellij после применения чужого снапшота.
+# Не-git состояние флота: tmux-раскладка (tmux-resurrect) и сессии opencode.
+# Синхронизируется через хаб (state_push/state_pull). tmux_restore = true
+# запускает resurrect restore в живом tmux после применения чужого снапшота.
 [state]
-zellij = true
-zellij_restore = true
+tmux = true
+tmux_restore = true
 
 # Сессии opencode: по умолчанию — для всех [projects.*]. Можно ограничить:
 # [state.opencode]
