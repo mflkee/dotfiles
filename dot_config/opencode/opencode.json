@@ -105,6 +105,23 @@
         "/home/mflkee/projects/rustrade/rustrade-dashboard/web"
       ],
       "enabled": true
+    },
+    "duckdb": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--with",
+        "mcp==1.0.0",
+        "mcp-server-duckdb",
+        "--db-path",
+        "/tmp/opencode/data/analysis.duckdb"
+      ],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest", "--headless", "--isolated"],
+      "enabled": true
     }
   },
   "experimental": {
