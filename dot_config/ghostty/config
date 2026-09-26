@@ -17,8 +17,8 @@ cursor-opacity = 1
 
 # Terminal padding
 # 0 = текст вплотную к рамке окна, выглядит неопрятно (промпт липнет к краю).
-window-padding-x = 20
-window-padding-y = 12
+window-padding-x = 10
+window-padding-y = 8
 
 # Split divider
 cursor-click-to-move = true
@@ -31,9 +31,9 @@ mouse-scroll-multiplier = discrete:0.5
 # niri сам управляет окнами, декорации браузера не нужны.
 gtk-titlebar = false
 
-# Скрыть таб-бар вкладок (auto = показывать при >=2 вкладках; hidden = никогда).
+# Скрыть таб-бар вкладок (never = никогда). В Ghostty 1.3.x значения "hidden" НЕТ.
 # Переключение вкладок остаётся: Ctrl+Shift+T новая, Ctrl+Shift+W закрыть, Ctrl+Tab.
-window-show-tab-bar = hidden
+window-show-tab-bar = never
 
 # Minimum contrast for readability
 minimum-contrast = 1.1
