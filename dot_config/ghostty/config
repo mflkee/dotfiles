@@ -15,18 +15,12 @@ cursor-style = block
 cursor-style-blink = false
 cursor-opacity = 1
 
-# Terminal padding
-# Небольшой отступ текста от рамки (0 = промпт липнет к краю).
-window-padding-x = 10
-window-padding-y = 8
-# Заливать поля цветом ближайшей ячейки, а не фоном темы — тогда TUI
-# занимает окно целиком, без серой «пустой» рамки вокруг.
-# Именно extend-always: обычный `extend` отключается, если в ближайшей строке
-# есть ячейки стандартного фона — и поле снова становится серым.
-window-padding-color = extend-always
-# Лишние пиксели (размер окна не кратен размеру символа) распределять
-# равномерно, а не сваливать полосой снизу/справа.
-window-padding-balance = true
+# Terminal padding — всё по дефолту Ghostty.
+# Раньше тут были window-padding-{x,y}, window-padding-color=extend-always и
+# window-padding-balance=true. Из-за extend-always поля заливались цветом
+# ближайшей ячейки, и верхняя/нижняя полоса полноэкранного TUI (tmux/zellij
+# status bar) «размазывалась» в padding — толстые полосы сверху и снизу.
+# Вернули дефолт: padding-color=background, balance=false, x/y=2.
 
 # Split divider
 cursor-click-to-move = true
