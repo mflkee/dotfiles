@@ -16,9 +16,15 @@ cursor-style-blink = false
 cursor-opacity = 1
 
 # Terminal padding
-# 0 = текст вплотную к рамке окна, выглядит неопрятно (промпт липнет к краю).
+# Небольшой отступ текста от рамки (0 = промпт липнет к краю).
 window-padding-x = 10
 window-padding-y = 8
+# Заливать поля цветом ближайшей ячейки, а не фоном темы — тогда TUI
+# занимает окно целиком, без серой «пустой» рамки вокруг.
+window-padding-color = extend
+# Лишние пиксели (размер окна не кратен размеру символа) распределять
+# равномерно, а не сваливать полосой снизу/справа.
+window-padding-balance = true
 
 # Split divider
 cursor-click-to-move = true
