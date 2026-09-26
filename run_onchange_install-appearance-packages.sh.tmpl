@@ -1,6 +1,6 @@
 #!/bin/bash
 # vim: ft=bash
-# run_onchange hash-packages: {{ list "kvantum" "kvantum-qt5" "qt5ct" "qt6ct" "tela-circle-icon-theme-yellow" "papirus-icon-theme" "breeze" "adw-gtk3" "noto-fonts" "noto-fonts-cjk" "noto-fonts-emoji" "noto-fonts-extra" "ttf-jetbrains-mono" "xdg-desktop-portal-gtk" | join "\n" | sha256sum }}
+# run_onchange hash-packages: {{ list "kvantum" "kvantum-qt5" "qt5ct" "qt6ct" "papirus-icon-theme" "breeze" "noto-fonts" "noto-fonts-cjk" "noto-fonts-emoji" "noto-fonts-extra" "ttf-jetbrains-mono" "xdg-desktop-portal-gtk" | join "\n" | sha256sum }}
 
 {{- $has_niri := false -}}
 {{- if hasKey .machines .chezmoi.hostname -}}
@@ -15,7 +15,7 @@ set -euo pipefail
 
 PACKAGES=(
   kvantum kvantum-qt5 qt5ct qt6ct
-  tela-circle-icon-theme-yellow papirus-icon-theme breeze adw-gtk3
+  papirus-icon-theme breeze
   noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra
   ttf-jetbrains-mono
   xdg-desktop-portal-gtk
