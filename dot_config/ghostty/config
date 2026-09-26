@@ -16,8 +16,9 @@ cursor-style-blink = false
 cursor-opacity = 1
 
 # Terminal padding
-window-padding-x = 0
-window-padding-y = 0
+# 0 = текст вплотную к рамке окна, выглядит неопрятно (промпт липнет к краю).
+window-padding-x = 12
+window-padding-y = 8
 
 # Split divider
 cursor-click-to-move = true
