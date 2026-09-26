@@ -15,12 +15,11 @@ cursor-style = block
 cursor-style-blink = false
 cursor-opacity = 1
 
-# Terminal padding — всё по дефолту Ghostty.
-# Раньше тут были window-padding-{x,y}, window-padding-color=extend-always и
-# window-padding-balance=true. Из-за extend-always поля заливались цветом
-# ближайшей ячейки, и верхняя/нижняя полоса полноэкранного TUI (tmux/zellij
-# status bar) «размазывалась» в padding — толстые полосы сверху и снизу.
-# Вернули дефолт: padding-color=background, balance=false, x/y=2.
+# Terminal padding — не переопределяем, всё по дефолту Ghostty.
+# Раньше тут были кастомные отступы + режим заливки полей цветом ближайшей
+# ячейки + балансировка. Из-за этого верхняя/нижняя полоса полноэкранного
+# TUI (tmux/zellij status bar) «размазывалась» в поля — толстые полосы
+# сверху и снизу. Теперь дефолт Ghostty: заливка фоном темы, балансировка выкл.
 
 # Split divider
 cursor-click-to-move = true
