@@ -244,8 +244,8 @@ spawn-sh-at-startup "sh $HOME/.config/niri/set-outputs.sh"
 spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-dracula'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
 
 // Idle: lock after 5 minutes, power off monitors after 10; lock before suspend.
-// Requires: swayidle, swaylock.
-spawn-sh-at-startup "swayidle -w timeout 300 'swaylock -f' timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'swaylock -f'"
+// Requires: swayidle, swaylock (lock = blurred screen via ~/.config/scripts/lock.sh).
+spawn-sh-at-startup "swayidle -w timeout 300 'sh $HOME/.config/scripts/lock.sh' timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'sh $HOME/.config/scripts/lock.sh'"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -348,7 +348,9 @@ binds {
 
     // Suggested binds for running programs: terminal and screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
-    Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Super+Alt+L hotkey-overlay-title="Lock Screen (blurred)" {
+        spawn-sh "sh $HOME/.config/scripts/lock.sh"
+    }
 
     // Noctalia is the primary shell surface for launchers and system popups.
     Mod+D repeat=false hotkey-overlay-title="Open Noctalia Launcher" {

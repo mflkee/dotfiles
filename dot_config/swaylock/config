@@ -1,0 +1,32 @@
+# swaylock config — цвета индикатора (акцент Noctalia #e6b450)
+# Кольцо: idle — тёмно-серый, верный ввод — акцент, ошибка — красный.
+# Фон задаёт скрипт ~/.config/scripts/lock.sh (блюр текущего экрана).
+
+color=0b0e14
+
+font=FiraCode Nerd Font Mono
+font-size=18
+
+indicator-radius=110
+indicator-thickness=5
+line-uses-inside
+
+ring-color=3b4261
+ring-ver-color=e6b450
+ring-wrong-color=d95757
+ring-clear-color=505050
+
+inside-color=0b0e14
+inside-ver-color=0b0e14
+inside-wrong-color=0b0e14
+inside-clear-color=161624
+
+key-hl-color=e6b450
+bs-hl-color=d95757
+
+text-color=e4ded2
+text-ver-color=e4ded2
+text-wrong-color=d95757
+text-clear-color=e4ded2
+
+separator-color=00000000
