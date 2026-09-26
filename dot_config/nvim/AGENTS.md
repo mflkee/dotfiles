@@ -13,7 +13,10 @@ lua/mflkee/pack.lua         → vim.pack build hooks (PackChanged autoamd) for i
 lua/mflkee/util.lua         → shared helpers (e.g. gh() GitHub URL builder)
 lua/mflkee/plugins/core.lua → UI/Core UX: guess-indent, gitsigns, which-key, bufferline,
                               cyberdream+base16 colorscheme, render-markdown, todo-comments, mini.nvim
-lua/mflkee/plugins/search.lua      → Telescope + LSP pickers + <leader>o (path/URL under cursor)
+lua/mflkee/plugins/snacks.lua → Snacks.nvim (основной picker, notifier, dashboard, indent, image, scratch, terminal, zen)
+lua/mflkee/plugins/search.lua → основной пикер Snacks.picker.* (Telescope — только для vim.ui.select) + <leader>o
+lua/mflkee/plugins/oil.lua → Oil.nvim (файл-менеджер, `-`)
+lua/mflkee/plugins/flash.lua → Flash.nvim (быстрые прыжки s/S/r/R)
 lua/mflkee/plugins/lsp.lua         → fidget, LSP keymaps, servers table, Mason + tool installer
 lua/mflkee/plugins/format.lua      → conform.nvim (stylua / ruff_format / rustfmt / pg_format)
 lua/mflkee/plugins/completion.lua  → LuaSnip + blink.cmp
