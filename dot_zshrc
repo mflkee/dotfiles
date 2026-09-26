@@ -190,11 +190,13 @@ function zoxide-fzf() {
 
 [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
 
-if [[ -z "$TMUX" ]]; then
-  if tmux has-session -t main 2>/dev/null; then
-    tmux attach-session -t main
-  else
-    tmux new-session -s main
+# Единая постоянная сессия Zellij "main" (аналог прежней tmux-сессии main).
+# Терминал открывается уже внутри Zellij; при повторном открытии — attach к той
+# же сессии. Не запускаем вложенно, вне интерактивной оболочки и без tty.
+# Отключить автозапуск: export ZELLIJ_AUTO_START=false
+if [[ -z "$ZELLIJ" && -o interactive && -t 0 && "${ZELLIJ_AUTO_START:-true}" == true ]]; then
+  if command -v zellij >/dev/null 2>&1; then
+    zellij attach --create main
   fi
 fi
 
