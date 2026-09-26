@@ -52,6 +52,11 @@ tmux_restore = true
 # [state.opencode]
 # projects = ["~/projects/mushroomwars"]
 [state.opencode]
+{{ if eq .chezmoi.hostname "archlinux-server" }}
+# На сервере opencode не используется (только pacman-v1 в /usr/bin, без V2) —
+# пустой список отключает и push, и pull сессий.
+projects = []
+{{ end }}
 
 {{ if eq .chezmoi.hostname "archlinux-server" }}
 [hub]
