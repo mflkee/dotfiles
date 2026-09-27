@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Настраивает авто-лок и выключение монитора в Noctalia v5.
+#
+# ВАЖНО: Noctalia v5 читает конфиг из ~/.local/state/noctalia/settings.toml (TOML),
+# а НЕ из ~/.config/noctalia/settings.json (тот legacy и игнорируется).
+# Каталог .local/state/noctalia/ исключён из chezmoi (Noctalia сама пишет туда),
+# поэтому нужный блок [idle] дописываем/обновляем idempotent-скриптом.
+#
+# Схема (получена из `noctalia config export full`):
+#   [idle]
+#   behavior_order = ["lock", "screen-off"]
+#   pre_action_fade_seconds = 2.0
+#       [idle.behavior.lock]       action="lock"        enabled=true timeout=600.0
+#       [idle.behavior.screen-off] action="screen_off"  enabled=true timeout=900.0
+#
+# hash-files: {{ list "run_onchange_after_set-noctalia-idle.sh.tmpl" | join "\n" | sha256sum }}
+
+set -uo pipefail
+
+if ! command -v noctalia >/dev/null 2>&1; then
+  echo "[noctalia-idle] noctalia not installed — skip"
+  exit 0
+fi
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia"
+CONF="$STATE_DIR/settings.toml"
+mkdir -p "$STATE_DIR"
+[ -f "$CONF" ] || : > "$CONF"
+
+python3 - "$CONF" <<'PY'
+import sys
+
+path = sys.argv[1]
+text = open(path, encoding="utf-8").read()
+
+# Убираем прежний блок [idle] (вместе со вложенными [idle.*]) — до следующей
+# секции верхнего уровня.
+lines = text.splitlines()
+out, skipping = [], False
+for ln in lines:
+    stripped = ln.strip()
+    is_section = stripped.startswith("[")
+    if is_section:
+        name = stripped.strip("[]").strip()
+        skipping = name == "idle" or name.startswith("idle.")
+    if not skipping:
+        out.append(ln)
+
+block = """
+[idle]
+behavior_order = [ "lock", "screen-off" ]
+pre_action_fade_seconds = 2.0
+
+    [idle.behavior.lock]
+    action = "lock"
+    command = ""
+    enabled = true
+    resume_command = ""
+    timeout = 600.0
+
+    [idle.behavior.screen-off]
+    action = "screen_off"
+    command = ""
+    enabled = true
+    resume_command = ""
+    timeout = 900.0
+"""
+
+new = "\n".join(out).rstrip() + "\n" + block
+open(path, "w", encoding="utf-8").write(new)
+print("[noctalia-idle] wrote [idle] block into", path)
+PY
+
+# Проверяем, что конфиг валиден, и просим Noctalia перечитать его.
+if ! noctalia config validate >/dev/null 2>&1; then
+  echo "[noctalia-idle] WARNING: config validation failed"
+fi
+
+if systemctl --user is-active --quiet noctalia-shell.service 2>/dev/null; then
+  noctalia msg config-reload >/dev/null 2>&1 \
+    && echo "[noctalia-idle] reloaded (lock 10m, screen-off 15m)" \
+    || echo "[noctalia-idle] reload failed"
+else
+  echo "[noctalia-idle] noctalia-shell not running — applied on next start"
+fi
+
+exit 0
