@@ -1,0 +1,24 @@
+{
+  "settings": {
+    "label": {
+      "label": "Bar prefix",
+      "description": "Text shown before the percentage, e.g. OC"
+    },
+    "display": {
+      "label": "Display",
+      "description": "Which limits to show in the bar itself; the tooltip always lists all three",
+      "option": {
+        "worst": "Most used limit only",
+        "all": "All three limits"
+      }
+    },
+    "refresh_minutes": {
+      "label": "Refresh interval (minutes)",
+      "description": "How often the dashboard page is re-read"
+    },
+    "credentials_file": {
+      "label": "Credentials file",
+      "description": "Path to a 0600 JSON file with {\"workspace_id\": ..., \"token\": ...}; falls back to the OPENCODE_GO_WORKSPACE / OPENCODE_GO_TOKEN env vars"
+    }
+  }
+}
