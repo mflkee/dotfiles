@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Убирает остатки старого самодельного локскрина (swaylock/swayidle/lock.sh).
+# Локскрин теперь встроенный в Noctalia (см. dot_config/niri/config.kdl,
+# dot_config/noctalia/settings.json.tmpl). chezmoi не удаляет файлы, которые
+# перестал отслеживать, поэтому чистим их здесь — на каждой машине.
+#
+# run_onchange: hash сбросит кэш при правке списка ниже.
+# hash-files: {{ list "dot_config/niri/config.kdl" "dot_config/noctalia/settings.json.tmpl" | join "\n" | sha256sum }}
+
+set -uo pipefail
+
+removed=0
+for f in \
+  "$HOME/.config/scripts/lock.sh" \
+  "$HOME/.config/swaylock/config" \
+  "$HOME/.local/share/swaylock/config"
+do
+  if [ -e "$f" ]; then
+    rm -f "$f" && echo "[legacy-lock] removed $f" && removed=$((removed + 1))
+  fi
+done
+# пустой каталог конфига swaylock
+if [ -d "$HOME/.config/swaylock" ]; then
+  rmdir "$HOME/.config/swaylock" 2>/dev/null && echo "[legacy-lock] removed dir ~/.config/swaylock" || true
+fi
+
+# Старый юнит Noctalia на headless-машинах (там Noctalia не установлена и
+# сервис падал с 203/EXEC).
+if ! command -v noctalia >/dev/null 2>&1; then
+  unit="$HOME/.config/systemd/user/noctalia-shell.service"
+  if [ -e "$unit" ]; then
+    systemctl --user stop noctalia-shell.service 2>/dev/null || true
+    rm -f "$unit" && echo "[legacy-lock] removed stale headless unit $unit"
+    systemctl --user daemon-reload 2>/dev/null || true
+    systemctl --user reset-failed noctalia-shell.service 2>/dev/null || true
+    removed=$((removed + 1))
+  fi
+fi
+
+# Пакеты swaylock/swayidle больше не нужны. Удаление требует sudo —
+# делаем best-effort молча (в неинтерактивных сессиях sudo недоступен).
+if command -v pacman >/dev/null 2>&1; then
+  if pacman -Qq swaylock swayidle >/dev/null 2>&1; then
+    if sudo -n true 2>/dev/null; then
+      sudo pacman -Rns --noconfirm swaylock swayidle >/dev/null 2>&1 \
+        && echo "[legacy-lock] removed packages swaylock swayidle"
+    else
+      echo "[legacy-lock] swaylock/swayidle still installed — remove: sudo pacman -Rns swaylock swayidle"
+    fi
+  fi
+fi
+
+[ "$removed" -eq 0 ] && echo "[legacy-lock] nothing to clean"
+exit 0
