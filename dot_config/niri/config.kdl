@@ -251,9 +251,10 @@ spawn-sh-at-startup "sh $HOME/.config/niri/set-outputs.sh"
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
 spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-dracula'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
 
-// Idle: lock after 5 minutes, power off monitors after 10; lock before suspend.
-// Requires: swayidle, swaylock (lock = blurred screen via ~/.config/scripts/lock.sh).
-spawn-sh-at-startup "swayidle -w timeout 300 'sh $HOME/.config/scripts/lock.sh' timeout 600 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'sh $HOME/.config/scripts/lock.sh'"
+// Idle/локскрин — целиком на Noctalia (встроенный session-lock, виджеты с часами).
+// Авто-лок и поведение по простою настраиваются в ~/.config/noctalia/settings.json:
+//   idle.enabled = true, idle.lockTimeout = 600 (10 минут).
+// swayidle/swaylock больше не используются.
 
 // Авто-сборка рабочего окружения: zen→ws1, терминалы→ws2, obsidian→ws3.
 spawn-sh-at-startup "sh $HOME/.config/scripts/workspace-layout.sh"
@@ -365,8 +366,8 @@ binds {
 
     // Suggested binds for running programs: terminal and screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: ghostty" { spawn "ghostty"; }
-    Super+Alt+L hotkey-overlay-title="Lock Screen (blurred)" {
-        spawn-sh "sh $HOME/.config/scripts/lock.sh"
+    Super+Alt+L hotkey-overlay-title="Lock Screen (Noctalia)" {
+        spawn "noctalia" "msg" "session" "lock"
     }
 
     // Noctalia is the primary shell surface for launchers and system popups.

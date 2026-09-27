@@ -25,8 +25,8 @@ $ sh ~/.config/scripts/screenrec-toggle.sh
 ## Запись аудио (toggle, ffmpeg)
 $ sh ~/.config/scripts/screenrec-toggle.sh audio
 
-## Локскрин (блюр экрана)
-$ sh ~/.config/scripts/lock.sh
+## Локскрин (Noctalia, можно с биндом Super+Alt+L)
+$ noctalia msg session lock
 
 ## Мониторы (память разметки)
 $ niri msg outputs
