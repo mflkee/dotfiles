@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# OpenCode Console credentials for the "OpenCode Go Usage" Noctalia widget.
+#
+# The console has no public API for plan limits, but the web dashboard reads its
+# own endpoint: GET <console>/api/go/status with the OAuth device token the
+# OpenCode CLI uses. That is what the widget calls.
+#
+#   opencode-go-auth login     device flow -> credentials.json
+#   opencode-go-auth status    print the current limits (same JSON the widget reads)
+#   opencode-go-auth logout    delete credentials.json
+#
+# The device token is good for 30 days. There is no working renewal: the console
+# accepts grant_type=refresh_token for client_id=opencode-cli, but hands back an
+# access token that every console endpoint answers with 401 while still burning
+# the refresh token - so re-running `login` is the only way forward.
+#
+# Credentials: ~/.config/opencode-go/credentials.json (0600, dir 0700)
+#   {"org_id":"wrk_...","access_token":"...","expires_at":1793104191}
+set -euo pipefail
+
+SERVER="${OPENCODE_GO_SERVER:-https://opencode.ai/console}"
+# Site root, e.g. https://opencode.ai - some console URLs come back root-relative
+ORIGIN="$(printf '%s' "$SERVER" | sed -E 's#^([a-z]+://[^/]+).*#\1#')"
+CLIENT_ID="${OPENCODE_GO_CLIENT_ID:-opencode-cli}"
+CREDS="${OPENCODE_GO_CREDS:-$HOME/.config/opencode-go/credentials.json}"
+API="$SERVER/api/go/status"
+TOKEN_URL="$SERVER/auth/device/token"
+UA="opencode-go-auth/1.0 (noctalia widget)"
+
+log()  { printf '%s\n' "$*" >&2; }
+die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+# 1234567 -> "14d 6h"; negative input is clamped to 0.
+humanize() {
+  local s="${1:-0}"
+  [ "$s" -lt 0 ] && s=0
+  local d=$(( s / 86400 )) h=$(( s % 86400 / 3600 )) m=$(( s % 3600 / 60 ))
+  if [ "$d" -gt 0 ]; then printf '%dd %dh' "$d" "$h"
+  elif [ "$h" -gt 0 ]; then printf '%dh %dm' "$h" "$m"
+  else printf '%dm' "$m"; fi
+}
+
+need() { command -v "$1" >/dev/null 2>&1 || die "$1 is required but not installed"; }
+need curl
+need jq
+
+creds_field() {
+  [ -f "$CREDS" ] || return 1
+  local value
+  value="$(jq -r --arg k "$1" '.[$k] // empty' "$CREDS")"
+  [ -n "$value" ] || return 1
+  printf '%s' "$value"
+}
+
+write_creds() {
+  local org="$1" access="$2" expires_at="$3"
+  mkdir -p "$(dirname "$CREDS")"
+  chmod 700 "$(dirname "$CREDS")"
+  local tmp
+  tmp="$(mktemp "${CREDS}.XXXXXX")"
+  chmod 600 "$tmp"
+  jq -n \
+    --arg org "$org" \
+    --arg access "$access" \
+    --argjson expires "$expires_at" \
+    '{org_id: $org, access_token: $access, expires_at: $expires}' \
+    >"$tmp"
+  mv -f "$tmp" "$CREDS"
+  chmod 600 "$CREDS"
+}
+
+# ── login: OAuth device flow ───────────────────────────────────────────────────
+
+cmd_login() {
+  local code now
+  code="$(curl -sS -X POST "$SERVER/auth/device/code" \
+    -H 'Content-Type: application/json' \
+    -H "User-Agent: $UA" \
+    -d "{\"client_id\":\"$CLIENT_ID\",\"supports_org_scope\":true}")"
+
+  local device_code user_code url interval expires_in
+  device_code="$(printf '%s' "$code" | jq -r '.device_code // empty')"
+  user_code="$(printf '%s' "$code" | jq -r '.user_code // empty')"
+  url="$(printf '%s' "$code" | jq -r '.verification_uri_complete // empty')"
+  interval="$(printf '%s' "$code" | jq -r '.interval // 5')"
+  expires_in="$(printf '%s' "$code" | jq -r '.expires_in // 600')"
+  [ -n "$device_code" ] || die "device code request failed: $code"
+
+  # verification_uri_complete is site-root relative, not relative to $SERVER
+  case "$url" in
+    /*) url="$ORIGIN$url" ;;
+  esac
+
+  log ""
+  log "OpenCode Console authorization"
+  log "  code: $user_code"
+  log "  open: $url"
+  log ""
+
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1 || true
+  fi
+
+  now="$(date +%s)"
+  local deadline=$((now + expires_in - 5))
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    local resp
+    resp="$(curl -sS -X POST "$TOKEN_URL" \
+      -H 'Content-Type: application/json' \
+      -H "User-Agent: $UA" \
+      -d "{\"grant_type\":\"urn:ietf:params:oauth:grant-type:device_code\",\"device_code\":\"$device_code\",\"client_id\":\"$CLIENT_ID\"}")"
+
+    if printf '%s' "$resp" | jq -e '.access_token' >/dev/null 2>&1; then
+      local access org expires_at
+      access="$(printf '%s' "$resp" | jq -r '.access_token')"
+      org="$(printf '%s' "$resp" | jq -r '.org_id // empty')"
+      expires_at=$(( $(date +%s) + $(printf '%s' "$resp" | jq -r '.expires_in // 0') ))
+      [ -n "$org" ] || die "no org_id in the token response (is the account a member of a workspace?)"
+      write_creds "$org" "$access" "$expires_at"
+      log "saved $CREDS"
+      log "  org: $org"
+      log "  valid until: $(date -d "@$expires_at" '+%Y-%m-%d %H:%M')"
+      return 0
+    fi
+
+    case "$(printf '%s' "$resp" | jq -r '.error // empty')" in
+      authorization_pending) : ;;
+      slow_down) interval=$((interval + 5)) ;;
+      *) die "authorization failed: $resp" ;;
+    esac
+    sleep "$interval"
+  done
+  die "timed out waiting for approval"
+}
+
+# ── status: what the widget shows ─────────────────────────────────────────────
+
+cmd_status() {
+  local org access
+  org="$(creds_field org_id)" || die "no org_id in $CREDS (run: opencode-go-auth login)"
+  access="$(creds_field access_token)" || die "no access_token in $CREDS (run: opencode-go-auth login)"
+
+  local body code
+  body="$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $access" \
+    -H "x-org-id: $org" -H 'Accept: application/json' -H "User-Agent: $UA" "$API")"
+  code="${body##*$'\n'}"
+  body="${body%$'\n'*}"
+
+  if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+    die "HTTP $code - the console rejected the token; run: opencode-go-auth login"
+  fi
+  [ "$code" = "200" ] || die "HTTP $code: $body"
+
+  local expires
+  if expires="$(creds_field expires_at 2>/dev/null)" && [ "$expires" -gt 0 ] 2>/dev/null; then
+    printf 'token valid for %s more (%s)\n' \
+      "$(humanize $(( expires - $(date +%s) )))" \
+      "$(date -d "@$expires" '+%Y-%m-%d %H:%M')" >&2
+  fi
+
+  printf '%s' "$body" | jq -r '
+    .access.meters
+    | to_entries[]
+    | "\(.key)\t\((.value.usedMicroCents | tonumber) * 100 / ((.value.limitMicroCents | tonumber)) | floor)%\tresets=\(.value.resetsAt // "-")"
+  '
+}
+
+# ── logout ────────────────────────────────────────────────────────────────────
+
+cmd_logout() {
+  rm -f "$CREDS"
+  log "removed $CREDS"
+}
+
+case "${1:-}" in
+  login)   cmd_login "${2:-}" ;;
+  status)  cmd_status ;;
+  logout)  cmd_logout ;;
+  *)
+    sed -n '3,12p' "$0" | sed 's/^# \{0,1\}//' >&2
+    exit 2
+    ;;
+esac
