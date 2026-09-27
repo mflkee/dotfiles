@@ -17,8 +17,8 @@ Host hp
   Port 22
   IdentityFile ~/.ssh/id_ed25519
 
-Host antix1 antix1.netbird.cloud
-    HostName 100.89.195.135
+Host antix1 debian-server
+    HostName 100.89.177.156
     User mflkee
 
 Host desktop archlinux-desktop-12-158.netbird.cloud
