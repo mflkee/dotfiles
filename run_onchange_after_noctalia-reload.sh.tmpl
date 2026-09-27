@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Применяет изменённые настройки Noctalia (idle-lock и т.п.) на всех машинах.
+# Noctalia следит за settings.json через inotify, но для надёжности (и на
+# машинах, где watcher не сработал) явно просим перечитать конфиг.
+#
+# hash-files: {{ list "dot_config/noctalia/settings.json.tmpl" | join "\n" | sha256sum }}
+
+set -uo pipefail
+
+if ! command -v noctalia >/dev/null 2>&1; then
+  echo "[noctalia-reload] noctalia not installed — skip"
+  exit 0
+fi
+
+if ! systemctl --user is-active --quiet noctalia-shell.service 2>/dev/null; then
+  echo "[noctalia-reload] noctalia-shell not running — skip"
+  exit 0
+fi
+
+if noctalia msg config-reload >/dev/null 2>&1; then
+  echo "[noctalia-reload] config reloaded"
+else
+  # Fallback: полный перезапуск сервиса
+  systemctl --user restart noctalia-shell.service 2>/dev/null \
+    && echo "[noctalia-reload] service restarted" \
+    || echo "[noctalia-reload] reload failed"
+fi
+
+exit 0
