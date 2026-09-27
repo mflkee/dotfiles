@@ -87,12 +87,15 @@ local function usageText(html)
   if start == nil then
     return nil
   end
-  local block = html:sub(start)
+  -- The block runs until the next marked section (or 4 KB, whichever is first)
+  -- so a trailing dashboard section cannot leak into the numbers.
+  local block = html:sub(start, start + 4000)
   local nextSlot = block:find('data-slot=', 2, true)
   if nextSlot ~= nil then
     block = block:sub(1, nextSlot - 1)
   end
   block = block:gsub("<[^>]*>", "")
+  block = block:gsub("<[^<>]*$", "") -- the cut can leave a half-open tag behind
   block = block:gsub("%s+", " ")
   return block
 end
@@ -112,7 +115,9 @@ local function parseUsage(text)
       local segment = text:sub(from, to ~= nil and (to - 1) or nil)
       local percent = segment:match("(%d+)%%")
       if percent ~= nil then
-        local reset = segment:match("Resets%s+in%s+(.+)$")
+        -- Bounded on purpose: words, digits and separators only, so a stray
+        -- trailing section cannot be swallowed into "Resets in ...".
+        local reset = segment:match("Resets%s+in%s+([%w][%w%d%.%,:%s%-]*%w)")
         table.insert(parsed, {
           label = kind.label,
           percent = tonumber(percent),
@@ -164,7 +169,7 @@ local function render()
     for _, reading in ipairs(readings) do
       local value = reading.percent .. "%"
       if reading.reset ~= "" then
-        value ..= "  ·  " .. reading.reset
+        value = value .. "  ·  " .. reading.reset
       end
       table.insert(rows, { key = reading.label, value = value })
     end
@@ -223,6 +228,7 @@ local function fetch()
   if busy then
     return
   end
+  lastAttempt = os.time()
   local workspace, token = loadCredentials()
   if workspace == nil then
     fail("setup", "нет учётных данных: " .. CREDENTIALS_PATH)
@@ -269,23 +275,20 @@ noctalia.setUpdateInterval(30000)
 
 function update()
   local now = os.time()
-  if lastAttempt == 0 or now - lastAttempt >= REFRESH_SECONDS then
-    lastAttempt = now
+  if now - lastAttempt >= REFRESH_SECONDS then
     fetch()
   end
 end
 
 function onClick()
   manual = true
-  lastAttempt = 0
-  update()
+  fetch()
 end
 
 function onIpc(event)
   if event == "refresh" then
     manual = true
-    lastAttempt = 0
-    update()
+    fetch()
   end
 end
 
