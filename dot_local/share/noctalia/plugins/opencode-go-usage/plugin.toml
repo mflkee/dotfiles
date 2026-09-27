@@ -1,19 +1,20 @@
 # OpenCode Go plan limits in the Noctalia bar.
 #
-# Data source: the Go dashboard page https://opencode.ai/workspace/<id>/go.
-# OpenCode publishes no API for plan limits, so the widget scrapes the
-# server-rendered `data-slot="usage"` block - the same three numbers the web UI
-# shows (rolling / weekly / monthly).
+# Data source: GET https://opencode.ai/console/api/go/status - the same oRPC
+# endpoint the web dashboard calls, so no HTML scraping. Meters are spend caps
+# in micro-cents; the widget shows used/limit for each (rolling 5h / weekly /
+# monthly).
 #
-# Credentials (workspace id + the browser `auth` cookie) are read from a 0600
-# JSON file instead of Noctalia settings, so the token never lands in
+# Credentials (org id + the OpenCode CLI's OAuth device token) are read from a
+# 0600 JSON file instead of Noctalia settings, so the token never lands in
 # settings.toml (which is world-readable):
-#   {"workspace_id": "...", "token": "..."}
-# Default location: ~/.config/opencode-go/credentials.json
+#   {"org_id": "wrk_...", "access_token": "...", "expires_at": 1793104191}
+# Produce them with `opencode-go-auth login`. Default location:
+# ~/.config/opencode-go/credentials.json
 
 id = "mflkee/opencode-go-usage"
 name = "OpenCode Go Usage"
-version = "1.0.0"
+version = "1.1.0"
 plugin_api = 3
 author = "mflkee"
 license = "MIT"

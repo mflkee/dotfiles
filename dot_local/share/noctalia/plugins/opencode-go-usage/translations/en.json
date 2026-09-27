@@ -14,11 +14,11 @@
     },
     "refresh_minutes": {
       "label": "Refresh interval (minutes)",
-      "description": "How often the dashboard page is re-read"
+      "description": "How often the console API is polled"
     },
     "credentials_file": {
       "label": "Credentials file",
-      "description": "Path to a 0600 JSON file with {\"workspace_id\": ..., \"token\": ...}; falls back to the OPENCODE_GO_WORKSPACE / OPENCODE_GO_TOKEN env vars"
+      "description": "Path to a 0600 JSON file with {\"org_id\": ..., \"access_token\": ...}; falls back to the OPENCODE_GO_ORG / OPENCODE_GO_TOKEN env vars"
     }
   }
 }

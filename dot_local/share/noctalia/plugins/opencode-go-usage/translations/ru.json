@@ -14,11 +14,11 @@
     },
     "refresh_minutes": {
       "label": "Интервал обновления (минуты)",
-      "description": "Как часто перечитывается страница дашборда"
+      "description": "Как часто опрашивается API консоли"
     },
     "credentials_file": {
       "label": "Файл с учётными данными",
-      "description": "Путь к JSON-файлу с правами 0600 и полями {\"workspace_id\": ..., \"token\": ...}; если файла нет — используются переменные OPENCODE_GO_WORKSPACE / OPENCODE_GO_TOKEN"
+      "description": "Путь к JSON-файлу с правами 0600 и полями {\"org_id\": ..., \"access_token\": ...}; если файла нет — используются переменные OPENCODE_GO_ORG / OPENCODE_GO_TOKEN"
     }
   }
 }

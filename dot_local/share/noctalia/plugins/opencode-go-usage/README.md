@@ -5,44 +5,68 @@
 
 ## Откуда данные
 
-Официального API для лимитов нет (только feature request), поэтому виджет
-читает ту же страницу, что и CLI-тул `opencode-go-usage-analyzer`:
+Виджет зовёт тот же эндпоинт, что и веб-дашборд консоли:
 
 ```
-GET https://opencode.ai/workspace/<workspace_id>/go
-Cookie: auth=<token>; oc_locale=en
+GET https://opencode.ai/console/api/go/status
+Authorization: Bearer <access_token>
+x-org-id: <org_id>
 ```
 
-Номера лежат в HTML в блоке `<div data-slot="usage">`; теги вырезаются, дальше
-разбираются три маркера `Rolling Usage` / `Weekly Usage` / `Monthly Usage`.
+Ответ — обычный JSON, без разбора HTML:
 
-Если в ответе есть `Continue with Google` — токен не принят (виджет покажет ⚠).
+```json
+{"access":{"endsAt":"2026-10-18T10:53:49.000Z","meters":{
+  "fiveHour":{"resetsAt":null,"limitMicroCents":"1200000000","usedMicroCents":"0"},
+  "week":{"resetsAt":"2026-09-28T00:00:00.000Z","limitMicroCents":"3000000000","usedMicroCents":"3000000000"},
+  "month":{"limitMicroCents":"6000000000","usedMicroCents":"3000000000"}}}}
+```
+
+Счётчики — это не запросы, а лимиты расхода в микро-центах, поэтому процент
+считается как `used / limit`. У `fiveHour` поля `resetsAt` нет, пока лимит не
+начали тратить (это скользящее окно), у `month` сброса нет вовсе — там дата
+продления из `access.endsAt`.
+
+Ошибки отображаются так: `401`/`403` → ⚠ (токен отвергнут), прочее → !.
 
 ## Учётные данные
 
 Токен **не** хранится в настройках Noctalia: `settings.toml` имеет права 0644.
-Он лежит в отдельном файле с правами 0600:
+Всё делает скрипт `~/.local/bin/opencode-go-auth` (тоже из chezmoi):
 
 ```bash
-mkdir -p ~/.config/opencode-go && chmod 700 ~/.config/opencode-go
-$EDITOR ~/.config/opencode-go/credentials.json   # chmod 600
+opencode-go-auth login    # OAuth device flow: открыть страницу, нажать Authorize
+opencode-go-auth status   # те же цифры, что покажет виджет
+opencode-go-auth logout   # удалить credentials.json
 ```
+
+`login` кладёт в `~/.config/opencode-go/credentials.json` (каталог 0700, файл
+0600) три поля:
 
 ```json
 {
-  "workspace_id": "…",
-  "token": "…"
+  "org_id": "wrk_…",
+  "access_token": "…",
+  "expires_at": 1793104191
 }
 ```
 
-Как получить: открыть <https://opencode.ai/workspace/…/go> в браузере, войти,
- затем devtools → Application → Cookies → `opencode.ai` → значение `auth`.
-`workspace_id` — это идентификатор в URL после `/workspace/`.
+Альтернатива — переменные окружения `OPENCODE_GO_ORG` и `OPENCODE_GO_TOKEN`
+(имеют приоритет над файлом). Путь к файлу переопределяется в настройках
+виджета (`credentials_file`).
 
-Альтернатива — переменные окружения `OPENCODE_GO_WORKSPACE` и
-`OPENCODE_GO_TOKEN` (имеют приоритет над файлом).
+### Токен живёт 30 дней
 
-Файл можно переопределить в настройках виджета (`credentials_file`).
+`login` выдаёт токен на 30 дней. Обновить его нечем: консоль принимает
+`grant_type=refresh_token` для `client_id=opencode-cli`, но возвращает
+access-токен, который все её же endpoints отбивают с `401`, при этом refresh-токен
+сгорает. Так что единственный способ — снова прогнать `login`.
+
+Чтобы это не превратилось в сюрприз, виджет за три дня до истечения красит себя
+в жёлтый и пишет в тултипе подсказку. После истечения будет ⚠.
+
+Плагинам Noctalia нельзя писать файлы, поэтому автообновление из виджета
+невозможно — это осознанное ограничение, а не недоработка.
 
 ## Установка
 
@@ -64,5 +88,14 @@ Settings → Bar → добавить виджет.
 
 - Левый клик по виджету — принудительное обновление (с уведомлением).
 - Средний клик — стандартно открывает настройки этого виджета.
-- `noctalia msg plugin mflkee/opencode-go-usage:usage refresh` — обновить
+- `noctalia msg plugin mflkee/opencode-go-usage:usage eDP-1 refresh` — обновить
   из терминала (можно повесить на биндинг niri).
+- `display = "all"` в настройках виджета — показывать в баре все три лимита
+  вместо самого загруженного (`worst`).
+
+## Проверка изменений
+
+```bash
+noctalia plugins lint ~/.local/share/noctalia/plugins/opencode-go-usage/
+lua5.4 /tmp/opencode/test_usage.lua   # 12 сценариев на стабах API
+```

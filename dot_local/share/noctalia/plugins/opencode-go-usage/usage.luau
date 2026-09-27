@@ -85,10 +85,23 @@ end
 
 -- ── parsing ──────────────────────────────────────────────────────────────────
 
--- "2026-09-28T00:00:00.000Z" -> epoch seconds. Only the Z form the API emits is
--- accepted; anything else returns nil and the caller falls back to the renewal
--- date. Hand-rolled because the plugin API has no date parser.
-local function isoToEpoch(text)
+-- Days since 1970-01-01 for a proleptic Gregorian date. The API sends UTC and
+-- os.time only speaks local time, so the countdown is done in UTC calendar
+-- seconds instead: identical in every timezone and free of DST edges (verified
+-- against `date -u -d` across nine zones).
+local function daysFromCivil(year, month, day)
+  year = month <= 2 and year - 1 or year
+  local era = math.floor(year / 400)
+  local yearOfEra = year - era * 400
+  local shifted = month + (month > 2 and -3 or 9)
+  local dayOfYear = math.floor((153 * shifted + 2) / 5) + day - 1
+  local dayOfEra = yearOfEra * 365 + math.floor(yearOfEra / 4) - math.floor(yearOfEra / 100) + dayOfYear
+  return era * 146097 + dayOfEra - 719468
+end
+
+-- UTC calendar seconds for a "....-..-..T..:..:..(.mmm)?Z" stamp, or nil for
+-- anything else - the widget then simply shows no countdown.
+local function isoToUtc(text)
   if type(text) ~= "string" then
     return nil
   end
@@ -97,19 +110,15 @@ local function isoToEpoch(text)
   if year == nil then
     return nil
   end
-  local days = os.difftime(0, os.time({
-    year = tonumber(year),
-    month = tonumber(month),
-    day = tonumber(day),
-    hour = tonumber(hour),
-    min = tonumber(minute),
-    sec = tonumber(second),
-  }))
-  if days == nil then
-    return nil
-  end
-  -- os.time reads the table as local time; the API is UTC, so shift the result.
-  return days - os.difftime(0, os.date("*t", 0))
+  return daysFromCivil(tonumber(year), tonumber(month), tonumber(day)) * 86400
+    + tonumber(hour) * 3600 + tonumber(minute) * 60 + tonumber(second)
+end
+
+-- The same UTC seconds for "now", so the two are directly comparable.
+local function nowUtc()
+  local parts = os.date("!*t", os.time())
+  return daysFromCivil(parts.year, parts.month, parts.day) * 86400
+    + parts.hour * 3600 + parts.min * 60 + parts.sec
 end
 
 -- Micro-cents arrive as strings; anything unparsable must not become NaN in the
@@ -125,9 +134,9 @@ local function tonum(value)
 end
 
 -- Countdown to a reset, capped at 99d so a far-future date cannot push the
--- tooltip row out of view. Uses localtime, matching how os.time reads the table.
+-- tooltip row out of view. `now` is UTC calendar seconds (see nowUtc).
 local function countdown(utcText, now)
-  local target = isoToEpoch(utcText)
+  local target = isoToUtc(utcText)
   if target == nil then
     return ""
   end
@@ -135,12 +144,12 @@ local function countdown(utcText, now)
   if left <= 0 then
     return "due"
   end
+  if left > 99 * 86400 then
+    return ">99d"
+  end
   local days = math.floor(left / 86400)
   local hours = math.floor((left % 86400) / 3600)
   local minutes = math.floor((left % 3600) / 60)
-  if days > 99 then
-    return ">99d"
-  end
   if days > 0 then
     return string.format("%dd %dh", days, hours)
   end
@@ -285,7 +294,7 @@ end
 -- ── fetching ─────────────────────────────────────────────────────────────────
 
 local function finish(body)
-  local parsed, err = parseStatus(body, os.time())
+  local parsed, err = parseStatus(body, nowUtc())
   if parsed == nil then
     -- A tag of Unauthorized/Forbidden means the token, not the format.
     fail(err == "console: Unauthorized" and "auth" or "error", err or "не удалось прочитать лимиты")
