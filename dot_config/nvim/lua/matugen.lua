@@ -1,36 +1,69 @@
-local M = {}
+ local M = {}
 
 function M.setup()
-  require('base16-colorscheme').setup {
-    base00 = '#0b0e14', base01 = '#131721', base02 = '#202229', base03 = '#3e4b59',
-    base04 = '#bfbdb6', base05 = '#e6e1cf', base06 = '#ece8db', base07 = '#f2f0e7',
-    base08 = '#f07178', base09 = '#ff8f40', base0A = '#ffb454', base0B = '#aad94c',
-    base0C = '#95e6cb', base0D = '#59c2ff', base0E = '#d2a6ff', base0F = '#e6b450',
-  }
+  require('base16-colorscheme').setup({
+    base00 = '#0b0e14',
+    base01 = '#1e222a',
+    base02 = '#272c36',
+    base03 = '#595f6a',
+    base04 = '#8e959e',
+    base05 = '#d1d1c7',
+    base06 = '#d1d1c7',
+    base07 = '#d1d1c7',
+    base08 = '#d95757',
+    base09 = '#39bae6',
+    base0A = '#aad94c',
+    base0B = '#e6b450',
+    base0C = '#8ed8f1',
+    base0D = '#efcf8f',
+    base0E = '#cde996',
+    base0F = '#e2f4be',
+  })
 
-  local hi = function(group, opts) vim.api.nvim_set_hl(0, group, opts) end
+  local hi = function(group, opts)
+    vim.api.nvim_set_hl(0, group, opts)
+  end
 
-  hi('TelescopeNormal', { fg = '#e6e1cf', bg = '#0b0e14' })
-  hi('TelescopeBorder', { fg = '#3e4b59', bg = '#0b0e14' })
-  hi('TelescopePromptNormal', { fg = '#e6e1cf', bg = '#0b0e14' })
-  hi('TelescopePromptBorder', { fg = '#3e4b59', bg = '#0b0e14' })
-  hi('TelescopePromptPrefix', { fg = '#e6e1cf', bg = '#0b0e14' })
-  hi('TelescopePromptCounter', { fg = '#bfbdb6', bg = '#0b0e14' })
-  hi('TelescopePromptTitle', { fg = '#0b0e14', bg = '#e6b450' })
-  hi('TelescopePreviewTitle', { fg = '#0b0e14', bg = '#aad94c' })
-  hi('TelescopeResultsTitle', { fg = '#0b0e14', bg = '#d2a6ff' })
-  hi('TelescopeSelection', { fg = '#e6e1cf', bg = '#202229' })
-  hi('TelescopeSelectionCaret', { fg = '#e6b450', bg = '#202229' })
-  hi('TelescopeMatching', { fg = '#e6b450', bold = true })
+  -- telescope.nvim
+  hi('TelescopeNormal',         { fg = '#d1d1c7',          bg = '#0b0e14' })
+  hi('TelescopeBorder',         { fg = '#595f6a',             bg = '#0b0e14' })
+  hi('TelescopePromptNormal',   { fg = '#d1d1c7',          bg = '#0b0e14' })
+  hi('TelescopePromptBorder',   { fg = '#595f6a',             bg = '#0b0e14' })
+  hi('TelescopePromptPrefix',   { fg = '#e6b450',             bg = '#0b0e14' })
+  hi('TelescopePromptCounter',  { fg = '#8e959e',  bg = '#0b0e14' })
+  hi('TelescopePromptTitle',    { fg = '#0b0e14',             bg = '#e6b450' })
+  hi('TelescopePreviewTitle',   { fg = '#0b0e14',             bg = '#aad94c' })
+  hi('TelescopeResultsTitle',   { fg = '#0b0e14',             bg = '#39bae6' })
+  hi('TelescopeSelection',      { fg = '#d1d1c7',          bg = '#272c36' })
+  hi('TelescopeSelectionCaret', { fg = '#e6b450',             bg = '#272c36' })
+  hi('TelescopeMatching',       { fg = '#e6b450',             bold = true })
+
+  -- mini.pick
+  hi('MiniPickNormal',         { fg = '#d1d1c7',          bg = '#0b0e14' })
+  hi('MiniPickBorder',         { fg = '#595f6a',             bg = '#0b0e14' })
+  hi('MiniPickPrompt',   { fg = '#d1d1c7',          bg = '#0b0e14' })
+  hi('MiniPickPromptPrefix',   { fg = '#e6b450',             bg = '#0b0e14' })
+  hi('MiniPickBorderText',    { fg = '#0b0e14',             bg = '#e6b450' })
+  hi('MiniPickMatchCurrent',      { fg = '#d1d1c7',          bg = '#272c36' })
+  hi('MiniPickPromptCaret', { fg = '#e6b450',             bg = '#272c36' })
+  hi('MiniPickMatchRanges',       { fg = '#e6b450',             bold = true })
 end
 
--- Register a signal handler for SIGUSR1 (matugen updates)
+-- Register a signal handler for SIGUSR1 (matugen updates).
+-- The handler re-requires this module, which re-runs the code below, so the
+-- previous handle is stopped first; otherwise handlers double on every signal.
+if _G.__matugen_signal then
+  _G.__matugen_signal:stop()
+  _G.__matugen_signal:close()
+end
+
 local signal = vim.uv.new_signal()
+_G.__matugen_signal = signal
 signal:start(
   'sigusr1',
   vim.schedule_wrap(function()
     package.loaded['matugen'] = nil
-    pcall(function() require('matugen').setup() end)
+    require('matugen').setup()
   end)
 )
 
