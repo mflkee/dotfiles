@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# tmux-renumber-windows: переиндексировать окна (вкладки) текущей сессии tmux,
+# убирая «дырки» после удаления окон в середине (1 2 4 5 6 → 1 2 3 4 5).
+# Использование:
+#   tmux-renumber-windows          # текущая сессия (нужно быть внутри tmux)
+#   tmux-renumber-windows SESS     # конкретная сессия по имени или id ($S0)
+# Вызывается вручную (bind "=" в конфиге) или автоматически при закрытии
+# окна, если включён set -g renumber-windows on.
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  if [[ -z "${TMUX:-}" ]]; then
+    printf 'tmux-renumber-windows: не внутри tmux-сессии\n' >&2
+    exit 1
+  fi
+  session="$(tmux display-message -p '#{session_id}')"
+else
+  session="$1"
+  if ! tmux has-session -t "$session" 2>/dev/null; then
+    printf 'tmux-renumber-windows: сессия не найдена: %s\n' "$session" >&2
+    exit 1
+  fi
+fi
+
+before="$(tmux list-windows -t "$session" -F '#I')"
+
+tmux move-window -r -t "$session"
+
+after="$(tmux list-windows -t "$session" -F '#I')"
+
+prev_msg="$(printf '%s' "$before" | paste -sd ' ' -)"
+new_msg="$(printf '%s' "$after" | paste -sd ' ' -)"
+
+if [[ "$before" == "$after" ]]; then
+  tmux display-message -t "$session" "Окна уже последовательны: ${new_msg}"
+  printf 'No gaps in %s: %s\n' "$session" "$new_msg"
+  exit 0
+fi
+
+tmux display-message -t "$session" "Переиндексировано: ${prev_msg} → ${new_msg}"
+printf 'Renumbered %s: %s -> %s\n' "$session" "$prev_msg" "$new_msg"
