@@ -151,5 +151,13 @@ Settings → Bar → добавить виджет.
 
 ```bash
 noctalia plugins lint ~/.local/share/noctalia/plugins/opencode-go-usage/
-lua5.4 /tmp/opencode/test_usage.lua   # 12 сценариев на стабах API
+lua5.4 /tmp/opencode/test_usage.lua              # 12 сценариев на стабах API
+bash ~/dotfiles/test_write-opencode-go-credentials.sh   # 16 сценариев на secrets.zsh
+opencode-go-auth status                          # живой API, не виджет
 ```
+
+Про виджет на живой машине: временная строчка `noctalia.log(<summary>)` рядом с
+`barWidget.setText(summary())`, `noctalia msg plugin mflkee/opencode-go-usage:usage
+<output> refresh`, затем `grep ocprobe ~/.cache/noctalia/noctalia.log`.
+`noctalia.log` принимает ровно один аргумент, а `notify` не пишется в
+`notifications.json` — читать текст виджета оттуда бесполезно.

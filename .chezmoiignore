@@ -57,3 +57,6 @@ dot_config/dsync/dsync/tokens.toml
 # Генерируется per-machine скриптом run_onchange_set-outputs.sh.tmpl —
 # не управляется как статичный файл.
 .config/niri/set-outputs.sh
+# Test harness for run_after_write-opencode-go-credentials.sh: lives in the repo
+# for reference, never deployed to $HOME.
+test_write-opencode-go-credentials.sh
