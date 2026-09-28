@@ -1,0 +1,150 @@
+<div align="center">
+
+<h1> tmux dotbar </h1>
+
+tmux dotbar is a simple and minimalist status bar theme for tmux. <br>
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
+</div> 
+
+## Preview
+<div align="center">
+  <img src="./imgs/preview.png" width="800" />
+  <img src="./imgs/prefix-preview.png" width="800" />
+  <p><em>Prefix and SSH indicator</em></p>
+</div>
+
+
+## Features
+* Icon indicator when a pane is maximized in a window
+* Icon indicator for active SSH session
+* Color indication when tmux prefix is pressed
+* Bell and activity notifications properly displayed with custom styles
+
+## Installation
+### Prerequisites
+This plugin uses Nerd Font icons, make sure you are using one in the terminal to work properly. If you don't want it, you can change the icons to something else.
+
+### TPM (recommended)
+1.  Install [TPM](https://github.com/tmux-plugins/tpm)
+2.  Add the plugin:
+
+    ```bash
+    set -g @plugin 'vaaleyard/tmux-dotbar'
+    ```
+3. Inside tmux, use the tpm install command: `prefix + I` (default prefix is ctrl+b)
+
+<details>
+    <summary font-size=18px>
+        <h3>Manual</h3>
+    </summary>
+
+1. Clone this repository to your desired location (e.g. `~/.config/tmux/plugins/tmux-dotbar`).
+
+   ```bash
+   mkdir -p ~/.config/tmux/plugins/
+   git clone https://github.com/vaaleyard/tmux-dotbar.git
+   ```
+2. Add the following line to your `tmux.conf` file:
+   `run ~/.config/tmux/plugins/tmux-dotbar/dotbar.tmux`.
+3. Reload Tmux by either restarting or reloading with `tmux source ~/.tmux.conf`.
+
+</details>
+
+## Configuration
+### Colorscheme
+This theme works best depending on the colorscheme you use, because the status-bar background is supposed to mix with the terminal background.
+The default colorscheme used for this theme (as in the preview images) is [neovim-ayu](https://github.com/Shatur/neovim-ayu) in [Ghostty](https://ghostty.org/), so it matches the background for my tmux, terminal and vim colorscheme.  
+It's **strongely recommended** to change the colors so it matches your colorscheme. You can get the colors from your preferred theme palette and change/set these options:
+```
+# supposing you use catppuccin moccha
+set -g @tmux-dotbar-bg "#1e1e2e"
+set -g @tmux-dotbar-fg "#585b70"
+set -g @tmux-dotbar-fg-current "#cdd6f4"
+set -g @tmux-dotbar-fg-session "#9399b2"
+set -g @tmux-dotbar-fg-prefix "#cba6f7"
+```
+
+You can also set `@tmux-dotbar-bold-status` to use bold font in the whole statusbar, or `@tmux-dotbar-bold-current-window` to use bold font just for the active window. To bold only the session indicator or right status text, set `@tmux-dotbar-bold-session` or `@tmux-dotbar-bold-status-right`.
+
+### Status bar
+You may feel the right part a bit empty. If you want, there's an option to display the current time there, you can enable it (disabled by default) in your `.tmux.conf`:
+```
+set -g @tmux-dotbar-right true
+```
+If you want to change the content of the right part (default is current time), you can:
+```
+set -g @tmux-dotbar-status-right-text " %H:%M "
+```
+Another option you might want to try is to change the position of the status-bar with `@tmux-dotbar-position` (bottom by default):
+```
+set -g @tmux-dotbar-position top
+```
+
+#### Session Indicator
+By default, the session name is displayed on the left with prefix highlight logic and rounded. You can move it to the right or change its text:
+```
+# Move session indicator to the right (defaults to "left")
+set -g @tmux-dotbar-session-position "right"
+
+# Style for the session indicator
+set -g @tmux-dotbar-rounded true
+
+# Change the text (default to " #S ") while keeping the prefix highlight logic
+set -g @tmux-dotbar-session-text "[#S]"
+```
+
+### SSH integration
+When you ssh into a server, tmux-dotbar will change the window name to the SSH hostname and it will also add an icon indicator. 
+Unfurtunately, tmux can't parse the window name when the SSH host is an IPv4 address. It gets truncated in the middle, e.g., `ssh user@192.168.1.100` would show only `192.168`. So for IP hosts this feature is not available.  
+Due to this limitation, I've addded the option to only display the icon (and don't change the window name) as it might cause confusion if you use IPs extensively, because you would not be sure if the window name is the host or not. If that's not the case, you don't need to change these settings. An option to do not show the icon is also available.
+```
+set -g @tmux-dotbar-ssh-icon '󰌘'
+set -g @tmux-dotbar-ssh-icon-only false
+set -g @tmux-dotbar-ssh-enabled true
+```
+
+## Recommended tmux options
+Since this theme does not display window indexes, it's best suited for users who manage a small number of windows.  
+To improve usability, it's hugely recommended to enable automatic renumbering when windows are closed.  
+Also a good option is to start window indexes at 1 for easier tracking.
+
+```
+set-option -g renumber-windows on
+set -g base-index 1
+setw -g pane-base-index 1
+```
+
+### All options
+Below are all the options you can change, with the default values. You can look at `dotbar.tmux` for more reference.  
+**NOTE:** don't copy and paste these settings, they are here only for reference if you want to change any.
+```
+set -g @tmux-dotbar-bg "#0B0E14"
+set -g @tmux-dotbar-fg "#475266"
+set -g @tmux-dotbar-fg-current "#BFBDB6"
+set -g @tmux-dotbar-fg-session "#565B66"
+set -g @tmux-dotbar-fg-prefix "#95E6CB"
+set -g @tmux-dotbar-position "bottom"
+set -g @tmux-dotbar-justify "absolute-centre"
+set -g @tmux-dotbar-left "true"
+set -g @tmux-dotbar-right "false"
+set -g @tmux-dotbar-session-position "left"
+set -g @tmux-dotbar-session-text " #S "
+set -g @tmux-dotbar-status-right-text " %H:%M "
+set -g @tmux-dotbar-window-status-format " #W "
+set -g @tmux-dotbar-window-status-separator " • "
+set -g @tmux-dotbar-maximized-icon "󰊓"
+set -g @tmux-dotbar-show-maximized-icon-for-all-tabs false
+set -g @tmux-dotbar-bold-status false
+set -g @tmux-dotbar-bold-current-window false
+set -g @tmux-dotbar-bold-session false
+set -g @tmux-dotbar-bold-status-right false
+set -g @tmux-dotbar-rounded true
+set -g @tmux-dotbar-ssh-enabled true
+set -g @tmux-dotbar-ssh-icon '󰌘'
+set -g @tmux-dotbar-ssh-icon-only false
+```
+
+### Credits
+This theme was inspired on [minimal-tmux-status](https://github.com/niksingh710/minimal-tmux-status/tree/main).
