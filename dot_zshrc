@@ -271,4 +271,24 @@ dh() {
   python3 /home/mflkee/projects/domainHub/main.py "$1" --with-playwright "${@:2}"
 }
 
+# --------------------
+# Tab: если справа есть автодополнение (seriy) — принять его,
+# иначе — обычный Tab (дополнение/fzf-tab).
+# --------------------
+_tab_complete_or_suggest() {
+  if [[ -n "${POSTDISPLAY:-}" ]]; then
+    zle autosuggest-accept
+  else
+    zle "${_ftb_orig_widget:-expand-or-complete}"
+  fi
+}
+zle -N _tab_complete_or_suggest
+# zsh-vi-mode сбрасывает keymaps после .zshrc — вешаем в его официальный хук
+function zvm_after_init() {
+  for _kmap in main emacs viins; do
+    bindkey -M "$_kmap" '^I' _tab_complete_or_suggest
+  done
+  unset _kmap
+}
+
 # e2e check 14:28:17
