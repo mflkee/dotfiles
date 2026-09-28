@@ -5,6 +5,28 @@ local gh = require('mflkee.util').gh
 
 vim.pack.add { gh 'folke/snacks.nvim' }
 
+-- Встроенная секция `startup` дашборда вызывает `require("lazy.stats")`, а она
+-- существует только под lazy.nvim. Здесь плагины ставятся нативным `vim.pack`,
+-- поэтому заменяем секцию на эквивалент через `vim.pack.get()` + свой таймер
+-- старта (см. init.lua). Регистрируем сразу после setup — дашборд Snacks
+-- поднимается на UIEnter, то есть уже после загрузки init.lua.
+local function startup_section()
+  local loaded = 0
+  for _ in pairs(vim.pack.get() or {}) do
+    loaded = loaded + 1
+  end
+  local started = tonumber(vim.g.nvim_start_hrtime) or vim.uv.hrtime()
+  local ms = math.floor((vim.uv.hrtime() - started) / 1e4 + 0.5) / 100
+  return {
+    align = 'center',
+    text = {
+      { '⚡ Neovim loaded ', hl = 'footer' },
+      { loaded .. ' plugins in ', hl = 'special' },
+      { ms .. 'ms', hl = 'special' },
+    },
+  }
+end
+
 require('snacks').setup {
   bigfile = { enabled = true },
   dashboard = { enabled = true },
@@ -20,6 +42,8 @@ require('snacks').setup {
   words = { enabled = true },
   zen = { enabled = true },
 }
+
+Snacks.dashboard.sections.startup = startup_section
 
 -- Дополнительные маппинги Snacks (основные пикеры — в plugins/search.lua)
 vim.keymap.set('n', '<leader>.', function() Snacks.scratch() end, { desc = 'Toggle Scratch Buffer' })

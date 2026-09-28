@@ -8,6 +8,10 @@
 -- Plus optional kickstart examples and personal custom plugins
 -- (lua/custom/plugins/, auto-loaded from DSL-compatible specs).
 
+-- Стартовый таймер для секции `startup` дашборда Snacks: перехватываем
+-- hrtime в самом начале init, пока ни один плагин ещё не загружен.
+vim.g.nvim_start_hrtime = vim.uv.hrtime()
+
 vim.loader.enable()
 
 -- Set <space> as the leader key (must happen before plugins are loaded)
