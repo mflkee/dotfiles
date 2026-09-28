@@ -12,8 +12,8 @@ description: |
 
 ### Session start (MANDATORY)
 
-1. Read `opencode-memory/context-cache.md` (~500 tokens, NOT index.md!)
-2. If working on specific project → read `projects/<name>.md` section only
+1. Read `🧠 opencode-memory/context-cache.md` (~500 tokens, NOT index.md!)
+2. If working on specific project → read `🧠 opencode-memory/🗂 projects/<name>.md` section only
 3. Use `vault_read` with `targetType` to read specific sections
 
 ### During work
@@ -25,9 +25,9 @@ description: |
 
 ### Session end (MANDATORY)
 
-1. Update `projects/<name>.md` via `vault_patch`
-2. Create session log in `opencode-memory/sessions/YYYY-MM-DD-<project>.md`
-3. Update `tasks/_index.md` — move completed to Done
+1. Update `🧠 opencode-memory/🗂 projects/<name>.md` via `vault_patch`
+2. Create session log in `🧠 opencode-memory/📜 sessions/YYYY-MM-DD-<project>.md`
+3. Update `🧠 opencode-memory/✅ tasks/_index.md` — move completed to Done
 4. **Update context-cache.md** (see Auto-cache section)
 
 ## Auto-cache mechanism
@@ -64,9 +64,13 @@ updated: YYYY-MM-DD
 ## Vault rules
 
 If unsure where a note belongs / how to name it / what format to use, read
-`opencode-memory/RULES.md` — it is the source of truth for vault structure:
+`🧠 opencode-memory/RULES.md` — it is the source of truth for vault structure:
 folders, frontmatter, naming, session logs, tasks index. RULES.md is small
 (~300 tokens) and only read when needed.
+
+> Пути vault теперь с эмодзи-префиксами (с 2026-09-26): «books→другое», в
+> т.ч. `🧠 opencode-memory/`, его подпапки `🗂 projects/`, `📜 sessions/`,
+> `✅ tasks/`. Это конвенция RULES.md (старые пути без эмодзи не применяются).
 
 ## MCP tools reference
 
