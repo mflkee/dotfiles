@@ -88,7 +88,7 @@ ZSH_HIGHLIGHT_STYLES[assign]=fg=#e6e1cf
 ZSH_HIGHLIGHT_STYLES[autodirectory]=fg=#59c2ff
 zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-autosuggestions
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#3e4b59"
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#8e959e"
 # zinit light agkozak/zsh-z # replaced by zoxide
 zinit light MichaelAquilina/zsh-you-should-use
 
