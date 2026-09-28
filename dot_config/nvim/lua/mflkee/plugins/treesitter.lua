@@ -3,6 +3,20 @@ local gh = require('mflkee.util').gh
 
 vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
+-- nvim-treesitter (main) хранит queries (highlights/injections/…) в runtime/queries/,
+-- но :packadd добавляет на rtp только корень плагина, поэтому queries недоступны:
+-- нет подсветки в .rs, а в md-блоках языки не инжектятся (всё одним цветом @markup.raw).
+-- Добавляем подкаталог runtime/ явно.
+local ts_query = vim.fn.globpath(vim.o.runtimepath, 'lua/nvim-treesitter/init.lua', false, true)[1]
+if ts_query then
+  -- <root>/lua/nvim-treesitter/init.lua → корень плагина (3 уровня вверх)
+  local ts_root = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(ts_query)))
+  local ts_runtime = vim.fs.joinpath(ts_root, 'runtime')
+  if vim.fn.isdirectory(ts_runtime) == 1 then
+    vim.opt.runtimepath:append(ts_runtime)
+  end
+end
+
 -- Ensure basic parsers are installed
 local parsers = {
   'bash',
