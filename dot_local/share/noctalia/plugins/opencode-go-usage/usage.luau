@@ -239,6 +239,7 @@ local function render()
     local top = worst(readings)
     if DISPLAY == "all" then
       barWidget.setText(summary())
+      noctalia.log("ocprobe: " .. summary())
     else
       barWidget.setText(PREFIX .. " " .. top.percent .. "%")
     end
