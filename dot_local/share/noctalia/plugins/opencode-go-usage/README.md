@@ -68,6 +68,31 @@ access-токен, который все её же endpoints отбивают с
 Плагинам Noctalia нельзя писать файлы, поэтому автообновление из виджета
 невозможно — это осознанное ограничение, а не недоработка.
 
+## Несколько машин
+
+Плагин и скрипт приезжают на все машины сами: они лежат в chezmoi, а dsync
+разворачивает `dotfiles` через `chezmoi apply`. Дальше на каждой машине нужно
+две вещи, и обе — локальные, в git не попадают.
+
+**1. Креды.** `~/.config/opencode-go/credentials.json` — секрет (0600), поэтому
+он не синхронизируется. Либо на каждой машине свой `opencode-go-auth login`
+(браузер подтверждает каждую отдельно), либо один раз скопировать файл:
+
+```bash
+ssh desktop 'mkdir -p ~/.config/opencode-go && chmod 700 ~/.config/opencode-go' \
+  '&& cat > ~/.config/opencode-go/credentials.json' \
+  '&& chmod 600 ~/.config/opencode-go/credentials.json' \
+  < ~/.config/opencode-go/credentials.json
+```
+
+Токен device flow не привязан к хосту, так что один и тот же файл на трёх
+машинах работает. Через 30 дней истекает он везде одновременно — предупреждение
+оно тоже покажет сразу на всех машинах.
+
+**2. Бар.** `~/.local/state/noctalia/settings.toml` chezmoi не управляет
+(у каждой машины свой бар), поэтому три строки из раздела «Установка» дописываются
+на каждой машине руками.
+
 ## Установка
 
 Плагин лежит в `dot_local/share/noctalia/plugins/opencode-go-usage/`, chezmoi
@@ -78,8 +103,11 @@ access-токен, который все её же endpoints отбивают с
 2. В `~/.local/state/noctalia/settings.toml`:
    - `[plugins] enabled = [..., "mflkee/opencode-go-usage"]`
    - `[widget.oc-usage]` с `type = "mflkee/opencode-go-usage:usage"`
-   - добавить `"oc-usage"` в `[bar.default].end`
-3. Перезагрузить shell: `systemctl --user restart noctalia-shell.service`
+   - добавить `"oc-usage"` в `[bar.default].end` (или `.start`, если виджет
+     нужен слева)
+3. Готово: Noctalia следит за `settings.toml` и подхватывает изменения сама
+   (в логе — `config changed, reloading` и `loaded plugin 'mflkee/opencode-go-usage'`).
+   Перезапуск шелла нужен только если плагин так и не появился.
 
 Либо через UI: Settings → Plugins → OpenCode Go Usage → Enable, затем
 Settings → Bar → добавить виджет.
