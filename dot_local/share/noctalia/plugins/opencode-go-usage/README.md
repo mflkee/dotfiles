@@ -32,12 +32,15 @@ x-org-id: <org_id>
 ## Учётные данные
 
 Токен **не** хранится в настройках Noctalia: `settings.toml` имеет права 0644.
-Всё делает скрипт `~/.local/bin/opencode-go-auth` (тоже из chezmoi):
+В репозитории он лежит в одном-единственном месте — в зашифрованном
+`~/.config/zsh/secrets.zsh` (chezmoi + age), поэтому dsync разносит его сам на
+все машины. Всё делает скрипт `~/.local/bin/opencode-go-auth` (тоже из chezmoi):
 
 ```bash
 opencode-go-auth login    # OAuth device flow: открыть страницу, нажать Authorize
 opencode-go-auth status   # те же цифры, что покажет виджет
-opencode-go-auth logout   # удалить credentials.json
+opencode-go-auth sync     # перезаписать блок в secrets.zsh из credentials.json
+opencode-go-auth logout   # удалить credentials.json и вычистить токен из secrets.zsh
 ```
 
 `login` кладёт в `~/.config/opencode-go/credentials.json` (каталог 0700, файл
@@ -55,6 +58,29 @@ opencode-go-auth logout   # удалить credentials.json
 (имеют приоритет над файлом). Путь к файлу переопределяется в настройках
 виджета (`credentials_file`).
 
+### Как токен попадает в репозиторий
+
+`login`/`logout`/`sync` переписывают управляемый блок прямо в
+`~/.config/zsh/secrets.zsh` и не трогают ничего за его пределами:
+
+```sh
+# >>> opencode-go-auth >>>
+export OPENCODE_GO_ORG="wrk_…"
+export OPENCODE_GO_TOKEN="…"
+export OPENCODE_GO_EXPIRES_AT="1793104191"
+# <<< opencode-go-auth <<<
+```
+
+Дальше `chezmoi re-add` зашифровывает файл в `~/dotfiles`, а `dsync push`
+разносит по остальным машинам. Значения с символами вне `[A-Za-z0-9_.:-]`
+не записываются вовсе — файл этот sourced каждым шеллом.
+
+Обратно на каждой машине credentials.json появляется сам: chezmoi-скрипт
+`run_after_write-opencode-go-credentials.sh` после каждого `chezmoi apply`
+(а dsync вызывает его после pull) раскладывает те же три значения в
+`~/.config/opencode-go/credentials.json`, 0600, и молчит, если файл уже
+актуален. То есть вручную ничего копировать не нужно — `chezmoi apply` и всё.
+
 ### Токен живёт 30 дней
 
 `login` выдаёт токен на 30 дней. Обновить его нечем: консоль принимает
@@ -70,28 +96,23 @@ access-токен, который все её же endpoints отбивают с
 
 ## Несколько машин
 
-Плагин и скрипт приезжают на все машины сами: они лежат в chezmoi, а dsync
-разворачивает `dotfiles` через `chezmoi apply`. Дальше на каждой машине нужно
-две вещи, и обе — локальные, в git не попадают.
+Из живого на каждой машине нужно только одно — бар. Остальное приезжает само.
 
-**1. Креды.** `~/.config/opencode-go/credentials.json` — секрет (0600), поэтому
-он не синхронизируется. Либо на каждой машине свой `opencode-go-auth login`
-(браузер подтверждает каждую отдельно), либо один раз скопировать файл:
+**Креды** лежат в зашифрованном `secrets.zsh`, его разносит dsync, а
+chezmoi-скрипт после каждого apply раскладывает `credentials.json`. Ничего
+копировать руками не нужно.
+
+**Бар.** `~/.local/state/noctalia/settings.toml` chezmoi не управляет (у каждой
+машины свой бар и свой набор мониторов), поэтому три строки из раздела
+«Установка» дописываются на каждой машине руками — один раз.
+
+Токен device flow не привязан к хосту, так что один токен на все машины, и
+через 30 дней он истекает везде одновременно: предупреждение останется жёлтым
+на всех машинах сразу. Продление — одна команда на любой машине:
 
 ```bash
-ssh desktop 'mkdir -p ~/.config/opencode-go && chmod 700 ~/.config/opencode-go' \
-  '&& cat > ~/.config/opencode-go/credentials.json' \
-  '&& chmod 600 ~/.config/opencode-go/credentials.json' \
-  < ~/.config/opencode-go/credentials.json
+opencode-go-auth login    # перезаписать токен, разнесётся сам
 ```
-
-Токен device flow не привязан к хосту, так что один и тот же файл на трёх
-машинах работает. Через 30 дней истекает он везде одновременно — предупреждение
-оно тоже покажет сразу на всех машинах.
-
-**2. Бар.** `~/.local/state/noctalia/settings.toml` chezmoi не управляет
-(у каждой машины свой бар), поэтому три строки из раздела «Установка» дописываются
-на каждой машине руками.
 
 ## Установка
 

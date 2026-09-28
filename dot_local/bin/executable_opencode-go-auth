@@ -7,6 +7,7 @@
 #
 #   opencode-go-auth login     device flow -> credentials.json
 #   opencode-go-auth status    print the current limits (same JSON the widget reads)
+#   opencode-go-auth sync      copy credentials.json into secrets.zsh and push
 #   opencode-go-auth logout    delete credentials.json
 #
 # The device token is good for 30 days. There is no working renewal: the console
@@ -16,6 +17,11 @@
 #
 # Credentials: ~/.config/opencode-go/credentials.json (0600, dir 0700)
 #   {"org_id":"wrk_...","access_token":"...","expires_at":1793104191}
+#
+# The repository keeps the token in exactly one place: the chezmoi-encrypted
+# ~/.config/zsh/secrets.zsh. `login`/`logout` rewrite that block and re-encrypt
+# it, then push via dsync; a chezmoi run_after script on every machine
+# materialises credentials.json from those variables. Nothing else stores it.
 set -euo pipefail
 
 SERVER="${OPENCODE_GO_SERVER:-https://opencode.ai/console}"
@@ -69,6 +75,71 @@ write_creds() {
   chmod 600 "$CREDS"
 }
 
+# ── secrets.zsh: the one place the token is stored in the repo ─────────────────
+
+SECRETS="${OPENCODE_GO_SECRETS:-$HOME/.config/zsh/secrets.zsh}"
+SECRETS_BEGIN="# >>> opencode-go-auth >>>"
+SECRETS_END="# <<< opencode-go-auth <<<"
+
+# Rewrites the managed block in secrets.zsh in place; everything outside the
+# markers is left alone. Written with awk rather than sed so the token is never
+# passed through a shell-quoting layer twice.
+sync_secrets() {
+  [ -f "$SECRETS" ] || die "$SECRETS not found (run: chezmoi apply)"
+
+  local org access expires
+  org="$(creds_field org_id || true)"
+  access="$(creds_field access_token || true)"
+  expires="$(creds_field expires_at 2>/dev/null || echo 0)"
+
+  # The console returns base64url/URL-safe values (letters, digits, `_-.`), so
+  # double quotes need no escaping. Anything else is refused instead of written
+  # out into a file that gets sourced by every shell.
+  for value in "$org" "$access" "$expires"; do
+    [ -n "$value" ] || continue
+    case "$value" in
+      *[!A-Za-z0-9_.:-]*) die "refusing to store a value with unexpected characters" ;;
+    esac
+  done
+
+  # No trailing newline in $block (command substitution strips it); awk adds it.
+  local block tmp
+  if [ -n "$org" ] && [ -n "$access" ]; then
+    block="$(printf '%s\nexport OPENCODE_GO_ORG="%s"\nexport OPENCODE_GO_TOKEN="%s"\nexport OPENCODE_GO_EXPIRES_AT="%s"\n%s' \
+      "$SECRETS_BEGIN" "$org" "$access" "$expires" "$SECRETS_END")"
+  else
+    block="$(printf '%s\n# no credentials - run: opencode-go-auth login\n%s' \
+      "$SECRETS_BEGIN" "$SECRETS_END")"
+  fi
+
+  tmp="$(mktemp "${SECRETS}.XXXXXX")"
+  {
+    if grep -qF "$SECRETS_BEGIN" "$SECRETS"; then
+      awk -v begin="$SECRETS_BEGIN" -v end="$SECRETS_END" -v block="$block" '
+        index($0, begin) == 1 { printf "%s\n", block; skip = 1; next }
+        index($0, end) == 1   { skip = 0; next }
+        skip != 1             { print }
+      ' "$SECRETS"
+    else
+      cat "$SECRETS"
+      if [ -s "$SECRETS" ]; then printf '\n'; fi
+      printf '%s\n' "$block"
+    fi
+  } >"$tmp"
+  chmod --reference="$SECRETS" "$tmp"
+  mv -f "$tmp" "$SECRETS"
+
+  if command -v chezmoi >/dev/null 2>&1; then
+    chezmoi re-add "$SECRETS" >/dev/null 2>&1 \
+      && log "re-encrypted $SECRETS into ~/dotfiles" \
+      || log "warning: chezmoi re-add failed for $SECRETS"
+  fi
+  if [ "${OPENCODE_GO_NO_PUSH:-0}" != "1" ] && command -v dsync >/dev/null 2>&1; then
+    log "pushing the new token to the other machines (dsync push)"
+    dsync push >/dev/null 2>&1 || log "warning: dsync push failed - run it by hand"
+  fi
+}
+
 # ── login: OAuth device flow ───────────────────────────────────────────────────
 
 cmd_login() {
@@ -120,6 +191,7 @@ cmd_login() {
       log "saved $CREDS"
       log "  org: $org"
       log "  valid until: $(date -d "@$expires_at" '+%Y-%m-%d %H:%M')"
+      sync_secrets
       return 0
     fi
 
@@ -170,14 +242,18 @@ cmd_status() {
 cmd_logout() {
   rm -f "$CREDS"
   log "removed $CREDS"
+  # Drop the token from the repo too, otherwise the other machines keep showing
+  # limits for a workspace nobody is authorised for any more.
+  sync_secrets
 }
 
 case "${1:-}" in
   login)   cmd_login "${2:-}" ;;
   status)  cmd_status ;;
+  sync)    sync_secrets ;;
   logout)  cmd_logout ;;
   *)
-    sed -n '3,12p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '3,13p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 2
     ;;
 esac
