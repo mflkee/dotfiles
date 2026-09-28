@@ -120,7 +120,8 @@ opencode-go-auth login    # перезаписать токен, разнесё�
 разворачивает его в `~/.local/share/noctalia/plugins/opencode-go-usage/` —
 это встроенный источник «local» Noctalia. Дальше:
 
-1. `chezmoi apply`
+1. `chezmoi apply` — приедет плагин, скрипт и (если токен уже есть в
+   `secrets.zsh`) `credentials.json`
 2. В `~/.local/state/noctalia/settings.toml`:
    - `[plugins] enabled = [..., "mflkee/opencode-go-usage"]`
    - `[widget.oc-usage]` с `type = "mflkee/opencode-go-usage:usage"`
@@ -129,6 +130,10 @@ opencode-go-auth login    # перезаписать токен, разнесё�
 3. Готово: Noctalia следит за `settings.toml` и подхватывает изменения сама
    (в логе — `config changed, reloading` и `loaded plugin 'mflkee/opencode-go-usage'`).
    Перезапуск шелла нужен только если плагин так и не появился.
+
+Если виджет показывает ⚙ — нет `credentials.json`. На новой машине: разово
+прогнать `opencode-go-auth login` (он и в secrets.zsh запишет, и разнесёт), на
+существующей достаточно `chezmoi apply`.
 
 Либо через UI: Settings → Plugins → OpenCode Go Usage → Enable, затем
 Settings → Bar → добавить виджет.
