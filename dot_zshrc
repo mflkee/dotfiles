@@ -71,7 +71,7 @@ ZSH_HIGHLIGHT_STYLES[alias]=fg=#aad94c
 ZSH_HIGHLIGHT_STYLES[builtin]=fg=#aad94c
 ZSH_HIGHLIGHT_STYLES[function]=fg=#59c2ff
 ZSH_HIGHLIGHT_STYLES[command]=fg=#e6e1cf
-ZSH_HIGHLIGHT_STYLES[precommand]=fg=#3e4b59
+ZSH_HIGHLIGHT_STYLES[precommand]=fg=#e6b450
 ZSH_HIGHLIGHT_STYLES[commandseparator]=fg=#f07178
 ZSH_HIGHLIGHT_STYLES[hashed-command]=fg=#e6e1cf
 ZSH_HIGHLIGHT_STYLES[path]=fg=#59c2ff,underline
