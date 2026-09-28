@@ -67,13 +67,13 @@ typeset -gA ZSH_HIGHLIGHT_STYLES
 ZSH_HIGHLIGHT_STYLES[default]=none
 ZSH_HIGHLIGHT_STYLES[unknown-token]=fg=#f07178
 ZSH_HIGHLIGHT_STYLES[reserved-word]=fg=#ffb454
-ZSH_HIGHLIGHT_STYLES[alias]=fg=#aad94c
-ZSH_HIGHLIGHT_STYLES[builtin]=fg=#aad94c
+ZSH_HIGHLIGHT_STYLES[alias]=fg=#0b0e14,bold,bg=#aad94c
+ZSH_HIGHLIGHT_STYLES[builtin]=fg=#0b0e14,bold,bg=#aad94c
 ZSH_HIGHLIGHT_STYLES[function]=fg=#59c2ff
-ZSH_HIGHLIGHT_STYLES[command]=fg=#aad94c
+ZSH_HIGHLIGHT_STYLES[command]=fg=#0b0e14,bold,bg=#aad94c
 ZSH_HIGHLIGHT_STYLES[precommand]=fg=#e6b450
 ZSH_HIGHLIGHT_STYLES[commandseparator]=fg=#f07178
-ZSH_HIGHLIGHT_STYLES[hashed-command]=fg=#aad94c
+ZSH_HIGHLIGHT_STYLES[hashed-command]=fg=#0b0e14,bold,bg=#aad94c
 ZSH_HIGHLIGHT_STYLES[path]=fg=#59c2ff,underline
 ZSH_HIGHLIGHT_STYLES[path_prefix]=none
 ZSH_HIGHLIGHT_STYLES[globbing]=fg=#ffb454
