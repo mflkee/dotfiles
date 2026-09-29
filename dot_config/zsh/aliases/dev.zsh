@@ -19,3 +19,13 @@ rd() {
   sleep 0.3
   xdg-open "$url" &>/dev/null &!
 }
+
+# rustrade paper-forward (стадия 3) — вторая панель на :8788.
+rd-pf() {
+  local url="http://127.0.0.1:8788"
+  [[ "$(hostname)" == archlinux-server ]] && { xdg-open "$url" &>/dev/null &!; return; }
+  systemctl --user is-active --quiet rustrade-tunnel.service 2>/dev/null ||
+    systemctl --user start rustrade-tunnel.service 2>/dev/null
+  sleep 0.3
+  xdg-open "$url" &>/dev/null &!
+}

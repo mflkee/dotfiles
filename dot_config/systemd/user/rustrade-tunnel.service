@@ -1,18 +1,18 @@
-# rustrade dashboard: SSH-туннель к archlinux-server.
-# Панель на сервере слушает только loopback (127.0.0.1:8787) — этот юнит
-# пробрасывает её локально через NetBird (alias `server` -> 100.89.126.211).
+# rustrade dashboard: SSH-туннели к archlinux-server (observe :8787,
+# paper-forward :8788). Панели на сервере слушают только loopback — юнит
+# пробрасывает их локально через NetBird (alias `server` -> 100.89.126.211).
 # Включать только на КЛИЕНТСКИХ машинах (не на archlinux-server):
 #   systemctl --user enable --now rustrade-tunnel.service
-# UI: http://127.0.0.1:8787  (или просто `rd`).
+# UI: http://127.0.0.1:8787 (observe) · http://127.0.0.1:8788 (paper-forward)
 
 [Unit]
-Description=rustrade dashboard SSH tunnel (server:8787 -> localhost:8787)
+Description=rustrade dashboard SSH tunnels (observe:8787, paper-forward:8788)
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/ssh -N -T -i /home/mflkee/.ssh/id_ed25519 -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 8787:127.0.0.1:8787 server
+ExecStart=/usr/bin/ssh -N -T -i /home/mflkee/.ssh/id_ed25519 -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 8787:127.0.0.1:8787 -L 8788:127.0.0.1:8788 server
 Restart=on-failure
 RestartSec=10
 
