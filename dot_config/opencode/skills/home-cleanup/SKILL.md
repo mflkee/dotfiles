@@ -100,8 +100,21 @@ archlinux-server). Сначала определи машину: `hostname`.
    - `curl .../rest/db/status?folder=<id>` — папки в состоянии `idle`, needBytes=0.
    - `dsync status` — проекты в норме.
 
+## Закрытые проекты (не реанимировать без явной просьбы)
+
+- **Кинотеатр (Jellyfin-стек)** — закрыт 2026-09-29 (сервер: все контейнеры/образы/юниты/
+  скрипты сняты, loop-образ 200 ГБ удалён, VM `redos` остановлена). Архив конфигов для
+  возможного восстановления: `/srv/kinoteatr-archive/kinoteatr-20260929-*.tar.gz`.
+  Остатки на машинах подлежат удалению (см. чек-лист ниже).
+- Если появляется «мусор» от других закрытых проектов — фиксировать здесь же.
+
 ## Известные паттерны захламления (чек-лист)
 
+- [ ] Остатки закрытого кинотеатра: `qbittorrent-nox` (сервис+пакет),
+      `~/.local/bin/media-drop`, `~/Downloads/kinoteatr`/`~/Downloads/euphoria-s2`,
+      no-sleep override `/etc/systemd/logind.conf.d/10-nosleep.conf` (отменён на notebook,
+      desktop ещё не дочищен — он был недоступен 2026-09-29), скрипты `dograb`/`media-*`
+      (напр. в `/tmp`, `/usr/local/sbin`) → удалить
 - [ ] Свой код-проект в корне `~` → `~/projects/<name>/`; чужой клон/утилита → `~/tools/<name>/`
 - [ ] Клавиатурные прошивки (`.uf2`) / раскладки (`.vil`) в корне или esp32-backups → `~/keebs/<brand>/`
 - [ ] Отчёты (`report_*`, `interim_report_*`, `Отчет*.pdf`) → `~/Documents/reports/`
