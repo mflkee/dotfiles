@@ -92,11 +92,25 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#8e959e"
 # zinit light agkozak/zsh-z # replaced by zoxide
 zinit light MichaelAquilina/zsh-you-should-use
 
-# fzf key-bindings and completion (должен быть до fzf-tab, чтобы fzf-tab переопределил Tab)
+# fzf-tab ОБЯЗАН грузиться ДО /usr/share/fzf/completion.zsh.
+#
+# fzf-tab при инициализации запоминает виджет, висящий на Tab:
+#   _ftb_orig_widget=${${$(builtin bindkey '^I')##* }}
+# Если сначала загрузить fzf/completion.zsh, он сам перебьёт Tab на свой
+# fzf-completion (строка `bindkey '^I' fzf-completion` в конце файла), и
+# fzf-tab запомнит именно его. Тогда по Tab получается цепочка
+#   fzf-tab-complete → .fzf-tab-orig-fzf-completion → fzf-completion
+#                    → zle expand-or-complete   # вложенный вызов!
+# Вложенный вызов completion-виджета ломает дополнение: zsh завершает не по
+# текущей команде и подставляет мусор (пути из $HOME, из базы zoxide).
+# Итог: _ftb_orig_widget = expand-or-complete (как надо).
+zinit light Aloxaf/fzf-tab
+
+# fzf key-bindings и completion. completion.zsh перебьёт Tab на fzf-completion,
+# но zvm_after_init (ниже) вернёт Tab на fzf-tab-complete.
 source /usr/share/fzf/key-bindings.zsh
 source /usr/share/fzf/completion.zsh
 
-zinit light Aloxaf/fzf-tab
 zinit light jeffreytse/zsh-vi-mode
 
 # Исправление рекурсии zsh-vi-mode + starship при нажатии Esc
