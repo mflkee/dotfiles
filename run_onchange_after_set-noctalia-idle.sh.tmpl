@@ -71,15 +71,22 @@ open(path, "w", encoding="utf-8").write(new)
 print("[noctalia-idle] wrote [idle] block into", path)
 PY
 
-# Проверяем, что конфиг валиден, и просим Noctalia перечитать его.
+# Проверяем, что конфиг валиден.
 if ! noctalia config validate >/dev/null 2>&1; then
   echo "[noctalia-idle] WARNING: config validation failed"
 fi
 
+# ВАЖНО: НЕ используем `noctalia msg config-reload`.
+# В Noctalia v5.0.0-beta.9 (сборка v5.0.0-beta.9-4-g7fd9f7bfa960) config-reload
+# пересобирает список idle-поведений, но НЕ пересоздаёт idle-нотификатор
+# ext-idle-notify: после reload авто-лок и screen-off перестают срабатывать
+# вообще, пока шелл не перезапустишь (воспроизведено 2026-10-01: 0 событий
+# ввода за 40 c, behavior не триггерится; restart — сразу оживает).
+# Поэтому перезапускаем шелл целиком.
 if systemctl --user is-active --quiet noctalia-shell.service 2>/dev/null; then
-  noctalia msg config-reload >/dev/null 2>&1 \
-    && echo "[noctalia-idle] reloaded (lock 10m, screen-off 15m)" \
-    || echo "[noctalia-idle] reload failed"
+  systemctl --user restart noctalia-shell.service \
+    && echo "[noctalia-idle] shell restarted (lock 10m, screen-off 15m armed)" \
+    || echo "[noctalia-idle] restart failed"
 else
   echo "[noctalia-idle] noctalia-shell not running — applied on next start"
 fi
