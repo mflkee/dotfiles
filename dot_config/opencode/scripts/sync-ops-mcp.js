@@ -47,16 +47,28 @@ async function st(pathname, opts = {}) {
   return JSON.parse(text);
 }
 
+// dsync пишет цветной лог (tracing) в stdout даже не в TTY. В ответе MCP
+// ANSI-последовательности — мусор для модели, поэтому гасим их на источнике
+// (NO_COLOR/TERM=dumb) и подчищаем на выходе, если dsync их всё же выдал.
+const ANSI_RE = /\x1B\[[0-9;?]*[ -/]*[@-~]/g;
+function stripAnsi(s) {
+  return (s || '').replace(ANSI_RE, '');
+}
+
 function runDsync(args) {
   const bin = fs.existsSync(path.join(os.homedir(), '.local/bin/dsync'))
     ? path.join(os.homedir(), '.local/bin/dsync')
     : 'dsync';
   return new Promise((resolve, reject) => {
-    execFile(bin, args, { timeout: 120000, maxBuffer: 4 * 1024 * 1024 }, (err, stdout, stderr) => {
+    execFile(bin, args, {
+      timeout: 120000,
+      maxBuffer: 4 * 1024 * 1024,
+      env: { ...process.env, NO_COLOR: '1', TERM: 'dumb', CLICOLOR: '0' },
+    }, (err, stdout, stderr) => {
       if (err) {
-        reject(new Error(`dsync ${args.join(' ')} failed: ${err.message}\n${stderr || stdout}`));
+        reject(new Error(`dsync ${args.join(' ')} failed: ${err.message}\n${stripAnsi(stderr || stdout)}`));
       } else {
-        resolve(stdout || stderr);
+        resolve(stripAnsi(stdout || stderr));
       }
     });
   });
@@ -285,10 +297,19 @@ const TOOLS = [
 async function handleToolCall(name, args) {
   switch (name) {
     case 'st-status': {
-      const s = await st('/rest/system/status');
+      // Syncthing v2 убрал version/folders/devices из /rest/system/status —
+      // версия живёт в /rest/system/version, счётчики считаем по конфигу.
+      const [s, v, folders, devices] = await Promise.all([
+        st('/rest/system/status'),
+        st('/rest/system/version').catch(() => null),
+        listFolderConfigs(),
+        listDeviceConfigs(),
+      ]);
       return {
-        myID: s.myID, version: s.version, uptimeSeconds: s.uptime,
-        folders: s.folders, devices: s.devices, goroutines: s.goroutines,
+        myID: s.myID, version: v ? v.version : null,
+        uptimeSeconds: s.uptime,
+        folderCount: folders.length, deviceCount: devices.length,
+        goroutines: s.goroutines,
         discoveryEnabled: s.discoveryEnabled,
       };
     }
@@ -400,8 +421,8 @@ async function handleToolCall(name, args) {
     case 'dsync-push': return { pushed: args.machine || 'all', output: (await runDsync(['push', ...(args.machine ? [args.machine] : [])])).trim() };
     case 'dsync-pull': return { pulled: args.machine || 'all', output: (await runDsync(['pull', ...(args.machine ? [args.machine] : [])])).trim() };
     case 'overview': {
-      const [status, folders, connections, dsync] = await Promise.all([
-        st('/rest/system/status'),
+      const [version, folders, connections, dsync] = await Promise.all([
+        st('/rest/system/version').catch(() => null),
         st('/rest/config/folders'),
         st('/rest/system/connections'),
         runDsync(['status']).catch(e => `dsync error: ${e.message}`),
@@ -410,7 +431,7 @@ async function handleToolCall(name, args) {
       const nameOf = id => (devices.find(d => d.deviceID === id) || {}).name || id;
       return {
         syncthing: {
-          version: status.version,
+          version: version ? version.version : null,
           folders: folders.map(f => ({
             id: f.id, label: f.label, path: f.path, type: f.type, paused: f.paused,
             shared: f.devices.map(d => nameOf(d.deviceID)),

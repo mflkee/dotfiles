@@ -2,17 +2,19 @@
 
 Базовый URL локально: `http://127.0.0.1:8384`, заголовок `X-API-Key: <ключ>`.
 Ключ: env `SYNCTHING_API_KEY` или `<apikey>` из `~/.local/state/syncthing/config.xml`.
+GUI слушает только `127.0.0.1` — с удалённой машины либо `ssh`, либо туннель.
 
 ## Чтение (GET)
 
 | Endpoint | Что даёт |
 |----------|----------|
-| `/rest/system/status` | myID, версия, uptime, юзеры |
+| `/rest/system/status` | myID, uptime, goroutines, discoveryEnabled ⚠️ **без** version/folders/devices (v2) |
+| `/rest/system/version` | `version`, `longVersion`, `os/arch`, `codename` |
 | `/rest/system/connections` | по каждому deviceID: connected, address, in/out bytes |
 | `/rest/config/folders` | все папки с `devices` (с кем shared) |
-| `/rest/config/devices` | все устройства (deviceID, name, addressed) |
+| `/rest/config/devices` | все устройства (deviceID, name, addresses) |
 | `/rest/db/status?folder=<id>` | состояние папки (needBytes, errors, state) |
-| `/rest/db/completion?folder=<id>` | прогресс по папке |
+| `/rest/db/completion?folder=<id>&device=<id>` | прогресс по папке для устройства |
 | `/rest/events?since=…` | события |
 
 ## Мутации (PUT/DELETE) — только через MCP sync-ops
@@ -24,22 +26,23 @@
 | `/rest/config/folders/{id}` | DELETE | удалить папку |
 | `/rest/config/scan` | POST | запустить сканирование |
 
-Важно: **PUT/DELETE возвращают 200 с пустым телом** — не парсить как JSON.
+Важно: **PUT/DELETE отвечают 200 с пустым телом** — не парсить как JSON.
 Конфиг применяется **асинхронно** — подождать 1–2 сек перед проверкой.
 
-## Устройства меша (на дату карты, точнее — см. vault `servers/mesh-map.md`)
+## Устройства меша
 
-| Короткий ID | Машина |
-|-------------|--------|
-| QX6QAG5 | archlinux-server (hub) |
-| MWBTMTZ | archlinux-mkair |
-| 3WAB5DG | archlinux-desktop |
-| SAAGLVR | archlinux-notebook |
-| KYVIPWB | huawei-nova |
+**Список здесь не хранить** — он разный у каждого узла (меш асимметричен) и
+меняется. Живой источник: MCP `sync-ops` → `st-list-devices`, либо:
+
+```bash
+scripts/syncthing-api.sh /rest/config/devices
+```
+
+Кто есть в меше и как связан — vault `🖥 servers/mesh-map.md`.
 
 ## Пример
 
 ```bash
-scripts/syncthing-api.sh /rest/system/status
+scripts/syncthing-api.sh /rest/system/version
 scripts/syncthing-api.sh /rest/system/connections
 ```
