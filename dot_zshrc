@@ -272,21 +272,23 @@ dh() {
 }
 
 # --------------------
-# Tab: если справа есть автодополнение (seriy) — принять его,
-# иначе — обычный Tab (дополнение/fzf-tab).
+# Tab → fzf-tab.
+#
+# НЕЛЬЗЯ оборачивать completion-виджет в свой `zle -N` виджет и вызывать
+# его оттуда: `zle expand-or-complete` / `zle fzf-completion` из вложенного
+# виджета ломает дополнение. zsh завершает не по текущей команде, а по
+# контексту вложенного вызова — и подставляет мусор (пути из $HOME, из базы
+# zoxide, из истории). Проверено: `mytab() { zle expand-or-complete }` даёт
+# `cd al` → `cd aliases` вместо `cd alp`.
+#
+# Поэтому Tab вешаем НАПРЯМУЮ на fzf-tab-complete — верхний уровень.
+# zsh-vi-mode сбрасывает keymaps после .zshrc, поэтому перепривязываем Tab
+# в его официальном хуке zvm_after_init.
+# Принять предложение zsh-autosuggestions — клавиша End / → (дефолт плагина).
 # --------------------
-_tab_complete_or_suggest() {
-  if [[ -n "${POSTDISPLAY:-}" ]]; then
-    zle autosuggest-accept
-  else
-    zle "${_ftb_orig_widget:-expand-or-complete}"
-  fi
-}
-zle -N _tab_complete_or_suggest
-# zsh-vi-mode сбрасывает keymaps после .zshrc — вешаем в его официальный хук
 function zvm_after_init() {
   for _kmap in main emacs viins; do
-    bindkey -M "$_kmap" '^I' _tab_complete_or_suggest
+    bindkey -M "$_kmap" '^I' fzf-tab-complete
   done
   unset _kmap
 }
