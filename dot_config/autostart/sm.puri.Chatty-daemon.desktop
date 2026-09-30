@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Chats (daemon, disabled)
+Comment=Отключён: chatty собран под libcamel-1.2.so.67, а evolution-data-server уже даёт .68 (нужен пересбор/апдейт пакета)
+Hidden=true

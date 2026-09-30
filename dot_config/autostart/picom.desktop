@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Picom (disabled)
+Comment=X11 compositor — не нужен в сессии niri (Wayland), при запуске падает с "Another composite manager is already running"
+Hidden=true
