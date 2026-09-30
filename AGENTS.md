@@ -50,6 +50,17 @@ cd ~/obs_main && git add -A && git commit -m "description"
 - **tmux**: синхронизируется последний снапшот tmux-resurrect
   (`~/.local/share/tmux/resurrect/`); на приёмнике файл раскладывается,
   восстановить в живой tmux — `prefix + Ctrl-r` (или `tmux_restore = true`).
+- **Грабли (разобрано 2026-10-01)**: `tmux-continuum` в `.tmux.conf` обязан
+  объявляться ПОСЛЕ `tmux-dotbar`. Загрузчик dotbar в конце перезаписывает
+  `status-right`/`status-left` и затирает интерполяцию `#(continuum_save.sh)`,
+  без которой автосейв continuum молча не работает: каталог
+  `~/.local/share/tmux/resurrect/` не создаётся, и после ребута tmux пишет
+  «Tmux resurrect file not found!». Проверка: `tmux show-options -g status-right`
+  должен содержать `continuum_save.sh`.
+- **dsync**: `collect_tmux` сам создаёт каталог снапшотов и сравнивает хеш
+  раскладки через `has_exact` (точное равенство). Раньше сравнение было `>=`
+  по числовому хешу — новый хеш меньше старого «залипал» в индексе, и tmux
+  больше не пушился (хаб не получал снапшот вообще).
 - **opencode**: синхронизируются сессии по всем `[projects.*]` (можно сузить:
   `[state.opencode] projects = ["~/projects/…"]`). На машине-источнике —
   `session list --format json` → `session export` изменившихся; на других —
