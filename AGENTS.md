@@ -107,6 +107,20 @@ ssh mkair-server-tmn "upsc apc-ups battery.charge"  # процент заряд�
 ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 ```
 
+## Запись экрана / скриншоты (niri)
+- **Хоткеи**: `Ctrl+Shift+R` — меню записи (fuzzel); `Alt+Shift+R` — сохранить клип из replay-буфера;
+  `Super+Shift+M` — запись только звука (MP3); `Mod+Shift+O` — OBS Studio; `Mod+Shift+S` — скриншот области.
+- **Скрипт**: `~/.config/scripts/screenrec-toggle.sh` (режимы `menu|video|replay|save|audio|stop-all|status`).
+  Видео — **gpu-screen-recorder** (`gsr-cli -ipc $XDG_RUNTIME_DIR/screenrec-*.sock` для стоп/пауза/replay),
+  аудио — `-a "default_output|<mic>"` (микрофон выбирается из `pactl list sources`, `mic_clean` первым),
+  звук-онли — ffmpeg + монитор дефолтного сынка (`pactl get-default-sink`.monitor) или выбранный микрофон в mp3. Зависимости: gsr+gsr-cli, fuzzel, slurp/grim, wl-copy, pactl, ffmpeg.
+- **Куда пишет**: видео → `~/Videos/`, replay-клипы → `~/Videos/Replays/`, mp3 → `~/Music/`,
+  логи/pid → `~/.cache/screenrec/`. OBS Studio (32.2.2) установлен — качать не нужно.
+- **Грабли**: replay-режим gsr требует явных `-c mp4` и `-ro <dir>` (иначе `option -c/-ro is required`);
+  регулярная запись во время replay идёт через тот же процесс (`gsr-cli start-replay-recording`).
+  mp4+aac пишет в лог безобидное `non monotonically increasing dts` — файл целиком валиден.
+  Старый скрипт на wf-recorder/tofi/**hyprctl** был сломан: `hyprctl` есть только у Hyprland, а не у niri.
+
 ## NetBird MCP (machine management)
 - Opencode has a built-in NetBird MCP tool (`netbird` MCP server).
 - Requires `NETBIRD_API_KEY` env var (personal access token from NetBird dashboard).

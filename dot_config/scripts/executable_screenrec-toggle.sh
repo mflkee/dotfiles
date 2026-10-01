@@ -1,314 +1,493 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# Запись экрана для niri: gpu-screen-recorder + аудио + replay-буфер + OBS + скриншот.
+#
+#   screenrec-toggle.sh            — интерактивное меню (fuzzel)
+#   screenrec-toggle.sh video      — старт/стоп записи видео
+#   screenrec-toggle.sh replay     — старт/стоп replay-буфера (60 с)
+#   screenrec-toggle.sh save       — сохранить клип из replay-буфера
+#   screenrec-toggle.sh audio      — старт/стоп записи только звука (mp3)
+#   screenrec-toggle.sh stop-all   — остановить всё
+#   screenrec-toggle.sh status     — состояние + последние строки логов
+#
+# Требуется: gpu-screen-recorder + gsr-cli, fuzzel, slurp/grim, wl-copy,
+#            notify-send, pactl, ffmpeg (только для аудио), опционально obs.
+set -uo pipefail
 
-# Toggle recording on Wayland/niri with optional tofi-driven setup.
-# Video flow (Super+Shift+R):
-#   1) Источник звука (Mic+Sys / Mic / Sys / Mute) — если tofi установлен
-#   2) При отсутствии tofi — дефолты: системный звук, 30 FPS
-#   => wf-recorder + (опционально) виртуальный микс микрофон+система
-# Audio-only flow (Super+Shift+M):
-#   - Источник (Система/Микрофон); при отсутствии tofi — Система, 192k
-# Требования: wf-recorder (видео), ffmpeg (аудио); tofi — опционально для меню.
+MODE="${1:-menu}"
 
-MODE="${1:-video}"
-
-state_dir="${XDG_CACHE_HOME:-$HOME/.cache}"
+state_dir="${XDG_CACHE_HOME:-$HOME/.cache}/screenrec"
 videos_dir="${XDG_VIDEOS_DIR:-$HOME/Videos}"
 music_dir="${XDG_MUSIC_DIR:-$HOME/Music}"
-[[ -d "$music_dir" ]] || music_dir="$videos_dir"
+replay_dir="$videos_dir/Replays"
+shots_dir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+mkdir -p "$state_dir" "$videos_dir" "$replay_dir" "$shots_dir" 2>/dev/null || true
 
-mkdir -p "$state_dir" "$videos_dir" "$music_dir" 2>/dev/null || true
+video_pid="$state_dir/video.pid"
+video_sock="$runtime_dir/screenrec-video.sock"
+video_out="$state_dir/video.out"
+video_via_replay="$state_dir/video.via-replay"
+video_log="$state_dir/video.log"
 
-# Best-effort уведомления (Noctalia предоставляет org.freedesktop.Notifications);
-# сбой демона не должен ронять скрипт из-за set -e.
-notify() { notify-send "$@" || true; }
+replay_pid_file="$state_dir/replay.pid"
+replay_sock="$runtime_dir/screenrec-replay.sock"
+replay_log="$state_dir/replay.log"
 
-# Will be set per-mode before first use
-pid_file=""
-last_file=""
+audio_pid="$state_dir/audiorec.pid"
+audio_out="$state_dir/audiorec.out"
+audio_log="$state_dir/audiorec.log"
 
-is_running() {
-  [[ -n "$pid_file" ]] || return 1
-  [[ -f "$pid_file" ]] || return 1
-  local pid comm
-  pid=$(cat "$pid_file" 2>/dev/null || true)
-  [[ -n "${pid:-}" ]] || { rm -f "$pid_file"; return 1; }
-  if kill -0 "$pid" 2>/dev/null; then
-    comm=$(ps -o comm= -p "$pid" 2>/dev/null | tr -d '\n' || true)
-    case "$comm" in
-      wf-recorder|wl-screenrec|ffmpeg) return 0 ;;
-      *) rm -f "$pid_file"; return 1 ;;
-    esac
+FPS=60
+QUALITY=very_high
+CODEC=h264
+
+# ---------------------------------------------------------------- утилиты ----
+
+notify() {
+  local title="$1" body="${2:-}"
+  if [[ -n "$body" ]]; then
+    notify-send -a "Запись экрана" "$title" "$body" 2>/dev/null || true
   else
-    rm -f "$pid_file"; return 1
+    notify-send -a "Запись экрана" "$title" 2>/dev/null || true
   fi
 }
 
-tofi_pick() {
-  # Usage: tofi_pick "Prompt" "opt1" "opt2" ...
+# pick "Промпт" "строка1" "строка2" ... -> выбранный текст (пусто = отмена)
+pick() {
   local prompt="$1"; shift
-  local sel=""
-  # Use tofi only to keep look identical to your app launcher
-  if command -v tofi >/dev/null 2>&1; then
-    # Respect your drun style entirely (single row, theme-controlled)
-    sel=$(printf '%s\n' "$@" | tofi --multi-instance=true --prompt-text "$prompt" 2>/dev/null || true)
-  fi
-  # Без tofi возвращаем пусто — вызывающий код подставляет дефолт
-  printf '%s' "${sel%$'\n'}"
-}
-
-pick_bool() { local ans; ans=$(tofi_pick "$1" "Да" "Нет"); [[ -z "$ans" ]] && ans="Нет"; [[ "$ans" == "Да" ]] && echo yes || echo no; }
-
-pick_video_fps() {
-  local ans; ans=$(tofi_pick "Качество (FPS)" "30" "60");
-  case "$ans" in 60) echo 60 ;; 30) echo 30 ;; *) echo 30 ;; esac
-}
-
-pick_mp3_bitrate() {
-  local ans; ans=$(tofi_pick "Качество MP3" "192k" "128k" "256k" "320k")
-  case "$ans" in 128k|192k|256k|320k) echo "$ans" ;; *) echo 192k ;; esac
-}
-
-pick_monitor() {
-  local mons sel
-  if command -v jq >/dev/null 2>&1; then
-    mons=$(hyprctl -j monitors 2>/dev/null | jq -r '.[].name' || true)
+  local lines=$#
+  (( lines > 12 )) && lines=12
+  local out=""
+  if command -v fuzzel >/dev/null 2>&1; then
+    out=$(printf '%s\n' "$@" | fuzzel --dmenu --lines="$lines" --width=46 --prompt="$prompt  " 2>/dev/null) || out=""
+  elif command -v rofi >/dev/null 2>&1; then
+    out=$(printf '%s\n' "$@" | rofi -dmenu -p "$prompt" 2>/dev/null) || out=""
   else
-    mons=$(hyprctl monitors 2>/dev/null | awk '/^Monitor /{print $2}')
+    out="${1:-}"
   fi
-  if [[ -z "$mons" ]]; then
-    echo ""; return 0
-  fi
-  sel=$(tofi_pick "Выберите экран" $mons)
-  if [[ -z "$sel" ]]; then
-    sel=$(printf '%s\n' $mons | head -n1)
-  fi
-  printf '%s' "$sel"
+  printf '%s' "$out"
 }
 
-resolve_audio_dev() {
-  local mode="${1:-system}" dev="" sink=""
-  # If PulseAudio (pipewire-pulse) is not reachable, fallback to no audio
-  if ! pactl info >/dev/null 2>&1; then
-    printf '%s' ""; return 0
+index_of() { # index_of "значение" "${массив[@]}" -> индекс или -1
+  local needle="$1"; shift
+  local i=0
+  for v in "$@"; do
+    [[ "$v" == "$needle" ]] && { printf '%s' "$i"; return 0; }
+    i=$((i + 1))
+  done
+  printf '%s' "-1"
+}
+
+pid_alive() {
+  local f="$1" p
+  [[ -r "$f" ]] || return 1
+  p=$(cat "$f" 2>/dev/null || true)
+  [[ -n "${p:-}" ]] || return 1
+  kill -0 "$p" 2>/dev/null
+}
+
+video_running() {
+  if [[ -f "$video_via_replay" ]]; then
+    if pid_alive "$replay_pid_file"; then return 0; fi
+    rm -f "$video_via_replay"; return 1
   fi
-  local get_active_sink
-  get_active_sink() {
-    local sid name
-    sid=$(pactl list short sink-inputs 2>/dev/null | awk 'NR==1{print $2}')
-    if [[ -n "$sid" ]]; then
-      name=$(pactl list short sinks 2>/dev/null | awk -v id="$sid" '$1==id{print $2}')
-      [[ -n "$name" ]] && { printf '%s' "$name"; return 0; }
-    fi
-    pactl get-default-sink 2>/dev/null || true
-  }
-  if [[ "$mode" == "mic" ]]; then
-    dev=$(pactl get-default-source 2>/dev/null || true)
-  elif [[ "$mode" == "system" ]]; then
-    sink=$(get_active_sink)
-    [[ -n "$sink" ]] && dev="${sink}.monitor"
+  if pid_alive "$video_pid"; then return 0; fi
+  rm -f "$video_pid"; return 1
+}
+
+replay_running() {
+  if pid_alive "$replay_pid_file"; then return 0; fi
+  rm -f "$replay_pid_file"; return 1
+}
+
+audio_running() {
+  if pid_alive "$audio_pid"; then return 0; fi
+  rm -f "$audio_pid"; return 1
+}
+
+log_tail() { tail -n 3 "$1" 2>/dev/null | tr '\n' ' ' | sed 's/  */ /g'; }
+
+# ------------------------------------------------------------------ аудио ----
+
+# "NAME|DESCRIPTION" для реальных микрофонов (без мониторов), mic_clean первым.
+list_mics() {
+  pactl list sources 2>/dev/null | awk '
+    /^Source #[0-9]/ { n=""; d="" }
+    /^\tName: /        { n=$2 }
+    /^\tDescription: / {
+      d=$0; sub(/^\tDescription: /, "", d)
+      if (n != "" && n !~ /\.monitor$/ && n !~ /^echo-cancel/)
+        print n "|" d
+    }
+  ' | awk -F'|' '{ print ($1 == "mic_clean" ? 0 : 1) "|" $0 }' | sort -t'|' -k1,1n | cut -d'|' -f2-
+}
+
+default_mic() {
+  local first
+  first=$(list_mics | head -n1 | cut -d'|' -f1)
+  printf '%s' "$first"
+}
+
+system_monitor() {
+  local sink
+  sink=$(pactl get-default-sink 2>/dev/null || true)
+  [[ -n "$sink" ]] && printf '%s.monitor' "$sink"
+}
+
+# Заполняет AUDIO_ARGS для gpu-screen-recorder
+AUDIO_ARGS=()
+pick_audio() {
+  local labels=("🔊 Система + микрофон" "🔊 Только система")
+  local keys=("both" "system")
+  local n d
+  while IFS='|' read -r n d; do
+    [[ -n "$n" ]] || continue
+    labels+=("🎤 Только микрофон: $d")
+    keys+=("mic:$n")
+  done < <(list_mics)
+  labels+=("🔇 Без звука")
+  keys+=("mute")
+
+  local sel idx
+  sel=$(pick "Источник звука" "${labels[@]}")
+  [[ -z "$sel" ]] && return 1
+  idx=$(index_of "$sel" "${labels[@]}")
+  (( idx < 0 )) && return 1
+  local key="${keys[$idx]}"
+
+  AUDIO_ARGS=()
+  case "$key" in
+    both)
+      local mic; mic=$(default_mic)
+      if [[ -n "$mic" ]]; then
+        AUDIO_ARGS=(-a "default_output|$mic")
+      else
+        AUDIO_ARGS=(-a "default_output")
+      fi
+      ;;
+    system) AUDIO_ARGS=(-a "default_output") ;;
+    mute)   AUDIO_ARGS=() ;;
+    mic:*)  AUDIO_ARGS=(-a "${key#mic:}") ;;
+  esac
+  if (( ${#AUDIO_ARGS[@]} > 0 )); then
+    AUDIO_ARGS+=(-ac aac -ab 192)
   fi
-  printf '%s' "${dev}"
+  return 0
 }
 
-# Track and switch default PulseAudio source safely
-get_default_source() {
-  pactl info 2>/dev/null | awk -F': ' '/Default Source/{print $2}'
-}
+# --------------------------------------------------------------- источник ----
 
-set_default_source() {
-  local new_src="$1"; [[ -n "$new_src" ]] || return 1
-  pactl set-default-source "$new_src" 2>/dev/null || true
-}
+CAPTURE_ARGS=()
+pick_source() {
+  local labels=("🖥 Оба монитора")
+  local keys=("BOTH")
+  local name res
+  while IFS='|' read -r name res; do
+    [[ -n "$name" ]] || continue
+    labels+=("🖥 Монитор $name ($res)")
+    keys+=("MON:$name")
+  done < <(gpu-screen-recorder --list-monitors 2>/dev/null || true)
+  labels+=("🖥 Этот монитор (где курсор)" "✂️ Область (выделить мышью)")
 
-push_default_source() {
-  local current
-  current=$(get_default_source || true)
-  echo "PREV_SRC=$current" >"$state_dir/rec_audio.env"
-}
+  local sel idx
+  sel=$(pick "Что записывать?" "${labels[@]}")
+  [[ -z "$sel" ]] && return 1
+  idx=$(index_of "$sel" "${labels[@]}")
+  (( idx < 0 )) && return 1
 
-pop_default_source() {
-  local f="$state_dir/rec_audio.env"; [[ -r "$f" ]] || return 0
-  # shellcheck disable=SC1090
-  source "$f" || true
-  [[ -n "${PREV_SRC:-}" ]] && pactl set-default-source "$PREV_SRC" 2>/dev/null || true
-  rm -f "$f"
-}
-
-create_mix_sink() {
-  # Create a null sink and loopbacks for mic + system with safe latency.
-  local sink_name="rec_mix_$(date +%s)" sink_mod mic lb1 lb2 sink
-  # Prefer active playback sink if any, else default sink
-  local sid name
-  sid=$(pactl list short sink-inputs 2>/dev/null | awk 'NR==1{print $2}')
-  if [[ -n "$sid" ]]; then
-    name=$(pactl list short sinks 2>/dev/null | awk -v id="$sid" '$1==id{print $2}')
-    sink="$name"
-  else
-    sink=$(pactl get-default-sink 2>/dev/null || true)
+  if (( idx == ${#keys[@]} )); then     # «этот монитор»
+    local focused
+    focused=$(niri msg --json focused-output 2>/dev/null | jq -r '.name' 2>/dev/null || true)
+    ([ -z "$focused" ] || [ "$focused" = "null" ]) && focused=$(gpu-screen-recorder --list-monitors 2>/dev/null | head -n1 | cut -d'|' -f1)
+    [[ -n "$focused" ]] || { notify "Запись" "Не удалось определить монитор"; return 1; }
+    CAPTURE_ARGS=(-w "$focused")
+    return 0
   fi
-  mic=$(pactl get-default-source 2>/dev/null || true)
-  if [[ -z "$mic" || -z "$sink" ]]; then
-    echo ""; return 1
+  if (( idx == ${#keys[@]} + 1 )); then # «область»
+    local region
+    region=$(slurp 2>/dev/null || true)
+    [[ -n "$region" ]] || return 1
+    CAPTURE_ARGS=(-w region -region "$region")
+    return 0
   fi
-  sink_mod=$(pactl load-module module-null-sink \
-    sink_name="$sink_name" rate=48000 channels=2 \
-    sink_properties=device.description="$sink_name" 2>/dev/null || true)
-  [[ -n "$sink_mod" ]] || { echo ""; return 1; }
-  lb1=$(pactl load-module module-loopback \
-    source="$mic" sink="$sink_name" latency_msec=20 adjust_time=1 remix=1 2>/dev/null || true)
-  lb2=$(pactl load-module module-loopback \
-    source="${sink}.monitor" sink="$sink_name" latency_msec=20 adjust_time=1 remix=1 2>/dev/null || true)
-  echo "SINK_NAME=$sink_name" >"$state_dir/rec_mix.env"
-  echo "SINK_MOD=$sink_mod" >>"$state_dir/rec_mix.env"
-  echo "LB1_MOD=$lb1" >>"$state_dir/rec_mix.env"
-  echo "LB2_MOD=$lb2" >>"$state_dir/rec_mix.env"
-  printf '%s.monitor' "$sink_name"
+
+  local key="${keys[$idx]}"
+  case "$key" in
+    BOTH)
+      local args=() mon
+      while IFS='|' read -r mon _; do
+        [[ -n "$mon" ]] || continue
+        args+=("$mon")
+      done < <(gpu-screen-recorder --list-monitors 2>/dev/null || true)
+      (( ${#args[@]} == 0 )) && { notify "Запись" "Мониторы не найдены"; return 1; }
+      local joined
+      joined=$(IFS='|'; printf '%s' "${args[*]}")
+      CAPTURE_ARGS=(-w "$joined")
+      ;;
+    MON:*) CAPTURE_ARGS=(-w "${key#MON:}") ;;
+    *) return 1 ;;
+  esac
+  return 0
 }
 
-cleanup_mix_sink() {
-  local f="$state_dir/rec_mix.env"; [[ -r "$f" ]] || return 0
-  # shellcheck disable=SC1090
-  source "$f" || true
-  [[ -n "${LB1_MOD:-}" ]] && pactl unload-module "$LB1_MOD" 2>/dev/null || true
-  [[ -n "${LB2_MOD:-}" ]] && pactl unload-module "$LB2_MOD" 2>/dev/null || true
-  [[ -n "${SINK_MOD:-}" ]] && pactl unload-module "$SINK_MOD" 2>/dev/null || true
-  rm -f "$f"
-}
+# ------------------------------------------------------------------ видео ----
 
 start_video() {
-  local ts outfile recorder_pid audio_mode fps dev="" fps_arg=() audio_args=() vf_args=()
-  ts=$(date +'%Y-%m-%d-%H%M%S')
-  outfile="$videos_dir/record_${ts}.mp4"
+  if video_running; then stop_video; return 0; fi
 
-  # Clean up any stale virtual mix from previous runs
-  cleanup_mix_sink || true
-  pop_default_source || true
+  local out ts
+  ts=$(date +'%Y-%m-%d_%H-%M-%S')
 
-  # Один выбор: источник звука (в стиле твоего tofi, короткие метки)
-  audio_mode=$(tofi_pick "Источник звука" \
-    "Mic+Sys" \
-    "Mic" \
-    "Sys" \
-    "Mute")
-  # Escape/close -> отмена без записи (только когда есть tofi для отмены).
-  # Без tofi используем дефолты, чтобы запись всегда стартовала.
-  if [[ -z "$audio_mode" ]]; then
-    if command -v tofi >/dev/null 2>&1; then
-      notify "Запись экрана" "Отменено"; return 0
+  # Если уже работает replay-буфер — пишем внутри него (экономит GPU).
+  if replay_running; then
+    if ! gsr-cli -ipc "$replay_sock" start-replay-recording >/dev/null 2>&1; then
+      notify "Запись экрана" "Не удалось начать запись (replay-буфер)"; return 1
     fi
-    audio_mode="Sys"
-    notify "Запись экрана" "tofi не установлен — системный звук, 30 FPS (по умолчанию)"
-  fi
-  case "$audio_mode" in
-    "Mic+Sys") dev=$(create_mix_sink) ;;
-    "Mic") dev=$(resolve_audio_dev mic) ;;
-    "Sys") dev=$(resolve_audio_dev system) ;;
-    "Mute") dev="" ;;
-    *) dev="" ;;
-  esac
-  fps=30
-  fps_arg=( -r "$fps" )
-  if [[ -n "$dev" ]]; then
-    # Ensure wf-recorder uses the intended source even if it ignores -a
-    push_default_source
-    set_default_source "$dev"
-    audio_args=( -a "$dev" )
-  fi
-  local audio_codec_args=()
-  if [[ -n "$dev" ]]; then
-    audio_codec_args=( -C aac )
-  fi
-  # yuv420p для совместимости
-  vf_args=( -F "format=yuv420p" )
-
-  if command -v wf-recorder >/dev/null 2>&1; then
-    wf-recorder \
-      -D -y \
-      "${fps_arg[@]}" \
-      "${audio_args[@]}" \
-      "${vf_args[@]}" \
-      "${audio_codec_args[@]}" \
-      -c libx264 \
-      -x yuv420p \
-      -p crf=23 \
-      -p preset=veryfast \
-      -p tune=zerolatency \
-      -p profile=main \
-      -p level=4.0 \
-      -f "$outfile" >/dev/null 2>&1 &
-    recorder_pid=$!
-  elif command -v wl-screenrec >/dev/null 2>&1; then
-    wl-screenrec -f "$outfile" >/dev/null 2>&1 &
-    recorder_pid=$!
-  else
-    notify "Запись экрана" "Не найден wf-recorder или wl-screenrec"
-    cleanup_mix_sink
-    exit 1
+    : > "$video_via_replay"
+    notify "⏺ Запись экрана" "Началась запись (вместе с replay-буфером)"
+    return 0
   fi
 
-  echo "$recorder_pid" > "$pid_file"
-  echo "$outfile" > "$last_file"
-  notify "Запись экрана" "Началась запись: $(basename "$outfile") — ${fps} FPS"
+  pick_source || { notify "Запись экрана" "Отменено"; return 0; }
+  pick_audio  || { notify "Запись экрана" "Отменено"; return 0; }
+
+  out="$videos_dir/record_$ts.mp4"
+  rm -f "$video_sock" "$video_via_replay"
+  gpu-screen-recorder \
+    "${CAPTURE_ARGS[@]}" "${AUDIO_ARGS[@]}" \
+    -k "$CODEC" -f "$FPS" -q "$QUALITY" -cursor yes -v no \
+    -ipc "$video_sock" -o "$out" >"$video_log" 2>&1 &
+  local p=$!
+  echo "$p" > "$video_pid"
+  echo "$out" > "$video_out"
+  sleep 1.5
+  if ! kill -0 "$p" 2>/dev/null; then
+    local err; err=$(log_tail "$video_log")
+    rm -f "$video_pid" "$video_out"
+    notify "⛔ Запись не началась" "${err:-см. $video_log}"
+    return 1
+  fi
+  notify "⏺ Запись экрана" "$(basename "$out") — ${FPS} FPS"
 }
+
+stop_video() {
+  local out="" p
+  if [[ -f "$video_via_replay" ]]; then
+    out=$(gsr-cli -ipc "$replay_sock" stop-replay-recording 2>/dev/null | tail -n1)
+    rm -f "$video_via_replay"
+  else
+    if pid_alive "$video_pid"; then
+      out=$(gsr-cli -ipc "$video_sock" stop 2>/dev/null | tail -n1)
+      if [[ -z "$out" ]]; then
+        p=$(cat "$video_pid" 2>/dev/null || true)
+        [[ -n "$p" ]] && kill -INT "$p" 2>/dev/null
+        sleep 1
+        out=$(cat "$video_out" 2>/dev/null || true)
+      fi
+    else
+      out=$(cat "$video_out" 2>/dev/null || true)
+    fi
+    rm -f "$video_pid"
+  fi
+  if [[ -n "$out" ]]; then
+    notify "⏹ Запись остановлена" "$(basename "$out")"
+  else
+    notify "⏹ Запись остановлена"
+  fi
+}
+
+toggle_pause() {
+  if [[ -f "$video_via_replay" ]]; then
+    gsr-cli -ipc "$replay_sock" toggle-replay-recording >/dev/null 2>&1 || true
+    notify "Запись" "Стоп/старт записи в replay-буфере"
+    return 0
+  fi
+  video_running || { notify "Запись" "Запись не идёт"; return 0; }
+  if gsr-cli -ipc "$video_sock" toggle-pause >/dev/null 2>&1; then
+    notify "⏸ Запись" "Пауза переключена"
+  else
+    notify "Запись" "Пауза недоступна"
+  fi
+}
+
+# ---------------------------------------------------------- replay-буфер ----
+
+start_replay() {
+  if replay_running; then stop_replay; return 0; fi
+  if video_running; then
+    notify "Replay-буфер" "Сначала остановите запись"; return 0
+  fi
+  pick_source || { notify "Запись экрана" "Отменено"; return 0; }
+  pick_audio  || { notify "Запись экрана" "Отменено"; return 0; }
+
+  rm -f "$replay_sock"
+  gpu-screen-recorder \
+    "${CAPTURE_ARGS[@]}" "${AUDIO_ARGS[@]}" \
+    -k "$CODEC" -f "$FPS" -q "$QUALITY" -cursor yes -v no -c mp4 \
+    -r 60 -replay-storage ram -o "$replay_dir" -ro "$videos_dir" -ipc "$replay_sock" >"$replay_log" 2>&1 &
+  local p=$!
+  echo "$p" > "$replay_pid_file"
+  sleep 1.5
+  if ! kill -0 "$p" 2>/dev/null; then
+    local err; err=$(log_tail "$replay_log")
+    rm -f "$replay_pid_file"
+    notify "⛔ Replay-буфер не запустился" "${err:-см. $replay_log}"
+    return 1
+  fi
+  notify "🔁 Replay-буфер включён" "Последние 60 с. Сохранение: Ctrl+Shift+R → «Сохранить клип» (или Alt+Shift+R)"
+}
+
+save_replay() {
+  if ! replay_running; then
+    notify "Клип не сохранён" "Replay-буфер не запущен (Ctrl+Shift+R → «Включить replay-буфер»)"
+    return 0
+  fi
+  local out
+  out=$(gsr-cli -ipc "$replay_sock" save-replay 2>/dev/null | tail -n1)
+  if [[ -n "$out" ]]; then
+    notify "💾 Клип сохранён" "$(basename "$out")"
+  else
+    notify "Клип не сохранён" "$(log_tail "$replay_log")"
+  fi
+}
+
+stop_replay() {
+  local out
+  out=$(gsr-cli -ipc "$replay_sock" stop 2>/dev/null | tail -n1)
+  if [[ -z "$out" ]] && pid_alive "$replay_pid_file"; then
+    kill -INT "$(cat "$replay_pid_file")" 2>/dev/null || true
+  fi
+  rm -f "$replay_pid_file" "$video_via_replay"
+  notify "⏹ Replay-буфер выключен"
+}
+
+# ------------------------------------------------------------------ аудио ----
 
 start_audio() {
-  local ts outfile recorder_pid audio_pick mode dev br
-  ts=$(date +'%Y-%m-%d-%H%M%S')
-  outfile="$music_dir/audio_${ts}.mp3"
-  audio_pick=$(tofi_pick "Источник аудио (MP3)" "Система" "Микрофон")
-  [[ -z "$audio_pick" ]] && audio_pick="Система"
-  case "$audio_pick" in "Система") mode=system ;; "Микрофон") mode=mic ;; *) mode=system ;; esac
-  br=$(pick_mp3_bitrate)
-  dev=$(resolve_audio_dev "$mode")
+  if audio_running; then stop_audio; return 0; fi
+
+  local labels=("🔊 Система" ) keys=("system")
+  local n d
+  while IFS='|' read -r n d; do
+    [[ -n "$n" ]] || continue
+    labels+=("🎤 Микрофон: $d"); keys+=("mic:$n")
+  done < <(list_mics)
+
+  local sel idx dev=""
+  sel=$(pick "Что писать (MP3)" "${labels[@]}")
+  [[ -z "$sel" ]] && { notify "Запись аудио" "Отменено"; return 0; }
+  idx=$(index_of "$sel" "${labels[@]}")
+  (( idx < 0 )) && return 0
+  case "${keys[$idx]}" in
+    system) dev=$(system_monitor) ;;
+    mic:*)  dev="${keys[$idx]#mic:}" ;;
+  esac
   if [[ -z "$dev" ]]; then
-    notify "Запись аудио" "Не удалось определить аудио-устройство"
-    exit 1
+    notify "⛔ Запись аудио" "Не удалось определить аудио-устройство"
+    return 1
   fi
-  ffmpeg -hide_banner -loglevel error -f pulse -i "$dev" -c:a libmp3lame -b:a "$br" "$outfile" >/dev/null 2>&1 &
-  recorder_pid=$!
-  echo "$recorder_pid" > "$pid_file"
-  echo "$outfile" > "$last_file"
-  notify "Запись аудио" "Начата: $(basename "$outfile") — $br"
+
+  local out ts
+  ts=$(date +'%Y-%m-%d_%H-%M-%S')
+  out="$music_dir/audio_$ts.mp3"
+  ffmpeg -hide_banner -loglevel error -f pulse -i "$dev" -c:a libmp3lame -b:a 192k "$out" >"$audio_log" 2>&1 &
+  local p=$!
+  echo "$p" > "$audio_pid"
+  echo "$out" > "$audio_out"
+  sleep 1
+  if ! kill -0 "$p" 2>/dev/null; then
+    local err; err=$(log_tail "$audio_log")
+    rm -f "$audio_pid"
+    notify "⛔ Запись аудио не началась" "${err:-см. $audio_log}"
+    return 1
+  fi
+  notify "🎙 Запись аудио (MP3)" "$(basename "$out") — 192 kbps"
 }
 
-stop_rec() {
-  local pid
-  pid=$(cat "$pid_file" 2>/dev/null || true)
-  if [[ -n "${pid:-}" ]]; then
-    # SIGINT works for both wf-recorder and ffmpeg
-    kill -INT "$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+stop_audio() {
+  local p out
+  if pid_alive "$audio_pid"; then
+    p=$(cat "$audio_pid" 2>/dev/null || true)
+    [[ -n "$p" ]] && kill -INT "$p" 2>/dev/null
+    sleep 1
   fi
-  rm -f "$pid_file"
-  if [[ -f "$last_file" ]]; then
-    if [[ "$MODE" == "audio" ]]; then
-      notify "Запись аудио" "Остановлена: $(basename "$(cat "$last_file")")"
+  rm -f "$audio_pid"
+  out=$(cat "$audio_out" 2>/dev/null || true)
+  notify "⏹ Запись аудио остановлена" "$(basename "${out:-запись}")"
+}
+
+stop_all() {
+  video_running && stop_video
+  replay_running && stop_replay
+  audio_running && stop_audio
+  notify "⏹ Остановлено" "Все записи завершены"
+}
+
+# ------------------------------------------------------------------- меню ----
+
+menu() {
+  local items=()
+  if video_running; then items+=("⏹ Остановить запись" "⏸ Пауза / продолжить")
+  else items+=("⏺ Начать запись экрана"); fi
+  if replay_running; then items+=("💾 Сохранить клип (replay)" "⏹ Выключить replay-буфер")
+  else items+=("🔁 Включить replay-буфер (60 с)"); fi
+  if audio_running; then items+=("⏹ Остановить аудиозапись")
+  else items+=("🎙 Записать только звук (MP3)"); fi
+  items+=("📸 Скриншот области" "🖥 Открыть OBS Studio" "⏹⏹ Остановить всё" "❌ Отмена")
+
+  local sel
+  sel=$(pick "Запись экрана" "${items[@]}")
+  case "$sel" in
+    "⏺ Начать запись экрана")        start_video ;;
+    "⏹ Остановить запись")           stop_video ;;
+    "⏸ Пауза / продолжить")          toggle_pause ;;
+    "🔁 Включить replay-буфер (60 с)") start_replay ;;
+    "💾 Сохранить клип (replay)")     save_replay ;;
+    "⏹ Выключить replay-буфер")      stop_replay ;;
+    "🎙 Записать только звук (MP3)")  start_audio ;;
+    "⏹ Остановить аудиозапись")      stop_audio ;;
+    "📸 Скриншот области")
+      setsid --fork sh "$HOME/.config/scripts/screenshot_region_clipboard.sh" >/dev/null 2>&1 ;;
+    "🖥 Открыть OBS Studio")
+      if command -v obs >/dev/null 2>&1; then
+        setsid --fork obs >/dev/null 2>&1
+      else
+        notify "OBS Studio" "obs не установлен: sudo pacman -S obs-studio"
+      fi ;;
+    "⏹⏹ Остановить всё")             stop_all ;;
+    *) exit 0 ;;
+  esac
+}
+
+status() {
+  local s=""
+  if video_running; then
+    if [[ -f "$video_via_replay" ]]; then
+      s+="видео: ЗАПИСЬ (внутри replay-процесса)\n"
     else
-      notify "Запись экрана" "Остановлена: $(basename "$(cat "$last_file")")"
+      s+="видео: ЗАПИСЬ ($(basename "$(cat "$video_out" 2>/dev/null)" 2>/dev/null))\n"
     fi
   else
-    notify "Запись" "Остановлена"
+    s+="видео: стоп\n"
   fi
-  # Clean up virtual audio mix (if any)
-  cleanup_mix_sink
-  # Restore default source
-  pop_default_source || true
+  replay_running && s+="replay: ВКЛ (60 с)\n" || s+="replay: выкл\n"
+  if audio_running; then
+    s+="аудио: ЗАПИСЬ ($(basename "$(cat "$audio_out" 2>/dev/null)" 2>/dev/null))\n"
+  else
+    s+="аудио: стоп\n"
+  fi
+  printf '%b' "$s"
+  printf 'video log: %s\n' "$(log_tail "$video_log")"
+  printf 'replay log: %s\n' "$(log_tail "$replay_log")"
 }
 
-if [[ "$MODE" == "audio" ]]; then
-  pid_file="$state_dir/audiorec.pid"
-  last_file="$state_dir/audiorec.last"
-  if is_running; then
-    stop_rec
-  else
-    start_audio
-  fi
-else
-  pid_file="$state_dir/screenrec.pid"
-  last_file="$state_dir/screenrec.last"
-  if is_running; then
-    stop_rec
-  else
-    start_video
-  fi
-fi
+case "$MODE" in
+  menu|"")  menu ;;
+  video)    start_video ;;
+  replay)   start_replay ;;
+  save)     save_replay ;;
+  audio)    start_audio ;;
+  stop-all) stop_all ;;
+  status)   status ;;
+  *)        echo "usage: $(basename "$0") [menu|video|replay|save|audio|stop-all|status]" >&2; exit 2 ;;
+esac
