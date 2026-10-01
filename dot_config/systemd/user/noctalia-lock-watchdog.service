@@ -1,0 +1,13 @@
+[Unit]
+Description=Noctalia lock watchdog (release a wedged lock screen)
+Documentation=man:systemd.service(5)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+# Сколько секунд держать заблокированную сессию, прежде чем считать локскрин
+# неотрисованным и снять блокировку. Увеличь, если пароль вводишь неспешно.
+Environment=LOCK_WATCHDOG_TIMEOUT=120
+Environment=LOCK_WATCHDOG_MIN_INTERVAL=30
+ExecStart=%h/.local/bin/noctalia-lock-watchdog

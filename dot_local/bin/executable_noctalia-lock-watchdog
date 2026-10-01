@@ -1,0 +1,84 @@
+#!/bin/sh
+# noctalia-lock-watchdog — страховка от «залипшего» локскрина.
+#
+# История: на ноутбуке стоял noctalia r4541 (июль), а конфиг локскрина приехал
+# с десктопа (r5310) со схемой lockscreen_widgets v2. Эта сборка её не понимает:
+# сессия блокировалась (niri: "locking session"), но локскрин не рисовался —
+# пустой экран без поля ввода, разблокировка невозможна.
+#
+# Логика: если сессия остаётся заблокированной дольше $LOCK_WATCHDOG_TIMEOUT
+# секунд, считаем, что локскрин не отрисовался, и снимаем блокировку —
+# перезапуск оболочки рвёт ext-session-lock, niri освобождает сессию.
+#
+# Настройка (в noctalia-lock-watchdog.service):
+#   LOCK_WATCHDOG_TIMEOUT=120   сколько секунд ждать перед снятием лока
+#   LOCK_WATCHDOG_MIN_INTERVAL=30  пауза перед повторной попыткой
+#
+# Состояние: ${XDG_CACHE_HOME:-~/.cache}/noctalia-lock-watchdog/locked-since
+set -eu
+
+TIMEOUT="${LOCK_WATCHDOG_TIMEOUT:-120}"
+MIN_INTERVAL="${LOCK_WATCHDOG_MIN_INTERVAL:-30}"
+STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia-lock-watchdog"
+STATE_FILE="$STATE_DIR/locked-since"
+
+log() {
+    printf '%s [lock-watchdog] %s\n' "$(date -Is)" "$*" >&2
+}
+
+# Ищем ID графической сессии: сначала из окружения, иначе последняя активная.
+session_id() {
+    if [ -n "${XDG_SESSION_ID:-}" ]; then
+        printf '%s\n' "$XDG_SESSION_ID"
+        return 0
+    fi
+    loginctl list-sessions --no-legend 2>/dev/null |
+        awk -v u="$USER" '$3 == u { print $1 }' | tail -1
+}
+
+# Заблокирована ли сессия: сперша сам noctalia, на случай его смерти — logind.
+is_locked() {
+    if out=$(noctalia msg status 2>/dev/null); then
+        case "$out" in
+            *'"locked": true'*) return 0 ;;
+            *) return 1 ;;
+        esac
+    fi
+    sid=$(session_id)
+    [ -n "$sid" ] || return 1
+    [ "$(loginctl show-session "$sid" -p LockHint --value 2>/dev/null)" = "yes" ]
+}
+
+now=$(date +%s)
+
+if ! is_locked; then
+    rm -f "$STATE_FILE"
+    exit 0
+fi
+
+if [ ! -f "$STATE_FILE" ]; then
+    mkdir -p "$STATE_DIR"
+    printf '%s\n' "$now" >"$STATE_FILE"
+    log "сессия заблокирована, жду до ${TIMEOUT}s"
+    exit 0
+fi
+
+since=$(cat "$STATE_FILE" 2>/dev/null || printf '%s' "$now")
+case "$since" in
+    '' | *[!0-9]*) since=$now ;;
+esac
+age=$((now - since))
+
+if [ "$age" -lt "$TIMEOUT" ]; then
+    exit 0
+fi
+
+log "лок держится ${age}s (> ${TIMEOUT}s) — локскрин не отрисовался, снимаю блокировку"
+if systemctl --user restart noctalia-shell.service; then
+    log "noctalia перезапущён, session-lock снят"
+else
+    log "не удалось перезапустить noctalia-shell.service"
+fi
+
+# Пауза перед следующей попыткой, чтобы не дёргать рестарт каждые 30 секунд.
+printf '%s\n' "$((now + MIN_INTERVAL))" >"$STATE_FILE"

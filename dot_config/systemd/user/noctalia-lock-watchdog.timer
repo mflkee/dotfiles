@@ -1,0 +1,11 @@
+[Unit]
+Description=Poll for a wedged Noctalia lock screen every 30s
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=30s
+AccuracySec=5s
+Unit=noctalia-lock-watchdog.service
+
+[Install]
+WantedBy=timers.target

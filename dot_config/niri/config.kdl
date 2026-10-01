@@ -369,6 +369,13 @@ binds {
     Super+Alt+L hotkey-overlay-title="Lock Screen (Noctalia)" {
         spawn "noctalia" "msg" "session" "lock"
     }
+    // Аварийный выход из залипшего локскрина: allow-when-locked нужен, чтобы
+    // хоткей срабатывал, когда сессия уже залочена (niri иначе не передаёт
+    // клавиши клиентам под локом). Рестарт оболочки рвёт ext-session-lock.
+    // Mod+Ctrl+Shift+L занят move-column-to-monitor-right, поэтому Ctrl+Alt+Shift+L.
+    Ctrl+Alt+Shift+L allow-when-locked=true hotkey-overlay-title="Emergency Unlock (restart Noctalia)" {
+        spawn-sh "systemctl --user restart noctalia-shell.service"
+    }
 
     // Noctalia is the primary shell surface for launchers and system popups.
     Mod+D repeat=false hotkey-overlay-title="Open Noctalia Launcher" {
