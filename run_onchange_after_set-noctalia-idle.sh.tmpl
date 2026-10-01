@@ -1,46 +1,41 @@
 #!/usr/bin/env bash
 # Единая точка настройки авто-лока и выключения монитора в Noctalia v5.
 #
-# Раньше здесь был inline-python, который писал [idle] прямо в
-# ~/.local/state/noctalia/settings.toml. Теперь вся логика — в одном
-# исполняемом скрипте ~/.local/bin/noctalia-set-idle, который используют и
-# chezmoi (этот run_onchange), и systemd-таймер noctalia-idle-guard.timer
-# (само-лечение, если Noctalia перезапишет settings.toml). Так у всех машин
-# ровно один шаблон поведения: lock 600s + screen-off 900s.
+# Вся логика — в одном исполняемом скрипте ~/.local/bin/noctalia-set-idle,
+# который используют и chezmoi (этот run_onchange), и systemd-таймер
+# noctalia-idle-guard.timer (само-лечение, если Noctalia перезапишет
+# settings.toml). Так у всех niri-машин ровно одно поведение:
+#   стадия 1: 600s — блокировка с графическим вводом пароля;
+#   стадия 2: 900s — мониторы гаснут по DPMS.
 #
 # Watchdog (`noctalia-lock-watchdog.timer`) — workaround для старого Noctalia,
 # который не рисует локскрин. Он строго opt-in через machines.yaml
-# (`noctalia_lock_watchdog: true`), чтобы «починка ноутбука» не включалась и не
-# ломала десктоп.
+# (`noctalia_lock_watchdog: true`), чтобы «починка ноутбука» не включалась на
+# десктопе и не ломала его.
 #
 # hash-files: {{ include "dot_local/bin/executable_noctalia-set-idle" | sha256sum }}
 
 set -uo pipefail
 
-{{- $watchdog := false -}}
-{{- if hasKey .machines .chezmoi.hostname -}}
-{{-   $m := index .machines .chezmoi.hostname -}}
-{{-   if hasKey $m "noctalia_lock_watchdog" -}}
-{{-     $watchdog = $m.noctalia_lock_watchdog -}}
-{{-   end -}}
-{{- end -}}
+{{ $watchdog := false }}
+{{ if hasKey .machines .chezmoi.hostname }}
+{{   $m := index .machines .chezmoi.hostname }}
+{{   if hasKey $m "noctalia_lock_watchdog" }}
+{{     $watchdog = $m.noctalia_lock_watchdog }}
+{{   end }}
+{{ end }}
 
-if ! command -v noctalia >/dev/null 2>&1 && [ ! -x /usr/bin/noctalia ]; then
+if command -v noctalia >/dev/null 2>&1 || [ -x /usr/bin/noctalia ]; then
+  HELPER="$HOME/.local/bin/noctalia-set-idle"
+  if [ -x "$HELPER" ]; then
+    "$HELPER" --watchdog {{ if $watchdog }}on{{ else }}off{{ end }}
+    rc=$?
+    [ "$rc" -eq 0 ] || echo "[noctalia-idle] helper exited with $rc"
+  else
+    echo "[noctalia-idle] helper $HELPER not deployed yet — skip"
+  fi
+else
   echo "[noctalia-idle] noctalia not installed — skip"
-  exit 0
 fi
 
-HELPER="$HOME/.local/bin/noctalia-set-idle"
-if [ ! -x "$HELPER" ]; then
-  echo "[noctalia-idle] helper $HELPER not deployed yet — skip"
-  exit 0
-fi
-
-{{ if $watchdog -}}
-"$HELPER" --watchdog on
-{{- else -}}
-"$HELPER" --watchdog off
-{{- end }}
-rc=$?
-[ "$rc" -eq 0 ] || echo "[noctalia-idle] helper exited with $rc"
 exit 0
