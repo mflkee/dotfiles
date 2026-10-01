@@ -265,6 +265,10 @@ def main(argv: list[str]) -> int:
     meta = load_meta()
     want_watchdog = bool(meta.get("watchdog", False))
 
+    version = run(["noctalia", "--version"]).stdout.strip()
+    if version:
+        log(f"версия {version}")
+
     changed = apply_idle(dry_run)
 
     # systemd мог ещё не знать о свежераскатанных юнитах.
