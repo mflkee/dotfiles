@@ -169,48 +169,58 @@ def strip_idle_block(text: str) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
-def apply_idle(dry_run: bool) -> bool:
-    """Возвращает True, если конфиг реально изменился."""
+def read_conf() -> str:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     if not CONF.exists():
         CONF.write_text("", encoding="utf-8")
+    return CONF.read_text(encoding="utf-8")
 
-    text = CONF.read_text(encoding="utf-8")
+
+def idle_ok_in_text(text: str) -> bool:
     try:
-        data = tomllib.loads(text)
+        return idle_is_ok(tomllib.loads(text))
     except tomllib.TOMLDecodeError:
-        data = {}
-
-    if idle_is_ok(data):
-        log("idle-конфиг уже корректен (lock 10m, screen-off 15m) — не трогаю")
         return False
 
-    if dry_run:
-        log(f"[dry-run] переписал бы блок [idle] в {CONF}")
-        return True
 
-    new_text = strip_idle_block(text) + CANONICAL_BLOCK
-    CONF.write_text(new_text, encoding="utf-8")
-    log(f"записал блок [idle] в {CONF} (lock 600s, screen-off 900s)")
-    return True
+def shell_is_active() -> bool:
+    return systemctl("is-active", "--quiet", "noctalia-shell.service").returncode == 0
 
 
-def restart_shell(dry_run: bool) -> None:
-    if dry_run:
-        log("[dry-run] перезапустил бы noctalia-shell.service")
+def sync_idle(dry_run: bool) -> None:
+    """Приводит [idle] к канону, не задевая остальной конфиг.
+
+    ВАЖНО: пишем только при ОСТАНОВЛЕННОЙ оболочке. Если писать на ходу,
+    Noctalia ловит inotify-событие, перечитывает конфиг и может пересохранить
+    settings.toml своей (усечённой) моделью — именно так 2026-10-02 потерялись
+    бар, капсула oc-usage, обои и тема. Порядок: stop → перечитать → записать →
+    start. Если [idle] уже канонический — не трогаем вообще ничего.
+
+    Почему не `noctalia msg config-reload`: в v5 beta.9 он пересобирает
+    behaviors, но НЕ пересоздаёт ext-idle-notify — авто-лок/screen-off молча
+    умирают до полного stop/start (баг воспроизведён 2026-10-01).
+    """
+    if idle_ok_in_text(read_conf()):
+        log("idle-конфиг уже корректен (lock 10m, screen-off 15m) — не трогаю")
         return
-    if systemctl("is-active", "--quiet", "noctalia-shell.service").returncode != 0:
-        log("noctalia-shell не запущен — применится при следующем старте")
+
+    if dry_run:
+        log(f"[dry-run] остановил бы шелл, переписал [idle] в {CONF}, запустил бы снова")
         return
-    # НЕ используем `noctalia msg config-reload`: в v5 beta.9 он пересобирает
-    # behaviors, но не пересоздаёт ext-idle-notify, и авто-лок/screen-off
-    # перестают срабатывать до полного рестарта оболочки (баг воспроизведён
-    # 2026-10-01). Рестарт рвёт и ext-session-lock, и старый idle-notifier.
-    res = systemctl("restart", "noctalia-shell.service")
-    if res.returncode == 0:
+
+    active = shell_is_active()
+    if active:
+        systemctl("stop", "noctalia-shell.service")
+
+    # После остановки Noctalia могла перезаписать файл своей моделью — читаем заново.
+    text = read_conf()
+    if not idle_ok_in_text(text):
+        CONF.write_text(strip_idle_block(text) + CANONICAL_BLOCK, encoding="utf-8")
+        log(f"записал блок [idle] в {CONF} (lock 600s, screen-off 900s)")
+
+    if active:
+        systemctl("start", "noctalia-shell.service")
         log("noctalia-shell перезапущен (idle-notifier пересоздан)")
-    else:
-        log(f"не удалось перезапустить noctalia-shell: {res.stderr.strip()}")
 
 
 def unit_exists(name: str) -> bool:
@@ -269,8 +279,6 @@ def main(argv: list[str]) -> int:
     if version:
         log(f"версия {version}")
 
-    changed = apply_idle(dry_run)
-
     # systemd мог ещё не знать о свежераскатанных юнитах.
     if not dry_run:
         systemctl("daemon-reload")
@@ -281,8 +289,7 @@ def main(argv: list[str]) -> int:
     # guard — само-лечение idle-конфига, нужен везде и всегда.
     reconcile_timer(GUARD_TIMER, True, dry_run)
 
-    if changed:
-        restart_shell(dry_run)
+    sync_idle(dry_run)
 
     return 0
 
