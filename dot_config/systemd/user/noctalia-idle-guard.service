@@ -1,0 +1,14 @@
+[Unit]
+Description=Noctalia idle guard (self-heal lock/screen-off config)
+Documentation=man:systemd.service(5)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+# Noctalia хранит конфиг в ~/.local/state/noctalia/settings.toml и может
+# перезаписать его (например, из GUI), затерев блок [idle]. Тогда авто-лок и
+# выключение монитора молча умирают. Этот сервис идемпотентно возвращает
+# канонический блок и перезапускает оболочку только если что-то реально
+# изменилось.
+ExecStart=%h/.local/bin/noctalia-set-idle

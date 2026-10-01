@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""noctalia-set-idle — единый источник истины для idle-поведения Noctalia.
+
+Зачем: Noctalia v5 хранит конфиг не в ~/.config (chezmoi), а в
+~/.local/state/noctalia/settings.toml, который генерирует/перезаписывает сама
+оболочка. Поэтому chezmoi-шаблон не может «просто положить файл»: нужен
+идемпотентный аппликатор. Он же гасит корень проблемы «починил на ноутбуке —
+сломалось на десктопе»: и ноутбук, и десктоп (и любой другой niri-машина)
+получают один и тот же минимальный, версионно-нейтральный блок [idle].
+
+Схема (снята с `noctalia config export full` на v5.0.0-beta.9, r5310):
+    [idle]
+    behavior_order = [ "lock", "screen-off" ]
+    pre_action_fade_seconds = 2.0
+        [idle.behavior.lock]       action="lock"        timeout=600.0
+        [idle.behavior.screen-off] action="screen_off"  timeout=900.0
+Стадия 1: через 10 мин — блокировка с графическим вводом пароля.
+Стадия 2: ещё через 5 мин (15 от простоя) — niri гасит мониторы по DPMS.
+
+Использование:
+    noctalia-set-idle                      # выровнять конфиг + само-лечение
+    noctalia-set-idle --watchdog on|off    # + включить/выключить watchdog
+    noctalia-set-idle --dry-run            # показать, что было бы сделано
+
+Применяется:
+    * chezmoi run_onchange_after_set-noctalia-idle.sh.tmpl (при `chezmoi apply`)
+    * systemd-таймером noctalia-idle-guard.timer каждые 15 мин (само-лечение,
+      если Noctalia перезаписала settings.toml и [idle] потерялся).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import tomllib
+
+LOG_PREFIX = "[noctalia-idle]"
+
+STATE_DIR = pathlib.Path(
+    os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))
+) / "noctalia"
+CONF = STATE_DIR / "settings.toml"
+META = STATE_DIR / "idle-meta.json"
+
+WATCHDOG_TIMER = "noctalia-lock-watchdog.timer"
+GUARD_TIMER = "noctalia-idle-guard.timer"
+
+# Целевое idle-поведение. Изменение этих чисел = изменение политики на ВСЕХ
+# машинах сразу (одна точка правды).
+DESIRED_IDLE = {
+    "behavior_order": ["lock", "screen-off"],
+    "pre_action_fade_seconds": 2.0,
+    "behavior": {
+        "lock": {
+            "action": "lock",
+            "command": "",
+            "enabled": True,
+            "locked_timeout": 0.0,
+            "resume_command": "",
+            "timeout": 600.0,
+        },
+        "screen-off": {
+            "action": "screen_off",
+            "command": "",
+            "enabled": True,
+            "locked_timeout": 0.0,
+            "resume_command": "",
+            "timeout": 900.0,
+        },
+    },
+}
+
+CANONICAL_BLOCK = """
+[idle]
+behavior_order = [ "lock", "screen-off" ]
+pre_action_fade_seconds = 2.0
+
+    [idle.behavior.lock]
+    action = "lock"
+    command = ""
+    enabled = true
+    locked_timeout = 0.0
+    resume_command = ""
+    timeout = 600.0
+
+    [idle.behavior.screen-off]
+    action = "screen_off"
+    command = ""
+    enabled = true
+    locked_timeout = 0.0
+    resume_command = ""
+    timeout = 900.0
+"""
+
+
+def log(msg: str) -> None:
+    print(f"{LOG_PREFIX} {msg}", flush=True)
+
+
+def run(cmd: list[str], *, check: bool = False) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=check,
+    )
+
+
+def systemctl(*args: str) -> subprocess.CompletedProcess:
+    return run(["systemctl", "--user", *args])
+
+
+def load_meta() -> dict:
+    try:
+        return json.loads(META.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def save_meta(meta: dict) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = META.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(META)
+
+
+def _subset_match(current: object, desired: object) -> bool:
+    """True, если desired целиком совпадает со current (лишние ключи игнорим)."""
+    if isinstance(desired, dict):
+        if not isinstance(current, dict):
+            return False
+        return all(k in current and _subset_match(current[k], v) for k, v in desired.items())
+    if isinstance(desired, list):
+        return current == desired
+    return current == desired
+
+
+def idle_is_ok(data: dict) -> bool:
+    idle = data.get("idle")
+    if not isinstance(idle, dict):
+        return False
+    behaviors = idle.get("behavior")
+    if not isinstance(behaviors, dict):
+        return False
+    # Ровно две стадии, ничего лишнего, порядок как задумано.
+    if idle.get("behavior_order") != DESIRED_IDLE["behavior_order"]:
+        return False
+    if set(behaviors.keys()) != set(DESIRED_IDLE["behavior"].keys()):
+        return False
+    for name, want in DESIRED_IDLE["behavior"].items():
+        if not _subset_match(behaviors.get(name, {}), want):
+            return False
+    return True
+
+
+def strip_idle_block(text: str) -> str:
+    out: list[str] = []
+    skipping = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("["):
+            name = stripped.strip("[]").strip()
+            skipping = name == "idle" or name.startswith("idle.")
+        if not skipping:
+            out.append(line)
+    return "\n".join(out).rstrip() + "\n"
+
+
+def apply_idle(dry_run: bool) -> bool:
+    """Возвращает True, если конфиг реально изменился."""
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    if not CONF.exists():
+        CONF.write_text("", encoding="utf-8")
+
+    text = CONF.read_text(encoding="utf-8")
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError:
+        data = {}
+
+    if idle_is_ok(data):
+        log("idle-конфиг уже корректен (lock 10m, screen-off 15m) — не трогаю")
+        return False
+
+    if dry_run:
+        log(f"[dry-run] переписал бы блок [idle] в {CONF}")
+        return True
+
+    new_text = strip_idle_block(text) + CANONICAL_BLOCK
+    CONF.write_text(new_text, encoding="utf-8")
+    log(f"записал блок [idle] в {CONF} (lock 600s, screen-off 900s)")
+    return True
+
+
+def restart_shell(dry_run: bool) -> None:
+    if dry_run:
+        log("[dry-run] перезапустил бы noctalia-shell.service")
+        return
+    if systemctl("is-active", "--quiet", "noctalia-shell.service").returncode != 0:
+        log("noctalia-shell не запущен — применится при следующем старте")
+        return
+    # НЕ используем `noctalia msg config-reload`: в v5 beta.9 он пересобирает
+    # behaviors, но не пересоздаёт ext-idle-notify, и авто-лок/screen-off
+    # перестают срабатывать до полного рестарта оболочки (баг воспроизведён
+    # 2026-10-01). Рестарт рвёт и ext-session-lock, и старый idle-notifier.
+    res = systemctl("restart", "noctalia-shell.service")
+    if res.returncode == 0:
+        log("noctalia-shell перезапущен (idle-notifier пересоздан)")
+    else:
+        log(f"не удалось перезапустить noctalia-shell: {res.stderr.strip()}")
+
+
+def unit_exists(name: str) -> bool:
+    return (pathlib.Path.home() / ".config/systemd/user" / name).exists()
+
+
+def timer_enabled(name: str) -> bool:
+    return systemctl("is-enabled", "--quiet", name).returncode == 0
+
+
+def reconcile_timer(name: str, want: bool, dry_run: bool) -> None:
+    if not unit_exists(name):
+        return
+    enabled = timer_enabled(name)
+    if want and not enabled:
+        if dry_run:
+            log(f"[dry-run] включил бы {name}")
+        else:
+            systemctl("enable", "--now", name)
+            log(f"{name} включён")
+    elif not want and enabled:
+        if dry_run:
+            log(f"[dry-run] выключил бы {name}")
+        else:
+            systemctl("disable", "--now", name)
+            log(f"{name} выключен")
+    # Если состояние уже нужное — молчим, чтобы не шуметь в журнале таймера.
+
+
+def main(argv: list[str]) -> int:
+    dry_run = "--dry-run" in argv
+    watchdog_flag: bool | None = None
+
+    if "--watchdog" in argv:
+        idx = argv.index("--watchdog")
+        if idx + 1 >= len(argv):
+            log("--watchdog требует on|off")
+            return 2
+        watchdog_flag = argv[idx + 1] == "on"
+
+    if not (pathlib.Path("/usr/bin/noctalia").exists() or pathlib.Path("/usr/local/bin/noctalia").exists()):
+        log("noctalia не установлена — пропуск")
+        return 0
+
+    if watchdog_flag is not None:
+        meta = load_meta()
+        meta["watchdog"] = watchdog_flag
+        if not dry_run:
+            save_meta(meta)
+        log(f"watchdog для этой машины: {'on' if watchdog_flag else 'off'}")
+
+    meta = load_meta()
+    want_watchdog = bool(meta.get("watchdog", False))
+
+    changed = apply_idle(dry_run)
+
+    # systemd мог ещё не знать о свежераскатанных юнитах.
+    if not dry_run:
+        systemctl("daemon-reload")
+
+    # watchdog — это workaround для конкретной машины (старый Noctalia, который
+    # не умеет рисовать локскрин), поэтому он строго opt-in через machines.yaml.
+    reconcile_timer(WATCHDOG_TIMER, want_watchdog, dry_run)
+    # guard — само-лечение idle-конфига, нужен везде и всегда.
+    reconcile_timer(GUARD_TIMER, True, dry_run)
+
+    if changed:
+        restart_shell(dry_run)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

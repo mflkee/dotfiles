@@ -1,94 +1,46 @@
 #!/usr/bin/env bash
-# Настраивает авто-лок и выключение монитора в Noctalia v5.
+# Единая точка настройки авто-лока и выключения монитора в Noctalia v5.
 #
-# ВАЖНО: Noctalia v5 читает конфиг из ~/.local/state/noctalia/settings.toml (TOML),
-# а НЕ из ~/.config/noctalia/settings.json (тот legacy и игнорируется).
-# Каталог .local/state/noctalia/ исключён из chezmoi (Noctalia сама пишет туда),
-# поэтому нужный блок [idle] дописываем/обновляем idempotent-скриптом.
+# Раньше здесь был inline-python, который писал [idle] прямо в
+# ~/.local/state/noctalia/settings.toml. Теперь вся логика — в одном
+# исполняемом скрипте ~/.local/bin/noctalia-set-idle, который используют и
+# chezmoi (этот run_onchange), и systemd-таймер noctalia-idle-guard.timer
+# (само-лечение, если Noctalia перезапишет settings.toml). Так у всех машин
+# ровно один шаблон поведения: lock 600s + screen-off 900s.
 #
-# Схема (получена из `noctalia config export full`):
-#   [idle]
-#   behavior_order = ["lock", "screen-off"]
-#   pre_action_fade_seconds = 2.0
-#       [idle.behavior.lock]       action="lock"        enabled=true timeout=600.0
-#       [idle.behavior.screen-off] action="screen_off"  enabled=true timeout=900.0
+# Watchdog (`noctalia-lock-watchdog.timer`) — workaround для старого Noctalia,
+# который не рисует локскрин. Он строго opt-in через machines.yaml
+# (`noctalia_lock_watchdog: true`), чтобы «починка ноутбука» не включалась и не
+# ломала десктоп.
 #
-# hash-files: {{ list "run_onchange_after_set-noctalia-idle.sh.tmpl" | join "\n" | sha256sum }}
+# hash-files: {{ include "dot_local/bin/executable_noctalia-set-idle" | sha256sum }}
 
 set -uo pipefail
 
-if ! command -v noctalia >/dev/null 2>&1; then
+{{- $watchdog := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $m := index .machines .chezmoi.hostname -}}
+{{-   if hasKey $m "noctalia_lock_watchdog" -}}
+{{-     $watchdog = $m.noctalia_lock_watchdog -}}
+{{-   end -}}
+{{- end -}}
+
+if ! command -v noctalia >/dev/null 2>&1 && [ ! -x /usr/bin/noctalia ]; then
   echo "[noctalia-idle] noctalia not installed — skip"
   exit 0
 fi
 
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia"
-CONF="$STATE_DIR/settings.toml"
-mkdir -p "$STATE_DIR"
-[ -f "$CONF" ] || : > "$CONF"
-
-python3 - "$CONF" <<'PY'
-import sys
-
-path = sys.argv[1]
-text = open(path, encoding="utf-8").read()
-
-# Убираем прежний блок [idle] (вместе со вложенными [idle.*]) — до следующей
-# секции верхнего уровня.
-lines = text.splitlines()
-out, skipping = [], False
-for ln in lines:
-    stripped = ln.strip()
-    is_section = stripped.startswith("[")
-    if is_section:
-        name = stripped.strip("[]").strip()
-        skipping = name == "idle" or name.startswith("idle.")
-    if not skipping:
-        out.append(ln)
-
-block = """
-[idle]
-behavior_order = [ "lock", "screen-off" ]
-pre_action_fade_seconds = 2.0
-
-    [idle.behavior.lock]
-    action = "lock"
-    command = ""
-    enabled = true
-    resume_command = ""
-    timeout = 600.0
-
-    [idle.behavior.screen-off]
-    action = "screen_off"
-    command = ""
-    enabled = true
-    resume_command = ""
-    timeout = 900.0
-"""
-
-new = "\n".join(out).rstrip() + "\n" + block
-open(path, "w", encoding="utf-8").write(new)
-print("[noctalia-idle] wrote [idle] block into", path)
-PY
-
-# Проверяем, что конфиг валиден.
-if ! noctalia config validate >/dev/null 2>&1; then
-  echo "[noctalia-idle] WARNING: config validation failed"
+HELPER="$HOME/.local/bin/noctalia-set-idle"
+if [ ! -x "$HELPER" ]; then
+  echo "[noctalia-idle] helper $HELPER not deployed yet — skip"
+  exit 0
 fi
 
-# ВАЖНО: НЕ используем `noctalia msg config-reload`.
-# В Noctalia v5.0.0-beta.9 (сборка v5.0.0-beta.9-4-g7fd9f7bfa960) config-reload
-# пересобирает список idle-поведений, но НЕ пересоздаёт idle-нотификатор
-# ext-idle-notify: после reload авто-лок и screen-off перестают срабатывать
-# вообще, пока шелл не перезапустишь (воспроизведено 2026-10-01: 0 событий
-# ввода за 40 c, behavior не триггерится; restart — сразу оживает).
-# Поэтому перезапускаем шелл целиком.
-if systemctl --user is-active --quiet noctalia-shell.service 2>/dev/null; then
-  systemctl --user restart noctalia-shell.service \
-    && echo "[noctalia-idle] shell restarted (lock 10m, screen-off 15m armed)" \
-    || echo "[noctalia-idle] restart failed"
-else
-  echo "[noctalia-idle] noctalia-shell not running — applied on next start"
-fi
-
+{{ if $watchdog -}}
+"$HELPER" --watchdog on
+{{- else -}}
+"$HELPER" --watchdog off
+{{- end }}
+rc=$?
+[ "$rc" -eq 0 ] || echo "[noctalia-idle] helper exited with $rc"
 exit 0
