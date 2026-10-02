@@ -10,23 +10,25 @@
 --      "month":  {"limitMicroCents":"6000000000","usedMicroCents":"3000000000"}}}}
 --
 -- Meters are money budgets, not request counts, so the percentage is
--- used/limit of the spend cap. Auth is the OpenCode CLI's OAuth device token
--- (Authorization: Bearer <access_token> + x-org-id: <org_id>), produced by
---   opencode-go-auth login
--- Credentials never come from Noctalia settings (settings.toml is 0644 and
--- world-readable); they are read from a 0600 JSON file
---   {"org_id": "wrk_...", "access_token": "...", "expires_at": 1793104191}
--- or from the OPENCODE_GO_ORG / OPENCODE_GO_TOKEN env vars. expires_at is only
--- used for the "token expiring" warning - the token is valid for 30 days and
--- there is no working renewal, so re-running the login script is the fix.
+-- used/limit of the spend cap.
+--
+-- v1.2: несколько аккаунтов (A/B). Активный аккаунт читается из
+--   ~/.config/opencode-go/current
+-- creds активного аккаунта — из ~/.config/opencode-go/credentials.json
+-- (копию активного аккаунта обновляет opencode-go-auth). Клик по виджету
+-- запускает `opencode-go-auth use <следующий>` — переключение занимает ~1с.
 
 local API = "https://opencode.ai/console/api/go/status"
-local DEFAULT_CREDENTIALS = "~/.config/opencode-go/credentials.json"
-local USER_AGENT = "opencode-go-usage/1.1 (noctalia bar widget)"
+local BASE_DIR = noctalia.expandPath("~/.config/opencode-go")
+local DEFAULT_CREDENTIALS = BASE_DIR .. "/credentials.json"
+local CURRENT_FILE = BASE_DIR .. "/current"
+local ACCOUNTS_DIR = BASE_DIR .. "/accounts"
+local USER_AGENT = "opencode-go-usage/1.2 (noctalia bar widget)"
 
 -- Ayu's yellow: the palette has no warning role, so severity is spelled out.
 local COLOR_WARN = "#e6b450"
 local COLOR_MUTED = "on_surface_variant"
+local COLOR_BUSY = "primary"
 
 -- Order matters: this is the order the dashboard shows and the order the bar
 -- uses in "all" mode.
@@ -46,6 +48,8 @@ end
 
 local PREFIX = tostring(setting("label", "OC"))
 local DISPLAY = tostring(setting("display", "worst"))
+local CLICK_ACTION = tostring(setting("click_action", "switch"))
+local SHOW_ACCOUNT = setting("show_account", true) ~= false
 local CREDENTIALS_PATH = noctalia.expandPath(tostring(setting("credentials_file", DEFAULT_CREDENTIALS)))
 local REFRESH_SECONDS = (tonumber(setting("refresh_minutes", 5)) or 5) * 60
 
@@ -57,16 +61,101 @@ local lastAttempt = 0
 local busy = false
 local manual = false
 local loadedExpires = nil
+local activeAccount = ""
+local transitionalAccount = ""
+local switchBusy = false
+
+-- ── account state ────────────────────────────────────────────────────────────
+
+local function loadActiveAccount()
+  local raw = noctalia.readFile(CURRENT_FILE)
+  if raw ~= nil then
+    local n = tostring(raw):gsub("%s", "")
+    if n ~= "" then
+      activeAccount = n
+      return
+    end
+  end
+  activeAccount = ""
+end
+
+local function accountLabel()
+  if transitionalAccount ~= "" then
+    return "<span>" .. transitionalAccount:upper() .. "</span>"
+  end
+  if activeAccount ~= "" then
+    return activeAccount:upper()
+  end
+  return PREFIX
+end
+
+-- Следующий за активным аккаунт из списка accounts/*.json; fallback a->b/b->a.
+local function nextAccount()
+  local entries = noctalia.listDir(ACCOUNTS_DIR)
+  local names = {}
+  if type(entries) == "table" then
+    for _, entry in ipairs(entries) do
+      local n = entry
+      if type(entry) == "table" then
+        n = entry.name
+      end
+      if type(n) == "string" then
+        local name = n:gsub("%.json$", "")
+        if name ~= n then
+          table.insert(names, name)
+        end
+      end
+    end
+  end
+  if #names < 2 then
+    -- Fallback: жёсткая пара a/b (тестовая совместимость с пустым listDir)
+    names = {}
+    if noctalia.exists(ACCOUNTS_DIR .. "/a.json") then table.insert(names, "a") end
+    if noctalia.exists(ACCOUNTS_DIR .. "/b.json") then table.insert(names, "b") end
+  end
+  table.sort(names)
+  if #names < 2 then
+    return nil
+  end
+  for _, name in ipairs(names) do
+    if name ~= activeAccount then
+      return name
+    end
+  end
+  return names[1]
+end
+
+local function runSwitch(target)
+  if switchBusy then
+    return
+  end
+  switchBusy = true
+  transitionalAccount = target
+  status = "ok"
+  detail = "переключаюсь на " .. target:upper() .. "…"
+  render()
+
+  local tool = noctalia.expandPath("~/.local/bin/opencode-go-auth")
+  local command = "'" .. tool .. "' use '" .. target .. "' 2>/dev/null"
+  local function onLine(line)
+    if line ~= nil and tostring(line) ~= "" then
+      detail = tostring(line)
+    end
+  end
+  if not noctalia.runStream(command, onLine) then
+    switchBusy = false
+    transitionalAccount = ""
+    noctalia.notifyError("OpenCode Go", "не удалось запустить opencode-go-auth")
+    render()
+    return
+  end
+  -- runStream асинхронный; финальное состояние придёт через onIpc("refresh"),
+  -- который вызовет сам скрипт. Дополнительно пробуем обновиться через 2с.
+end
 
 -- ── credentials ──────────────────────────────────────────────────────────────
 
 local function loadCredentials()
-  local envOrg = noctalia.getenv("OPENCODE_GO_ORG")
-  local envToken = noctalia.getenv("OPENCODE_GO_TOKEN")
-  if type(envOrg) == "string" and envOrg ~= "" and type(envToken) == "string" and envToken ~= "" then
-    return envOrg, envToken, nil
-  end
-
   local raw = noctalia.readFile(CREDENTIALS_PATH)
   if raw == nil then
     return nil
@@ -87,8 +176,7 @@ end
 
 -- Days since 1970-01-01 for a proleptic Gregorian date. The API sends UTC and
 -- os.time only speaks local time, so the countdown is done in UTC calendar
--- seconds instead: identical in every timezone and free of DST edges (verified
--- against `date -u -d` across nine zones).
+-- seconds instead: identical in every timezone and free of DST edges.
 local function daysFromCivil(year, month, day)
   year = month <= 2 and year - 1 or year
   local era = math.floor(year / 400)
@@ -99,8 +187,7 @@ local function daysFromCivil(year, month, day)
   return era * 146097 + dayOfEra - 719468
 end
 
--- UTC calendar seconds for a "....-..-..T..:..:..(.mmm)?Z" stamp, or nil for
--- anything else - the widget then simply shows no countdown.
+-- UTC calendar seconds for a "....-..-..T..:..:..(.mmm)?Z" stamp, or nil.
 local function isoToUtc(text)
   if type(text) ~= "string" then
     return nil
@@ -114,15 +201,12 @@ local function isoToUtc(text)
     + tonumber(hour) * 3600 + tonumber(minute) * 60 + tonumber(second)
 end
 
--- The same UTC seconds for "now", so the two are directly comparable.
 local function nowUtc()
   local parts = os.date("!*t", os.time())
   return daysFromCivil(parts.year, parts.month, parts.day) * 86400
     + parts.hour * 3600 + parts.min * 60 + parts.sec
 end
 
--- Micro-cents arrive as strings; anything unparsable must not become NaN in the
--- bar, so a bad number drops the meter instead of rendering "nan%".
 local function tonum(value)
   if type(value) == "number" then
     return value
@@ -134,7 +218,7 @@ local function tonum(value)
 end
 
 -- Countdown to a reset, capped at 99d so a far-future date cannot push the
--- tooltip row out of view. `now` is UTC calendar seconds (see nowUtc).
+-- tooltip row out of view.
 local function countdown(utcText, now)
   local target = isoToUtc(utcText)
   if target == nil then
@@ -166,7 +250,6 @@ local function parseStatus(body, now)
   end
   local access = decoded.access
   if type(access) ~= "table" or type(access.meters) ~= "table" then
-    -- 401/403 bodies are {"_tag":"Unauthorized"} and have no access block.
     if type(decoded._tag) == "string" then
       return nil, "console: " .. decoded._tag
     end
@@ -184,8 +267,6 @@ local function parseStatus(body, now)
         if percent > 100 then
           percent = 100
         end
-        -- Rolling 5h has no resetsAt until it is first touched; the monthly
-        -- meter renews with the subscription instead of resetting weekly.
         local reset = countdown(source.resetsAt, now)
         if reset == "" and meter.key == "month" then
           reset = countdown(access.endsAt, now)
@@ -224,8 +305,6 @@ local function summary()
   return table.concat(parts, " · ")
 end
 
--- Warns before the token dies rather than after: the renewal is a manual
--- browser approval, so a silent 401 a day later is worse than a yellow bar.
 local function expiringSoon()
   local expires = tonumber(loadedExpires)
   if expires == nil then
@@ -237,12 +316,15 @@ end
 local function render()
   if status == "ok" and #readings > 0 then
     local top = worst(readings)
+    local prefix = SHOW_ACCOUNT and accountLabel() or PREFIX
     if DISPLAY == "all" then
-      barWidget.setText(summary())
+      barWidget.setText(prefix .. " " .. summary())
     else
-      barWidget.setText(PREFIX .. " " .. top.percent .. "%")
+      barWidget.setText(prefix .. " " .. top.percent .. "%")
     end
-    if expiringSoon() then
+    if switchBusy then
+      barWidget.setColor(COLOR_BUSY)
+    elseif expiringSoon() then
       barWidget.setColor(COLOR_WARN, "script")
     elseif top.percent >= 90 then
       barWidget.setColor("error")
@@ -253,6 +335,7 @@ local function render()
     end
 
     local rows = {}
+    table.insert(rows, { key = "аккаунт", value = accountLabel() })
     for _, reading in ipairs(readings) do
       local value = reading.percent .. "%"
       if reading.reset ~= "" then
@@ -260,22 +343,28 @@ local function render()
       end
       table.insert(rows, { key = reading.label, value = value })
     end
+    if switchBusy then
+      table.insert(rows, { key = "status", value = detail })
+    end
     if expiringSoon() then
       table.insert(rows, { key = "token", value = "истекает — opencode-go-auth login" })
     end
     if refreshed then
       table.insert(rows, { key = "updated", value = noctalia.formatTime("%H:%M") })
     end
+    if CLICK_ACTION == "switch" then
+      table.insert(rows, { key = "клик", value = "переключить аккаунт" })
+    end
     barWidget.setTooltip(rows)
     return
   end
 
   if status == "setup" then
-    barWidget.setText(PREFIX .. " ⚙")
+    barWidget.setText(accountLabel() .. " ⚙")
   elseif status == "auth" then
-    barWidget.setText(PREFIX .. " ⚠")
+    barWidget.setText(accountLabel() .. " ⚠")
   else
-    barWidget.setText(PREFIX .. " !")
+    barWidget.setText(accountLabel() .. " !")
   end
   barWidget.setColor(COLOR_MUTED)
   barWidget.setTooltip({ { key = "OpenCode Go", value = detail } })
@@ -296,7 +385,6 @@ end
 local function finish(body)
   local parsed, err = parseStatus(body, nowUtc())
   if parsed == nil then
-    -- A tag of Unauthorized/Forbidden means the token, not the format.
     fail(err == "console: Unauthorized" and "auth" or "error", err or "не удалось прочитать лимиты")
     return
   end
@@ -304,9 +392,11 @@ local function finish(body)
   status = "ok"
   detail = ""
   refreshed = true
+  transitionalAccount = ""
+  switchBusy = false
   render()
   if manual then
-    noctalia.notify("OpenCode Go", summary())
+    noctalia.notify("OpenCode Go", accountLabel() .. " " .. summary())
     manual = false
   end
 end
@@ -316,6 +406,7 @@ local function fetch()
     return
   end
   lastAttempt = os.time()
+  loadActiveAccount()
   local org, token, expires = loadCredentials()
   loadedExpires = expires
   if org == nil then
@@ -369,16 +460,34 @@ function update()
 end
 
 function onClick()
-  manual = true
-  fetch()
+  if CLICK_ACTION == "refresh" then
+    manual = true
+    fetch()
+    return
+  end
+  local target = nextAccount()
+  if target == nil then
+    noctalia.notifyError("OpenCode Go", "настроен только один аккаунт — добавь второй: opencode-go-auth login --account b")
+    return
+  end
+  if target == activeAccount then
+    manual = true
+    fetch()
+    return
+  end
+  runSwitch(target)
 end
 
 function onIpc(event)
   if event == "refresh" then
     manual = true
     fetch()
+  elseif type(event) == "string" and event:match("^switched:") then
+    transitionalAccount = event:match("^switched:(.*)$")
+    fetch()
   end
 end
 
+loadActiveAccount()
 render()
 fetch()

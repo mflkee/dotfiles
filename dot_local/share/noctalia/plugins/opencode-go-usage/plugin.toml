@@ -5,22 +5,23 @@
 # in micro-cents; the widget shows used/limit for each (rolling 5h / weekly /
 # monthly).
 #
-# Credentials (org id + the OpenCode CLI's OAuth device token) are read from a
-# 0600 JSON file instead of Noctalia settings, so the token never lands in
-# settings.toml (which is world-readable):
-#   {"org_id": "wrk_...", "access_token": "...", "expires_at": 1793104191}
-# Produce them with `opencode-go-auth login`. Default location:
-# ~/.config/opencode-go/credentials.json
+# v1.2: аккаунты A/B. Активный аккаунт читается из
+#   ~/.config/opencode-go/current
+# Токены аккаунтов лежат в:
+#   ~/.config/opencode-go/accounts/<name>.json   (0600; создаёт opencode-go-auth)
+#   ~/.config/opencode-go/credentials.json       (копия активного для виджета)
+# Клик по виджету = переключение аккаунта (`opencode-go-auth use <next>`).
+# Продюсер токенов: `opencode-go-auth login --account <a|b>` (device flow).
 
 id = "mflkee/opencode-go-usage"
 name = "OpenCode Go Usage"
-version = "1.1.0"
+version = "1.2.0"
 plugin_api = 3
 author = "mflkee"
 license = "MIT"
 dependencies = []
 icon = "gauge"
-description = "Показывает лимиты OpenCode Go (rolling 5h / weekly / monthly) в баре."
+description = "Показывает лимиты OpenCode Go (rolling 5h / weekly / monthly) и переключает аккаунты A/B."
 tags = ["productivity", "ai"]
 
 [[widget]]
@@ -62,3 +63,22 @@ entry = "usage.luau"
   label_key = "settings.credentials_file.label"
   description_key = "settings.credentials_file.description"
   default = "~/.config/opencode-go/credentials.json"
+  advanced = true
+
+  [[widget.setting]]
+  key = "click_action"
+  type = "select"
+  label_key = "settings.click_action.label"
+  description_key = "settings.click_action.description"
+  default = "switch"
+    options = [
+      { value = "switch", label_key = "settings.click_action.option.switch" },
+      { value = "refresh", label_key = "settings.click_action.option.refresh" },
+    ]
+
+  [[widget.setting]]
+  key = "show_account"
+  type = "toggle"
+  label_key = "settings.show_account.label"
+  description_key = "settings.show_account.description"
+  default = true

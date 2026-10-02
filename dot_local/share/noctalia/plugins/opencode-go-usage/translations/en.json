@@ -1,24 +1,36 @@
 {
   "settings": {
     "label": {
-      "label": "Bar prefix",
-      "description": "Text shown before the percentage, e.g. OC"
+      "label": "Label",
+      "description": "Text shown when the account name is hidden"
     },
     "display": {
       "label": "Display",
-      "description": "Which limits to show in the bar itself; the tooltip always lists all three",
+      "description": "Show the worst meter only, or all of them",
       "option": {
-        "worst": "Most used limit only",
-        "all": "All three limits"
+        "worst": "Worst meter only",
+        "all": "All meters (5h · week · month)"
       }
     },
     "refresh_minutes": {
       "label": "Refresh interval (minutes)",
-      "description": "How often the console API is polled"
+      "description": "How often to re-fetch the limits"
     },
     "credentials_file": {
       "label": "Credentials file",
-      "description": "Path to a 0600 JSON file with {\"org_id\": ..., \"access_token\": ...}; falls back to the OPENCODE_GO_ORG / OPENCODE_GO_TOKEN env vars"
+      "description": "JSON with org_id / access_token for the active account"
+    },
+    "click_action": {
+      "label": "Click action",
+      "description": "What a click on the widget does",
+      "option": {
+        "switch": "Switch to the next account",
+        "refresh": "Refresh the data"
+      }
+    },
+    "show_account": {
+      "label": "Show account name",
+      "description": "Prefix the widget with the active account (A/B)"
     }
   }
 }

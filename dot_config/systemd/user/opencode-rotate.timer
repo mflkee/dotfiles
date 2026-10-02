@@ -1,0 +1,11 @@
+[Unit]
+Description=Toggle OpenCode Go account on the 1st and 16th of each month
+
+[Timer]
+OnCalendar=*-01 10:00:00
+OnCalendar=*-16 10:00:00
+Persistent=true
+Unit=opencode-rotate.service
+
+[Install]
+WantedBy=timers.target

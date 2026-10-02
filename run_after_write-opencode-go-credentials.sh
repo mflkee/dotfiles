@@ -3,29 +3,25 @@
 # Materialise the OpenCode Go widget credentials from secrets.zsh.
 # Managed by chezmoi
 #
-# The token lives in exactly one place in the repo: the encrypted
-# ~/.config/zsh/secrets.zsh. Noctalia does not read shell env, so on every
-# `chezmoi apply` (including the one dsync runs after a pull) this writes the
-# same three values out as the 0600 JSON the widget and `opencode-go-auth`
-# expect. Run on every apply on purpose: the trigger for a new token is a new
-# secrets.zsh, and chezmoi's run_onchange would only key off this script.
-#
-# Values are copied verbatim, never parsed as shell code, and the file is only
-# rewritten when the content actually changes so the widget's mtime stays put.
+# v2: аккаунты A/B. Токены лежат в зашифрованном ~/.config/zsh/secrets.zsh
+# (единственное место в репо). На каждом `chezmoi apply` этот скрипт пишет:
+#   accounts/<name>.json        для каждого аккаунта (ORG/TOKEN/EXPIRES_<NAME>)
+#   credentials.json            копия АКТИВНОГО аккаунта (виджет читает его)
+#   current                     имя активного аккаунта (создаётся, если нет)
+# Значения копируются дословно, никогда не парсятся как shell-код; файлы
+# переписываются только при изменении содержимого.
 
 set -uo pipefail
 
 SECRETS="${HOME}/.config/zsh/secrets.zsh"
-DIR="${HOME}/.config/opencode-go"
-CREDS="${DIR}/credentials.json"
+BASE="${HOME}/.config/opencode-go"
+DIR="${BASE}/accounts"
+CREDS="${BASE}/credentials.json"
+CURRENT_FILE="${BASE}/current"
 
 [ -f "$SECRETS" ] || exit 0
 
 read_secret() {
-  # Prints the value of the last matching `export NAME='...'` line, or nothing.
-  # Handles single quotes, double quotes and bare values, ignores commented-out
-  # lines. Values are base64/URL-safe by construction, so no quote can appear
-  # inside them; anything unexpected is skipped rather than guessed at.
   local name="$1" value
   value="$(sed -n "s/^[[:space:]]*export[[:space:]]\+${name}=//p" "$SECRETS" | tail -n 1)" || exit 0
   case "$value" in
@@ -38,36 +34,75 @@ read_secret() {
   [ -n "$value" ] && printf '%s' "$value"
 }
 
-org="$(read_secret OPENCODE_GO_ORG)"
-token="$(read_secret OPENCODE_GO_TOKEN)"
-expires="$(read_secret OPENCODE_GO_EXPIRES_AT)"
+write_json() {
+  local target="$1" org="$2" token="$3" expires="$4"
+  [ -n "$org" ] && [ -n "$token" ] || return 1
+  case "$expires" in
+    ''|*[!0-9]*) expires=0 ;;
+  esac
+  local tmp; tmp="$(mktemp "${target}.XXXXXX" 2>/dev/null)"
+  if command -v jq >/dev/null 2>&1; then
+    jq -n --arg org "$org" --arg token "$token" --argjson expires "$expires" \
+      '{org_id: $org, access_token: $token, expires_at: $expires}' >"$tmp" || { rm -f "$tmp"; return 1; }
+  else
+    printf '{"org_id":"%s","access_token":"%s","expires_at":%s}\n' \
+      "$org" "$token" "$expires" >"$tmp"
+  fi
+  chmod 600 "$tmp"
+  if [ ! -f "$target" ] || ! cmp -s "$tmp" "$target"; then
+    mv -f "$tmp" "$target"
+    chmod 600 "$target"
+  else
+    rm -f "$tmp"
+  fi
+  return 0
+}
 
-# No token (fresh machine before the first login, or after logout): leave
-# whatever is there alone rather than replacing it with an empty file.
-[ -n "$org" ] && [ -n "$token" ] || exit 0
-case "$expires" in
-  ''|*[!0-9]*) expires=0 ;;
-esac
-
-mkdir -p "$DIR" && chmod 700 "$DIR" || exit 0
-
+mkdir -p "$DIR" && chmod 700 "$BASE" 2>/dev/null || exit 0
 umask 077
-tmp="$(mktemp "${CREDS}.XXXXXX" 2>/dev/null)" || exit 0
-trap 'rm -f "$tmp"' EXIT
-if command -v jq >/dev/null 2>&1; then
-  jq -n --arg org "$org" --arg token "$token" --argjson expires "$expires" \
-    '{org_id: $org, access_token: $token, expires_at: $expires}' >"$tmp" || exit 0
-else
-  printf '{"org_id":"%s","access_token":"%s","expires_at":%s}\n' \
-    "$org" "$token" "$expires" >"$tmp"
+
+# Активный аккаунт (в v2 — OPENCODE_GO_CURRENT; легаси — просто первый).
+active="$(read_secret OPENCODE_GO_CURRENT)"
+[ -n "$active" ] || active=""
+
+names=""
+org="$(read_secret OPENCODE_GO_ORG_A)"; token="$(read_secret OPENCODE_GO_TOKEN_A)"
+expires="$(read_secret OPENCODE_GO_EXPIRES_A)"
+if [ -n "$org" ] && [ -n "$token" ]; then
+  write_json "${DIR}/a.json" "$org" "$token" "$expires" && names="$names a"
+fi
+org="$(read_secret OPENCODE_GO_ORG_B)"; token="$(read_secret OPENCODE_GO_TOKEN_B)"
+expires="$(read_secret OPENCODE_GO_EXPIRES_B)"
+if [ -n "$org" ] && [ -n "$token" ]; then
+  write_json "${DIR}/b.json" "$org" "$token" "$expires" && names="$names b"
 fi
 
-mkdir -p "$DIR" && chmod 700 "$DIR"
-if [ -f "$CREDS" ] && cmp -s "$tmp" "$CREDS"; then
-  exit 0
+# Легаси: если B нет, но есть старые OPENCODE_GO_ORG/TOKEN — это аккаунт a.
+if [ -z "$names" ]; then
+  org="$(read_secret OPENCODE_GO_ORG)"; token="$(read_secret OPENCODE_GO_TOKEN)"
+  expires="$(read_secret OPENCODE_GO_EXPIRES_AT)"
+  if [ -n "$org" ] && [ -n "$token" ]; then
+    write_json "${DIR}/a.json" "$org" "$token" "$expires" && names=" a"
+    [ -n "$active" ] || active="a"
+  fi
 fi
-mv -f "$tmp" "$CREDS"
-chmod 600 "$CREDS"
-trap - EXIT
-valid="$(date -d "@$expires" '+%Y-%m-%d' 2>/dev/null || echo '?')"
-echo "[chezmoi] wrote $CREDS from secrets.zsh (token valid until $valid)"
+
+[ -n "$names" ] || exit 0
+[ -n "$active" ] || active="$(printf '%s\n' $names | tr -d ' ' | head -c 1)"
+
+# credentials.json = копия активного (виджет не умеет в аккаунты).
+act_file="${DIR}/${active}.json"
+[ -f "$act_file" ] || act_file="$(ls "$DIR"/*.json 2>/dev/null | head -1)"
+[ -n "$act_file" ] && [ -f "$act_file" ] || exit 0
+org="$(jq -r '.org_id // empty' "$act_file" 2>/dev/null)"
+token="$(jq -r '.access_token // empty' "$act_file" 2>/dev/null)"
+expires="$(jq -r '.expires_at // 0' "$act_file" 2>/dev/null)"
+write_json "$CREDS" "$org" "$token" "$expires"
+
+# current: не затираем локально выбранный активный аккаунт.
+if [ ! -f "$CURRENT_FILE" ]; then
+  printf '%s\n' "$active" >"$CURRENT_FILE"
+  chmod 600 "$CURRENT_FILE"
+fi
+
+echo "[chezmoi] wrote accounts{${names// /,}} + credentials.json (active=$active)"

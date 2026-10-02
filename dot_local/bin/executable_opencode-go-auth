@@ -1,42 +1,50 @@
 #!/usr/bin/env bash
-# OpenCode Console credentials for the "OpenCode Go Usage" Noctalia widget.
+# OpenCode Go accounts for the "OpenCode Go Usage" Noctalia widget + CLI.
 #
-# The console has no public API for plan limits, but the web dashboard reads its
-# own endpoint: GET <console>/api/go/status with the OAuth device token the
-# OpenCode CLI uses. That is what the widget calls.
+# v2 — несколько аккаунтов (A/B …), быстрый свайп из бара и хоткеем.
 #
-#   opencode-go-auth login     device flow -> credentials.json
-#   opencode-go-auth status    print the current limits (same JSON the widget reads)
-#   opencode-go-auth sync      copy credentials.json into secrets.zsh and push
-#   opencode-go-auth logout    delete credentials.json
+# Каждый аккаунт = отдельный логин в opencode.ai/console (отдельный email) со
+# своей подпиской OpenCode Go (~1100₽/мес). Планируется полмесяца на одном,
+# полмесяца на другом; переключение занимает ~1 секунду.
 #
-# The device token is good for 30 days. There is no working renewal: the console
-# accepts grant_type=refresh_token for client_id=opencode-cli, but hands back an
-# access token that every console endpoint answers with 401 while still burning
-# the refresh token - so re-running `login` is the only way forward.
+# Хранилище (0600/0700):
+#   ~/.config/opencode-go/credentials.json     copy активного аккаунта (виджет читает его)
+#   ~/.config/opencode-go/current              имя активного аккаунта ("a" / "b")
+#   ~/.config/opencode-go/accounts/<name>.json токен аккаунта (org_id/access_token/expires_at)
+#   ~/.config/opencode-go/accounts/<name>.cli  id креда opencode CLI для аккаунта (опц.)
+#   ~/.config/opencode-go/switch-request       файл-запрос для systemd path unit (клик в баре)
 #
-# Credentials: ~/.config/opencode-go/credentials.json (0600, dir 0700)
-#   {"org_id":"wrk_...","access_token":"...","expires_at":1793104191}
+# Команды:
+#   opencode-go-auth login [--account NAME]    device flow -> accounts/NAME.json
+#   opencode-go-auth use NAME | toggle         переключить активный аккаунт
+#   opencode-go-auth apply [NAME]              идемпотентный коммит (используется path unit)
+#   opencode-go-auth list                      список аккаунтов + активный + срок токенов
+#   opencode-go-auth link NAME CLI_CRED_ID     привязать аккаунт к credential opencode CLI
+#   opencode-go-auth status [NAME]             лимиты Go-плана (как видит виджет)
+#   opencode-go-auth sync                      переписать secrets.zsh из accounts/
+#   opencode-go-auth logout [NAME]             удалить аккаунт
 #
-# The repository keeps the token in exactly one place: the chezmoi-encrypted
-# ~/.config/zsh/secrets.zsh. `login`/`logout` rewrite that block and re-encrypt
-# it, then push via dsync; a chezmoi run_after script on every machine
-# materialises credentials.json from those variables. Nothing else stores it.
+# Секреты в репо — только в зашифрованном ~/.config/zsh/secrets.zsh (chezmoi):
+#   OPENCODE_GO_ORG_A/TOKEN_A/EXPIRES_A, … и легаси-переменные активного
+#   (OPENCODE_GO_ORG/TOKEN/EXPIRES_AT) для старых машин.
 set -euo pipefail
 
 SERVER="${OPENCODE_GO_SERVER:-https://opencode.ai/console}"
-# Site root, e.g. https://opencode.ai - some console URLs come back root-relative
 ORIGIN="$(printf '%s' "$SERVER" | sed -E 's#^([a-z]+://[^/]+).*#\1#')"
 CLIENT_ID="${OPENCODE_GO_CLIENT_ID:-opencode-cli}"
-CREDS="${OPENCODE_GO_CREDS:-$HOME/.config/opencode-go/credentials.json}"
+BASE="${OPENCODE_GO_BASE:-$HOME/.config/opencode-go}"
+CREDS="${OPENCODE_GO_CREDS:-$BASE/credentials.json}"
+ACCOUNTS_DIR="${OPENCODE_GO_ACCOUNTS:-$BASE/accounts}"
+CURRENT_FILE="${OPENCODE_GO_CURRENT:-$BASE/current}"
+REQ_FILE="${OPENCODE_GO_REQ:-$BASE/switch-request}"
 API="$SERVER/api/go/status"
 TOKEN_URL="$SERVER/auth/device/token"
-UA="opencode-go-auth/1.0 (noctalia widget)"
+UA="opencode-go-auth/2.0 (noctalia widget)"
+NOTIFY=(notify-send -a "OpenCode Go")
 
 log()  { printf '%s\n' "$*" >&2; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
 
-# 1234567 -> "14d 6h"; negative input is clamped to 0.
 humanize() {
   local s="${1:-0}"
   [ "$s" -lt 0 ] && s=0
@@ -50,69 +58,153 @@ need() { command -v "$1" >/dev/null 2>&1 || die "$1 is required but not installe
 need curl
 need jq
 
-creds_field() {
-  [ -f "$CREDS" ] || return 1
-  local value
-  value="$(jq -r --arg k "$1" '.[$k] // empty' "$CREDS")"
-  [ -n "$value" ] || return 1
-  printf '%s' "$value"
+# ── accounts ──────────────────────────────────────────────────────────────────
+
+mkdir -p "$BASE" "$ACCOUNTS_DIR"
+chmod 700 "$BASE" "$ACCOUNTS_DIR"
+
+valid_name() {
+  case "$1" in
+    '' | *[!a-z0-9]*) return 1 ;;
+  esac
 }
 
-write_creds() {
-  local org="$1" access="$2" expires_at="$3"
-  mkdir -p "$(dirname "$CREDS")"
-  chmod 700 "$(dirname "$CREDS")"
-  local tmp
-  tmp="$(mktemp "${CREDS}.XXXXXX")"
+account_list() {
+  for f in "$ACCOUNTS_DIR"/*.json; do
+    [ -f "$f" ] || continue
+    printf '%s\n' "$(basename "$f" .json)"
+  done | sort
+}
+
+account_file()   { printf '%s/%s.json' "$ACCOUNTS_DIR" "$1"; }
+cli_cred_file()  { printf '%s/%s.cli' "$ACCOUNTS_DIR" "$1"; }
+
+account_field() {
+  local name="$1" field="$2"
+  jq -r --arg k "$field" '.[$k] // empty' "$(account_file "$name")"
+}
+
+active_name() {
+  [ -f "$CURRENT_FILE" ] || return 1
+  local n; n="$(cat "$CURRENT_FILE" 2>/dev/null || true)"
+  valid_name "$n" || return 1
+  printf '%s' "$n"
+}
+
+write_account() {
+  local name="$1" org="$2" access="$3" expires_at="$4"
+  valid_name "$name" || die "invalid account name: '$name' (use [a-z0-9])"
+  local tmp; tmp="$(mktemp "$(account_file "$name").XXXXXX")"
   chmod 600 "$tmp"
-  jq -n \
-    --arg org "$org" \
-    --arg access "$access" \
-    --argjson expires "$expires_at" \
-    '{org_id: $org, access_token: $access, expires_at: $expires}' \
-    >"$tmp"
-  mv -f "$tmp" "$CREDS"
+  jq -n --arg org "$org" --arg access "$access" --argjson expires "$expires_at" \
+    '{org_id: $org, access_token: $access, expires_at: $expires}' >"$tmp"
+  mv -f "$tmp" "$(account_file "$name")"
+  chmod 600 "$(account_file "$name")"
+}
+
+# Активный аккаунт: current-файл + копия в credentials.json (его читает виджет).
+set_current() {
+  local name="$1"
+  valid_name "$name" || die "invalid account name: '$name'"
+  [ -f "$(account_file "$name")" ] || die "no credentials for account '$name' — run: opencode-go-auth login --account $name"
+  local tmp; tmp="$(mktemp "${CURRENT_FILE}.XXXXXX")"
+  printf '%s\n' "$name" >"$tmp"
+  mv -f "$tmp" "$CURRENT_FILE"
+  chmod 600 "$CURRENT_FILE"
+  cp -f "$(account_file "$name")" "$CREDS"
   chmod 600 "$CREDS"
 }
 
-# ── secrets.zsh: the one place the token is stored in the repo ─────────────────
+# CLI-сторона: переключить активный credential интеграции opencode.
+cli_switch() {
+  local name="$1" cred
+  cred="$(cat "$(cli_cred_file "$name")" 2>/dev/null || true)"
+  [ -n "$cred" ] || return 2
+  if command -v opencode >/dev/null 2>&1; then
+    if opencode auth switch opencode "$cred" >/dev/null 2>&1; then
+      return 0
+    fi
+    return 3
+  fi
+  return 2
+}
+
+notify() {
+  local summary="$1" body="${2:-}"
+  if command -v notify-send >/dev/null 2>&1; then
+    "${NOTIFY[@]}" "$summary" "$body" >/dev/null 2>&1 || true
+  fi
+  if [ -n "$body" ]; then log "$summary: $body"; else log "$summary"; fi
+}
+
+# Попросить виджет обновиться (если ноутлишник запущен).
+refresh_widget() {
+  command -v noctalia >/dev/null 2>&1 || return 0
+  timeout 8 noctalia msg plugin mflkee/opencode-go-usage:usage all refresh >/dev/null 2>&1 || true
+}
+
+# ── commit: применить активный аккаунт (используется и `use`, и `apply`) ──────
+
+commit_switch() {
+  local name="$1" old=""
+  old="$(active_name 2>/dev/null || true)"
+  set_current "$name"
+  local cli_rc=0 msg=""
+  cli_switch "$name" || cli_rc=$?
+  if [ "$cli_rc" -eq 2 ]; then
+    msg="CLI-аккаунт не привязан (opencode-go-auth link $name <cred_id>) — только виджет"
+  elif [ "$cli_rc" -eq 3 ]; then
+    msg="CLI-switch не удался — виджет переключён, CLI остался на прежнем"
+  fi
+  rm -f "$REQ_FILE"
+  refresh_widget
+  if [ "$name" != "$old" ]; then
+    notify "OpenCode Go → $name" "$msg"
+  elif [ -n "$msg" ]; then
+    notify "OpenCode Go: $name уже активен ($(basename "$0") apply)" "$msg"
+  fi
+}
+
+# ── secrets.zsh: единственное место токенов в репо (chezmoi-encrypted) ───────
 
 SECRETS="${OPENCODE_GO_SECRETS:-$HOME/.config/zsh/secrets.zsh}"
 SECRETS_BEGIN="# >>> opencode-go-auth >>>"
 SECRETS_END="# <<< opencode-go-auth <<<"
 
-# Rewrites the managed block in secrets.zsh in place; everything outside the
-# markers is left alone. Written with awk rather than sed so the token is never
-# passed through a shell-quoting layer twice.
 sync_secrets() {
   [ -f "$SECRETS" ] || die "$SECRETS not found (run: chezmoi apply)"
 
-  local org access expires
-  org="$(creds_field org_id || true)"
-  access="$(creds_field access_token || true)"
-  expires="$(creds_field expires_at 2>/dev/null || echo 0)"
+  local names; names="$(account_list)"
+  [ -n "$names" ] || { sync_empty_block; return 0; }
 
-  # The console returns base64url/URL-safe values (letters, digits, `_-.`), so
-  # double quotes need no escaping. Anything else is refused instead of written
-  # out into a file that gets sourced by every shell.
-  for value in "$org" "$access" "$expires"; do
-    [ -n "$value" ] || continue
-    case "$value" in
-      *[!A-Za-z0-9_.:-]*) die "refusing to store a value with unexpected characters" ;;
-    esac
+  local lines="" name org access expires active line
+  active="$(active_name 2>/dev/null || printf '%s' "$(printf '%s\n' "$names" | head -1)")"
+  for name in $names; do
+    org="$(account_field "$name" org_id)"; access="$(account_field "$name" access_token)"
+    expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+    [ -n "$org" ] && [ -n "$access" ] || continue
+    UP="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
+    for value in "$org" "$access"; do
+      case "$value" in *[!A-Za-z0-9_.:-]*) die "refusing to store unexpected characters" ;; esac
+    done
+    [ "${expires:-0}" -gt 0 ] 2>/dev/null || expires=0
+    lines="$lines
+export OPENCODE_GO_ORG_$UP=\"$org\"
+export OPENCODE_GO_TOKEN_$UP=\"$access\"
+export OPENCODE_GO_EXPIRES_$UP=\"$expires\""
   done
+  [ -n "$lines" ] || { sync_empty_block; return 0; }
 
-  # No trailing newline in $block (command substitution strips it); awk adds it.
-  local block tmp
-  if [ -n "$org" ] && [ -n "$access" ]; then
-    block="$(printf '%s\nexport OPENCODE_GO_ORG="%s"\nexport OPENCODE_GO_TOKEN="%s"\nexport OPENCODE_GO_EXPIRES_AT="%s"\n%s' \
-      "$SECRETS_BEGIN" "$org" "$access" "$expires" "$SECRETS_END")"
-  else
-    block="$(printf '%s\n# no credentials - run: opencode-go-auth login\n%s' \
-      "$SECRETS_BEGIN" "$SECRETS_END")"
-  fi
+  local legacy_org legacy_token legacy_expires
+  legacy_org="$(account_field "$active" org_id)"; legacy_token="$(account_field "$active" access_token)"
+  legacy_expires="$(account_field "$active" expires_at 2>/dev/null || echo 0)"
+  [ "${legacy_expires:-0}" -gt 0 ] 2>/dev/null || legacy_expires=0
 
-  tmp="$(mktemp "${SECRETS}.XXXXXX")"
+  local block
+  block="$(printf '%s\nexport OPENCODE_GO_CURRENT="%s"%s\nexport OPENCODE_GO_ORG="%s"\nexport OPENCODE_GO_TOKEN="%s"\nexport OPENCODE_GO_EXPIRES_AT="%s"\n%s' \
+    "$SECRETS_BEGIN" "$active" "$lines" "$legacy_org" "$legacy_token" "$legacy_expires" "$SECRETS_END")"
+
+  local tmp; tmp="$(mktemp "${SECRETS}.XXXXXX")"
   {
     if grep -qF "$SECRETS_BEGIN" "$SECRETS"; then
       awk -v begin="$SECRETS_BEGIN" -v end="$SECRETS_END" -v block="$block" '
@@ -140,16 +232,41 @@ sync_secrets() {
   fi
 }
 
-# ── login: OAuth device flow ───────────────────────────────────────────────────
+sync_empty_block() {
+  local block tmp
+  block="$(printf '%s\n# no credentials - run: opencode-go-auth login\n%s' "$SECRETS_BEGIN" "$SECRETS_END")"
+  tmp="$(mktemp "${SECRETS}.XXXXXX")"
+  {
+    if grep -qF "$SECRETS_BEGIN" "$SECRETS"; then
+      awk -v begin="$SECRETS_BEGIN" -v end="$SECRETS_END" -v block="$block" '
+        index($0, begin) == 1 { printf "%s\n", block; skip = 1; next }
+        index($0, end) == 1   { skip = 0; next }
+        skip != 1             { print }
+      ' "$SECRETS"
+    else
+      cat "$SECRETS"
+      if [ -s "$SECRETS" ]; then printf '\n'; fi
+      printf '%s\n' "$block"
+    fi
+  } >"$tmp"
+  chmod --reference="$SECRETS" "$tmp"
+  mv -f "$tmp" "$SECRETS"
+}
+
+# ── login: OAuth device flow ──────────────────────────────────────────────────
 
 cmd_login() {
-  local code now
-  code="$(curl -sS -X POST "$SERVER/auth/device/code" \
-    -H 'Content-Type: application/json' \
-    -H "User-Agent: $UA" \
-    -d "{\"client_id\":\"$CLIENT_ID\",\"supports_org_scope\":true}")"
+  local name="${1:-}"
+  if [ -n "$name" ] && ! valid_name "$name"; then
+    die "invalid account name '$name' (use [a-z0-9])"
+  fi
+  [ -z "$name" ] && name="a"
+  [ "$(account_list | wc -l)" -eq 0 ] && name="a"
 
-  local device_code user_code url interval expires_in
+  local code user_code url interval expires_in device_code
+  code="$(curl -sS -X POST "$SERVER/auth/device/code" \
+    -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+    -d "{\"client_id\":\"$CLIENT_ID\",\"supports_org_scope\":true}")"
   device_code="$(printf '%s' "$code" | jq -r '.device_code // empty')"
   user_code="$(printf '%s' "$code" | jq -r '.user_code // empty')"
   url="$(printf '%s' "$code" | jq -r '.verification_uri_complete // empty')"
@@ -157,44 +274,37 @@ cmd_login() {
   expires_in="$(printf '%s' "$code" | jq -r '.expires_in // 600')"
   [ -n "$device_code" ] || die "device code request failed: $code"
 
-  # verification_uri_complete is site-root relative, not relative to $SERVER
-  case "$url" in
-    /*) url="$ORIGIN$url" ;;
-  esac
+  case "$url" in /*) url="$ORIGIN$url" ;; esac
 
   log ""
-  log "OpenCode Console authorization"
+  log "OpenCode Console authorization — аккаунт: $name"
   log "  code: $user_code"
   log "  open: $url"
   log ""
+  if command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1 || true; fi
 
-  if command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "$url" >/dev/null 2>&1 || true
-  fi
-
-  now="$(date +%s)"
-  local deadline=$((now + expires_in - 5))
+  local now deadline resp access org expires_at
+  now="$(date +%s)"; deadline=$((now + expires_in - 5))
   while [ "$(date +%s)" -lt "$deadline" ]; do
-    local resp
     resp="$(curl -sS -X POST "$TOKEN_URL" \
-      -H 'Content-Type: application/json' \
-      -H "User-Agent: $UA" \
+      -H 'Content-Type: application/json' -H "User-Agent: $UA" \
       -d "{\"grant_type\":\"urn:ietf:params:oauth:grant-type:device_code\",\"device_code\":\"$device_code\",\"client_id\":\"$CLIENT_ID\"}")"
-
     if printf '%s' "$resp" | jq -e '.access_token' >/dev/null 2>&1; then
-      local access org expires_at
       access="$(printf '%s' "$resp" | jq -r '.access_token')"
       org="$(printf '%s' "$resp" | jq -r '.org_id // empty')"
       expires_at=$(( $(date +%s) + $(printf '%s' "$resp" | jq -r '.expires_in // 0') ))
       [ -n "$org" ] || die "no org_id in the token response (is the account a member of a workspace?)"
-      write_creds "$org" "$access" "$expires_at"
-      log "saved $CREDS"
+      write_account "$name" "$org" "$access" "$expires_at"
+      if ! active_name >/dev/null 2>&1; then
+        set_current "$name"
+      fi
+      log "saved $(account_file "$name")"
       log "  org: $org"
       log "  valid until: $(date -d "@$expires_at" '+%Y-%m-%d %H:%M')"
       sync_secrets
+      refresh_widget
       return 0
     fi
-
     case "$(printf '%s' "$resp" | jq -r '.error // empty')" in
       authorization_pending) : ;;
       slow_down) interval=$((interval + 5)) ;;
@@ -205,12 +315,15 @@ cmd_login() {
   die "timed out waiting for approval"
 }
 
-# ── status: what the widget shows ─────────────────────────────────────────────
+# ── status: что показывает виджет ─────────────────────────────────────────────
 
 cmd_status() {
+  local name="${1:-}"
+  [ -z "$name" ] && { name="$(active_name 2>/dev/null || true)"; }
+  [ -n "$name" ] || die "no active account (run: opencode-go-auth login --account a)"
   local org access
-  org="$(creds_field org_id)" || die "no org_id in $CREDS (run: opencode-go-auth login)"
-  access="$(creds_field access_token)" || die "no access_token in $CREDS (run: opencode-go-auth login)"
+  org="$(account_field "$name" org_id)" || die "no org_id for '$name'"
+  access="$(account_field "$name" access_token)" || die "no access_token for '$name'"
 
   local body code
   body="$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $access" \
@@ -219,41 +332,131 @@ cmd_status() {
   body="${body%$'\n'*}"
 
   if [ "$code" = "401" ] || [ "$code" = "403" ]; then
-    die "HTTP $code - the console rejected the token; run: opencode-go-auth login"
+    die "HTTP $code — консоль отвергла токен аккаунта '$name'; обнови: opencode-go-auth login --account $name"
   fi
   [ "$code" = "200" ] || die "HTTP $code: $body"
 
   local expires
-  if expires="$(creds_field expires_at 2>/dev/null)" && [ "$expires" -gt 0 ] 2>/dev/null; then
-    printf 'token valid for %s more (%s)\n' \
-      "$(humanize $(( expires - $(date +%s) )))" \
+  if expires="$(account_field "$name" expires_at 2>/dev/null)" && [ "${expires:-0}" -gt 0 ] 2>/dev/null; then
+    printf 'account %s: token valid for %s more (%s)\n' \
+      "$name" "$(humanize $(( expires - $(date +%s) )))" \
       "$(date -d "@$expires" '+%Y-%m-%d %H:%M')" >&2
   fi
 
-  printf '%s' "$body" | jq -r '
-    .access.meters
-    | to_entries[]
-    | "\(.key)\t\((.value.usedMicroCents | tonumber) * 100 / ((.value.limitMicroCents | tonumber)) | floor)%\tresets=\(.value.resetsAt // "-")"
+  printf '%s\n' "$body" | jq -r '
+    .access.meters | to_entries[]
+    | "\(.key)\t\((.value.usedMicroCents | tonumber) * 100 / (.value.limitMicroCents | tonumber) | floor)%\tresets=\(.value.resetsAt // "-")"
   '
 }
 
-# ── logout ────────────────────────────────────────────────────────────────────
+# ── list ──────────────────────────────────────────────────────────────────────
+
+cmd_list() {
+  local active
+  active="$(active_name 2>/dev/null || true)"
+  local names; names="$(account_list)"
+  if [ -z "$names" ]; then
+    echo "accounts: none (run: opencode-go-auth login --account a)"
+    return 0
+  fi
+  local name org expires clicred clid
+  for name in $names; do
+    org="$(account_field "$name" org_id 2>/dev/null || true)"
+    expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+    clicred="$(cat "$(cli_cred_file "$name")" 2>/dev/null || true)"
+    clid=""; [ -n "$clicred" ] && clid="cli=$clicred"
+    local star=" "; [ "$name" = "$active" ] && star="*"
+    printf '%s%s\torg=%s\tcli_id=%s\texpires=%s\n' \
+      "$star" "$name" "${org:-?}" "${clid:-—}" \
+      "$([ "${expires:-0}" -gt 0 ] 2>/dev/null && date -d "@$expires" '+%Y-%m-%d' || echo 'нет')"
+  done
+  echo
+  echo "активный: ${active:-—}"
+}
+
+# ── use / toggle / apply ──────────────────────────────────────────────────────
+
+cmd_use() {
+  local name="$1"
+  valid_name "$name" || die "invalid account name '$name'"
+  [ -f "$(account_file "$name")" ] || die "no credentials for account '$name' — run: opencode-go-auth login --account $name"
+  commit_switch "$name"
+  echo "switched to $name"
+}
+
+cmd_toggle() {
+  local active next=""
+  active="$(active_name 2>/dev/null || true)"
+  local names; names="$(account_list)"
+  [ -n "$names" ] || die "no accounts configured (run: opencode-go-auth login --account a)"
+  local name
+  for name in $names; do
+    if [ -n "$active" ] && [ "$name" != "$active" ]; then next="$name"; break; fi
+  done
+  [ -n "$next" ] || next="$(printf '%s\n' "$names" | head -1)"
+  cmd_use "$next"
+}
+
+cmd_apply() {
+  local name="${1:-}"
+  [ -z "$name" ] && { name="$(active_name 2>/dev/null || true)"; }
+  [ -n "$name" ] || die "no active account set — run: opencode-go-auth use <name>"
+  [ -f "$(account_file "$name")" ] || die "no credentials for account '$name'"
+  commit_switch "$name"
+  echo "applied $name"
+}
+
+cmd_link() {
+  local name="$1" cred="$2"
+  valid_name "$name" || die "invalid account name '$name'"
+  [ -n "$cred" ] || die "usage: opencode-go-auth link <name> <cli_credential_id>"
+  local tmp; tmp="$(mktemp "$(cli_cred_file "$name").XXXXXX")"
+  printf '%s\n' "$cred" >"$tmp"
+  mv -f "$tmp" "$(cli_cred_file "$name")"
+  chmod 600 "$(cli_cred_file "$name")"
+  echo "linked $name -> opencode credential $cred"
+}
 
 cmd_logout() {
-  rm -f "$CREDS"
-  log "removed $CREDS"
-  # Drop the token from the repo too, otherwise the other machines keep showing
-  # limits for a workspace nobody is authorised for any more.
+  local name="${1:-}"
+  [ -z "$name" ] && { name="$(active_name 2>/dev/null || true)"; }
+  [ -n "$name" ] || die "no account name given and none active"
+  rm -f "$(account_file "$name")" "$(cli_cred_file "$name")"
+  log "removed account '$name'"
+  local active
+  active="$(active_name 2>/dev/null || true)"
+  if [ "$active" = "$name" ]; then
+    local next
+    next="$(account_list | head -1 || true)"
+    if [ -n "$next" ]; then
+      set_current "$next"
+      log "now active: $next"
+    else
+      rm -f "$CURRENT_FILE" "$CREDS"
+      log "no accounts left - removed current pointer"
+    fi
+  fi
   sync_secrets
 }
 
+# ── dispatch ──────────────────────────────────────────────────────────────────
+
 case "${1:-}" in
-  login)   cmd_login "${2:-}" ;;
-  status)  cmd_status ;;
-  sync)    sync_secrets ;;
-  logout)  cmd_logout ;;
+  login)
+    name=""
+    [ "${2:-}" = "--account" ] && name="${3:-}" && [ -n "$name" ] || name="${2:-}"
+    cmd_login "$name"
+    ;;
+  use)   cmd_use "${2:?usage: opencode-go-auth use <name|toggle>}" ;;
+  toggle) cmd_toggle ;;
+  apply) cmd_apply "${2:-}" ;;
+  list)  cmd_list ;;
+  link)  cmd_link "${2:-}" "${3:-}" ;;
+  status) cmd_status "${2:-}" ;;
+  sync)  sync_secrets ;;
+  logout) cmd_logout "${2:-}" ;;
   *)
-    sed -n '3,13p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 2
     ;;
 esac
