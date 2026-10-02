@@ -161,3 +161,19 @@ opencode-go-auth status                          # живой API, не видж
 <output> refresh`, затем `grep ocprobe ~/.cache/noctalia/noctalia.log`.
 `noctalia.log` принимает ровно один аргумент, а `notify` не пишется в
 `notifications.json` — читать текст виджета оттуда бесполезно.
+
+## Аккаунты A/B (v1.2)
+
+Виджет умеет быстро переключать аккаунты OpenCode Go.
+
+- Активный аккаунт — в `~/.config/opencode-go/current` (`a`/`b`); метка показывается в баре (`A …`/`B …`).
+- Токены аккаунтов — `~/.config/opencode-go/accounts/<name>.json` (создаёт `opencode-go-auth login --account <name>`, device flow).
+- Клик по виджету = переключение на следующий аккаунт (`opencode-go-auth use <next>`; хоткей в niri: `Mod+Ctrl+O`).
+- Полумесячная ротация (1-е и 16-е в 10:00) — systemd-таймер `opencode-rotate.timer`.
+
+```bash
+opencode-go-auth login --account b   # добавить второй аккаунт (браузер)
+opencode-go-auth use b               # переключиться на b
+opencode-go-auth toggle              # а/b снова (или хоткей Mod+Ctrl+O, или клик по виджету)
+opencode-go-auth list                # статус всех аккаунтов
+```
