@@ -16,14 +16,14 @@ export SECRETS="$HOME/.config/zsh/secrets.zsh"
 export OPENCODE_GO_BASE="$HOME/.config/opencode-go"
 export OPENCODE_GO_CREDS="$HOME/.config/opencode-go/credentials.json"
 export OPENCODE_GO_ACCOUNTS="$HOME/.config/opencode-go/accounts"
-export OPENCODE_GO_CURRENT="$HOME/.config/opencode-go/current"
+export OPENCODE_GO_CURRENT_FILE="$HOME/.config/opencode-go/current"
 export OPENCODE_GO_REQ="$HOME/.config/opencode-go/switch-request"
 mkdir -p "$HOME/.config/zsh" "$HOME/.config/opencode-go/accounts"
 export SYNC_FN="$work/sync_fn.sh"
 
 BASE="$OPENCODE_GO_BASE"
 ACCOUNTS_DIR="$OPENCODE_GO_ACCOUNTS"
-CURRENT_FILE="$OPENCODE_GO_CURRENT"
+CURRENT_FILE="$OPENCODE_GO_CURRENT_FILE"
 CREDS="$OPENCODE_GO_CREDS"
 
 # Only the pieces under test: the marker globals and sync_secrets + sync_empty_block.
@@ -33,7 +33,7 @@ log() { printf '%s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 BASE="${OPENCODE_GO_BASE:-$HOME/.config/opencode-go}"
 ACCOUNTS_DIR="${OPENCODE_GO_ACCOUNTS:-$BASE/accounts}"
-CURRENT_FILE="${OPENCODE_GO_CURRENT:-$BASE/current}"
+CURRENT_FILE="${OPENCODE_GO_CURRENT_FILE:-$BASE/current}"
 CREDS="${OPENCODE_GO_CREDS:-$BASE/credentials.json}"
 account_list() {
   for f in "$ACCOUNTS_DIR"/*.json; do

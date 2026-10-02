@@ -35,7 +35,11 @@ CLIENT_ID="${OPENCODE_GO_CLIENT_ID:-opencode-cli}"
 BASE="${OPENCODE_GO_BASE:-$HOME/.config/opencode-go}"
 CREDS="${OPENCODE_GO_CREDS:-$BASE/credentials.json}"
 ACCOUNTS_DIR="${OPENCODE_GO_ACCOUNTS:-$BASE/accounts}"
-CURRENT_FILE="${OPENCODE_GO_CURRENT:-$BASE/current}"
+# ВНИМАНИЕ:override именно *_FILE. Имя OPENCODE_GO_CURRENT занято secrets.zsh
+# и там означает ИМЯ активного аккаунта ("a"/"b"), а не путь. Когда скрипт
+# брал его как путь, указатель писался в ./a (CWD), current не менялся,
+# а виджет и CLI расходились: переключение «не работало».
+CURRENT_FILE="${OPENCODE_GO_CURRENT_FILE:-$BASE/current}"
 REQ_FILE="${OPENCODE_GO_REQ:-$BASE/switch-request}"
 API="$SERVER/api/go/status"
 TOKEN_URL="$SERVER/auth/device/token"
@@ -57,6 +61,12 @@ humanize() {
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 is required but not installed"; }
 need curl
 need jq
+
+# Страховка от повторения коллизии: указатель обязан лежать внутри $BASE.
+case "$CURRENT_FILE" in
+  "$BASE"/*) : ;;
+  *) die "OPENCODE_GO_CURRENT_FILE must be a path inside $BASE (got: $CURRENT_FILE)" ;;
+esac
 
 # ── accounts ──────────────────────────────────────────────────────────────────
 
