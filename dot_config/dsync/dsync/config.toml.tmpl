@@ -21,6 +21,16 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 post_pull = "chezmoi apply --force"
 
+# awgq: CLI + веб-панель. Явный проект — хаб раскатывает на весь флот
+# (git clone/pull с GitHub + post_pull бутстрап: venv, symlink, web-зависимости).
+# После первого pull на машине: `awgq web up` (один раз, спросит sudo → поставит
+# sudoers и включит автозапуск панели).
+[projects.awgq]
+path = "/home/mflkee/projects/awgq"
+branch = "main"
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+post_pull = "bash ~/projects/awgq/scripts/awgq-post-pull.sh"
+
 # ~/projects: КОНТРОЛЬ СОСТОЯНИЙ через dsync (без разворота содержимого).
 # Каждая машина при dsync push анонсирует состояния своих git-репо (ветка,
 # dirty, ahead/behind, url, последний коммит); hub копит их — смотришь в
