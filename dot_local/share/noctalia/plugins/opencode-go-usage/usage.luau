@@ -65,6 +65,12 @@ local activeAccount = ""
 local transitionalAccount = ""
 local switchBusy = false
 
+-- render определён ниже (секция rendering), но зовётся из runSwitch(),
+-- который объявлен раньше по тексту. Без форвард-декларации ссылка внутри
+-- runSwitch резолвилась в ГЛОБАЛЬНУЮ render (nil) → клик по виджету падал
+-- с "attempt to call a nil value" и аккаунты не переключались.
+local render
+
 -- ── account state ────────────────────────────────────────────────────────────
 
 local function loadActiveAccount()
@@ -108,10 +114,10 @@ local function nextAccount()
     end
   end
   if #names < 2 then
-    -- Fallback: жёсткая пара a/b (тестовая совместимость с пустым listDir)
+    -- Fallback: жёсткая пара a/b. API v5.2.1 — fileExists (noctalia.exists нет).
     names = {}
-    if noctalia.exists(ACCOUNTS_DIR .. "/a.json") then table.insert(names, "a") end
-    if noctalia.exists(ACCOUNTS_DIR .. "/b.json") then table.insert(names, "b") end
+    if noctalia.fileExists(ACCOUNTS_DIR .. "/a.json") then table.insert(names, "a") end
+    if noctalia.fileExists(ACCOUNTS_DIR .. "/b.json") then table.insert(names, "b") end
   end
   table.sort(names)
   if #names < 2 then
@@ -313,7 +319,7 @@ local function expiringSoon()
   return expires - os.time() < 3 * 86400
 end
 
-local function render()
+render = function()
   if status == "ok" and #readings > 0 then
     local top = worst(readings)
     local prefix = SHOW_ACCOUNT and accountLabel() or PREFIX
@@ -491,3 +497,4 @@ end
 loadActiveAccount()
 render()
 fetch()
+

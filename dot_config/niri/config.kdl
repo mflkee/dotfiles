@@ -371,8 +371,18 @@ binds {
     }
     // Аварийный выход из залипшего локскрина: allow-when-locked нужен, чтобы
     // хоткей срабатывал, когда сессия уже залочена (niri иначе не передаёт
-    // клавиши клиентам под локом). Рестарт оболочки рвёт ext-session-lock.
-    // Mod+Ctrl+Shift+L занят move-column-to-monitor-right, поэтому Ctrl+Alt+Shift+L.
+    // клавиши клиентам под локом). Mod+Ctrl+Shift+L занят
+    // move-column-to-monitor-right, поэтому Ctrl+Alt+Shift+L.
+    //
+    // Два хоткея, потому что отказывают они по-разному:
+    //   U — снимает secure-состояние сессии через loginctl (работает всегда,
+    //       даже если клиент лока мёртв и рисует пустоту). Если loginctl не
+    //       справился — fallback рестартом оболочки.
+    //   L — просто перезапускает Noctalia: нужно, когда локскрин есть, но
+    //       ввод в него не доходит.
+    Ctrl+Alt+Shift+U allow-when-locked=true hotkey-overlay-title="Emergency Unlock (loginctl unlock-session)" {
+        spawn-sh "loginctl unlock-session 2>/dev/null || systemctl --user restart noctalia-shell.service"
+    }
     Ctrl+Alt+Shift+L allow-when-locked=true hotkey-overlay-title="Emergency Unlock (restart Noctalia)" {
         spawn-sh "systemctl --user restart noctalia-shell.service"
     }
