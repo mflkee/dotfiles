@@ -17,7 +17,6 @@ export OPENCODE_GO_BASE="$HOME/.config/opencode-go"
 export OPENCODE_GO_CREDS="$HOME/.config/opencode-go/credentials.json"
 export OPENCODE_GO_ACCOUNTS="$HOME/.config/opencode-go/accounts"
 export OPENCODE_GO_CURRENT_FILE="$HOME/.config/opencode-go/current"
-export OPENCODE_GO_REQ="$HOME/.config/opencode-go/switch-request"
 mkdir -p "$HOME/.config/zsh" "$HOME/.config/opencode-go/accounts"
 export SYNC_FN="$work/sync_fn.sh"
 

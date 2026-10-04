@@ -140,20 +140,27 @@ Settings → Bar → добавить виджет.
 
 ## Управление
 
-- Левый клик по виджету — принудительное обновление (с уведомлением).
+- Левый клик — по настройке `click_action`: `switch` (по умолчанию) переключает
+  на следующий аккаунт, `refresh` — принудительно обновляет данные.
 - Средний клик — стандартно открывает настройки этого виджета.
 - `noctalia msg plugin mflkee/opencode-go-usage:usage eDP-1 refresh` — обновить
   из терминала (можно повесить на биндинг niri).
 - `display = "all"` в настройках виджета — показывать в баре все три лимита
   вместо самого загруженного (`worst`).
 
+Если сеть/сервер отвалились, виджет **не теряет последние удачные цифры**:
+показывает их приглушённо и пишет в тултипе «нет свежих данных · последние в
+HH:MM». Раньше на любой сетевой сбой вместо чисел появлялся `!`.
+
+
 ## Проверка изменений
 
 ```bash
 noctalia plugins lint ~/.local/share/noctalia/plugins/opencode-go-usage/
-lua5.4 /tmp/opencode/test_usage.lua              # 12 сценариев на стабах API
-bash ~/dotfiles/test_write-opencode-go-credentials.sh   # 16 сценариев на secrets.zsh
+lua5.4 ~/dotfiles/test_usage.lua                 # 18 сценариев на стабах API
+bash ~/dotfiles/test_write-opencode-go-credentials.sh   # 13 сценариев на secrets.zsh
 opencode-go-auth status                          # живой API, не виджет
+opencode-go-auth status --json | jq .            # то же машинно-читаемо
 ```
 
 Про виджет на живой машине: временная строчка `noctalia.log(<summary>)` рядом с
@@ -169,11 +176,38 @@ opencode-go-auth status                          # живой API, не видж
 - Активный аккаунт — в `~/.config/opencode-go/current` (`a`/`b`); метка показывается в баре (`A …`/`B …`).
 - Токены аккаунтов — `~/.config/opencode-go/accounts/<name>.json` (создаёт `opencode-go-auth login --account <name>`, device flow).
 - Клик по виджету = переключение на следующий аккаунт (`opencode-go-auth use <next>`; хоткей в niri: `Mod+Ctrl+O`).
-- Полумесячная ротация (1-е и 16-е в 10:00) — systemd-таймер `opencode-rotate.timer`.
+- Полумесячная ротация (1-е и 16-е в 10:00) — systemd-таймер `opencode-rotate.timer`,
+  который зовёт `opencode-go-auth rotate`.
+
+### Ротация идемпотентна (не `toggle`)
+
+`rotate` **вычисляет** аккаунт по половине месяца (1–15 → `a`, 16–конец → `b`) и не
+зависит от текущего состояния. Поэтому повторный запуск ничего не меняет, а все
+машины с включённым таймером сходятся к одному аккаунту. Раньше таймер звал
+`toggle` («флип» a↔b): если машины рассинхронились или таймер срабатывал
+`Persistent` после сна, получался двойной флип и машины уезжали на разные
+аккаунты. `toggle` остался как ручная команда (хоткей/клик).
+
+`use`, `toggle` и `rotate` обновляют блок в `secrets.zsh` (без `dsync push`), так
+что активный аккаунт и легаси-переменные доезжают до остальных машин. После
+`chezmoi apply` скрипт материализации выравнивает локальный `current` по
+`secrets.zsh` и best-effort переключает CLI этой машины (`opencode-go-auth apply`;
+отключить — `OPENCODE_GO_NO_CLI_SWITCH=1`).
+
+### Токен: напоминание об истечении
+
+Токены живут 30 дней и автоматически не обновляются (refresh не работает — см.
+выше). Кроме жёлтого виджета за 3 дня, ежедневный таймер
+`opencode-go-tokencheck.timer` зовёт `opencode-go-auth check` и шлёт
+`notify-send`, если до истечения меньше 3 суток. Это работает и на машинах без
+бара.
 
 ```bash
 opencode-go-auth login --account b   # добавить второй аккаунт (браузер)
 opencode-go-auth use b               # переключиться на b
 opencode-go-auth toggle              # а/b снова (или хоткей Mod+Ctrl+O, или клик по виджету)
+opencode-go-auth rotate              # выставить аккаунт по половине месяца (идемпотентно)
+opencode-go-auth check               # предупредить, если токен скоро истечёт
 opencode-go-auth list                # статус всех аккаунтов
 ```
+

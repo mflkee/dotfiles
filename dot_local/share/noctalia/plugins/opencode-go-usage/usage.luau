@@ -412,6 +412,8 @@ local function finish(body)
   status = "ok"
   detail = ""
   refreshed = true
+  updatedAt = os.time()
+  staleAt = 0
   transitionalAccount = ""
   switchBusy = false
   render()

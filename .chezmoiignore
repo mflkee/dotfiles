@@ -61,3 +61,6 @@ dot_config/dsync/dsync/tokens.toml
 # Test harness for run_after_write-opencode-go-credentials.sh: lives in the repo
 # for reference, never deployed to $HOME.
 test_write-opencode-go-credentials.sh
+# Test harness for the Noctalia widget (usage.luau): stubs the noctalia API and
+# asserts the render/stale logic. Run: lua5.4 test_usage.lua
+test_usage.lua
