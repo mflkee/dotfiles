@@ -1,0 +1,64 @@
+# awgq VPN — виджет бара Noctalia (AmneziaWG).
+#
+# Показывает состояние туннеля `awg-quick@wg0.service`: включён/выключен,
+# активный конфиг и внутренний IP. Левый клик — `awgq toggle` (сам поднимает
+# маршруты NetBird), правый — всплывающая сводка, IPC `toggle/on/off/refresh`.
+#
+# Статус читается дешёвыми командами (systemctl is-active + readlink + ip),
+# без запуска `awgq status` (~1 c). Тогл — через `awgq`, чтобы отработал
+# netbird-fix. Локальный плагин: ~/.local/share/noctalia/plugins/awgq/.
+
+id = "mflkee/awgq"
+name = "awgq VPN"
+version = "1.0.0"
+plugin_api = 3
+author = "mflkee"
+license = "MIT"
+icon = "shield-lock"
+description = "Статус AmneziaWG и управление туннелем из бара: ON/OFF, активный конфиг, IP."
+tags = ["network", "privacy", "system"]
+
+[[widget]]
+id = "vpn"
+entry = "awgq.luau"
+
+  [[widget.setting]]
+  key = "show_config"
+  type = "toggle"
+  label_key = "settings.show_config.label"
+  description_key = "settings.show_config.description"
+  default = true
+
+  [[widget.setting]]
+  key = "refresh_seconds"
+  type = "int"
+  label_key = "settings.refresh_seconds.label"
+  description_key = "settings.refresh_seconds.description"
+  default = 3
+  min = 1
+  max = 60
+  step = 1
+
+  [[widget.setting]]
+  key = "unit"
+  type = "string"
+  label_key = "settings.unit.label"
+  description_key = "settings.unit.description"
+  default = "awg-quick@wg0.service"
+  advanced = true
+
+  [[widget.setting]]
+  key = "interface"
+  type = "string"
+  label_key = "settings.interface.label"
+  description_key = "settings.interface.description"
+  default = "wg0"
+  advanced = true
+
+  [[widget.setting]]
+  key = "symlink"
+  type = "string"
+  label_key = "settings.symlink.label"
+  description_key = "settings.symlink.description"
+  default = "/etc/amnezia/amneziawg/wg0.conf"
+  advanced = true
