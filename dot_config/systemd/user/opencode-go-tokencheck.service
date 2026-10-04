@@ -1,0 +1,6 @@
+[Unit]
+Description=Warn when an OpenCode Go token is about to expire
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/opencode-go-auth check

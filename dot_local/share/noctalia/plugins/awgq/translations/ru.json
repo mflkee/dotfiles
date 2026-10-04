@@ -1,0 +1,43 @@
+{
+  "status": {
+    "on": "ВКЛ",
+    "off": "ВЫКЛ",
+    "busy": "…"
+  },
+  "tooltip": {
+    "status": "Статус",
+    "config": "Конфиг",
+    "ip": "IP",
+    "detail": "Ошибка",
+    "click": "Клик",
+    "click_action": "переключить VPN"
+  },
+  "notify": {
+    "title": "awgq VPN"
+  },
+  "errors": {
+    "toggle": "Не удалось переключить VPN"
+  },
+  "settings": {
+    "show_config": {
+      "label": "Показывать активный конфиг",
+      "description": "Показывать имя активного AWG-конфига вместо просто ВКЛ"
+    },
+    "refresh_seconds": {
+      "label": "Интервал обновления (секунды)",
+      "description": "Как часто перепроверять состояние туннеля"
+    },
+    "unit": {
+      "label": "systemd-юнит",
+      "description": "Юнит сервиса VPN, напр. awg-quick@wg0.service"
+    },
+    "interface": {
+      "label": "Интерфейс",
+      "description": "Сетевой интерфейс туннеля, напр. wg0"
+    },
+    "symlink": {
+      "label": "Симлинк активного конфига",
+      "description": "Симлинк, указывающий на активный файл конфига"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily OpenCode Go token expiry check
+
+[Timer]
+OnCalendar=*-*-* 09:30:00
+Persistent=true
+Unit=opencode-go-tokencheck.service
+
+[Install]
+WantedBy=timers.target

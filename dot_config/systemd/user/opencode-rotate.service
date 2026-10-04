@@ -1,8 +1,8 @@
 [Unit]
-Description=Rotate OpenCode Go account (half-month cycle)
+Description=Set the OpenCode Go account for the current half-month (idempotent)
 PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/opencode-go-auth toggle
+ExecStart=%h/.local/bin/opencode-go-auth rotate

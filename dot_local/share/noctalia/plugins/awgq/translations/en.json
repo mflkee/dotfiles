@@ -1,0 +1,43 @@
+{
+  "status": {
+    "on": "ON",
+    "off": "OFF",
+    "busy": "…"
+  },
+  "tooltip": {
+    "status": "Status",
+    "config": "Config",
+    "ip": "IP",
+    "detail": "Detail",
+    "click": "Click",
+    "click_action": "toggle VPN"
+  },
+  "notify": {
+    "title": "awgq VPN"
+  },
+  "errors": {
+    "toggle": "Failed to toggle the VPN"
+  },
+  "settings": {
+    "show_config": {
+      "label": "Show active config",
+      "description": "Display the active AWG config name instead of just ON"
+    },
+    "refresh_seconds": {
+      "label": "Refresh interval (seconds)",
+      "description": "How often the tunnel state is re-checked"
+    },
+    "unit": {
+      "label": "systemd unit",
+      "description": "VPN service unit, e.g. awg-quick@wg0.service"
+    },
+    "interface": {
+      "label": "Interface",
+      "description": "Tunnel network interface, e.g. wg0"
+    },
+    "symlink": {
+      "label": "Active config symlink",
+      "description": "Symlink pointing at the active config file"
+    }
+  }
+}

@@ -99,10 +99,31 @@ token="$(jq -r '.access_token // empty' "$act_file" 2>/dev/null)"
 expires="$(jq -r '.expires_at // 0' "$act_file" 2>/dev/null)"
 write_json "$CREDS" "$org" "$token" "$expires"
 
-# current: не затираем локально выбранный активный аккаунт.
-if [ ! -f "$CURRENT_FILE" ]; then
-  printf '%s\n' "$active" >"$CURRENT_FILE"
-  chmod 600 "$CURRENT_FILE"
+# current: держим в соответствии с secrets (OPENCODE_GO_CURRENT — источник истины
+# для флота). Пишем только при изменении содержимого.
+if [ "$(cat "$CURRENT_FILE" 2>/dev/null || true)" != "$active" ]; then
+  tmp="$(mktemp "${CURRENT_FILE}.XXXXXX" 2>/dev/null)" || tmp="${CURRENT_FILE}.tmp"
+  if printf '%s\n' "$active" >"$tmp" 2>/dev/null; then
+    chmod 600 "$tmp" 2>/dev/null || true
+    mv -f "$tmp" "$CURRENT_FILE" 2>/dev/null || rm -f "$tmp"
+  else
+    rm -f "$tmp"
+  fi
+fi
+
+# Best-effort: привести opencode CLI ЭТОЙ машины к активному аккаунту, но только
+# когда аккаунт менялся с прошлого apply (маркер .cli-applied) и есть чем
+# переключать. OPENCODE_GO_NO_CLI_SWITCH=1 отключает.
+if [ "${OPENCODE_GO_NO_CLI_SWITCH:-0}" != "1" ] \
+   && command -v opencode >/dev/null 2>&1 \
+   && [ -f "${DIR}/${active}.cli" ] \
+   && [ -x "${HOME}/.local/bin/opencode-go-auth" ]; then
+  marker="${BASE}/.cli-applied"
+  if [ "$(cat "$marker" 2>/dev/null || true)" != "$active" ]; then
+    if "${HOME}/.local/bin/opencode-go-auth" apply >/dev/null 2>&1; then
+      printf '%s\n' "$active" >"$marker" 2>/dev/null || true
+    fi
+  fi
 fi
 
 echo "[chezmoi] wrote accounts{${names// /,}} + credentials.json (active=$active)"

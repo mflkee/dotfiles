@@ -24,7 +24,7 @@ entry = "awgq.luau"
 
   [[widget.setting]]
   key = "show_config"
-  type = "toggle"
+  type = "bool"
   label_key = "settings.show_config.label"
   description_key = "settings.show_config.description"
   default = true

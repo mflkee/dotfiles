@@ -12,17 +12,22 @@
 #   ~/.config/opencode-go/current              имя активного аккаунта ("a" / "b")
 #   ~/.config/opencode-go/accounts/<name>.json токен аккаунта (org_id/access_token/expires_at)
 #   ~/.config/opencode-go/accounts/<name>.cli  id креда opencode CLI для аккаунта (опц.)
-#   ~/.config/opencode-go/switch-request       файл-запрос для systemd path unit (клик в баре)
 #
 # Команды:
 #   opencode-go-auth login [--account NAME]    device flow -> accounts/NAME.json
-#   opencode-go-auth use NAME | toggle         переключить активный аккаунт
-#   opencode-go-auth apply [NAME]              идемпотентный коммит (используется path unit)
+#   opencode-go-auth use NAME | toggle         переключить активный аккаунт (ручной флип)
+#   opencode-go-auth rotate                    выставить аккаунт по половине месяца (идемпотентно)
+#   opencode-go-auth apply [NAME]              привести ЭТУ машину к активному (файлы + CLI)
 #   opencode-go-auth list                      список аккаунтов + активный + срок токенов
 #   opencode-go-auth link NAME CLI_CRED_ID     привязать аккаунт к credential opencode CLI
-#   opencode-go-auth status [NAME]             лимиты Go-плана (как видит виджет)
+#   opencode-go-auth status [--json] [NAME]    лимиты Go-плана (как видит виджет)
+#   opencode-go-auth check [SECONDS]           уведомить, если токен скоро истекает
 #   opencode-go-auth sync                      переписать secrets.zsh из accounts/
 #   opencode-go-auth logout [NAME]             удалить аккаунт
+#
+# use/toggle/rotate обновляют блок в secrets.zsh (без dsync push): так активный
+# аккаунт и легаси-переменные доезжают до остальных машин, а `apply` после pull
+# приводит их CLI к тому же аккаунту.
 #
 # Секреты в репо — только в зашифрованном ~/.config/zsh/secrets.zsh (chezmoi):
 #   OPENCODE_GO_ORG_A/TOKEN_A/EXPIRES_A, … и легаси-переменные активного
@@ -40,7 +45,6 @@ ACCOUNTS_DIR="${OPENCODE_GO_ACCOUNTS:-$BASE/accounts}"
 # брал его как путь, указатель писался в ./a (CWD), current не менялся,
 # а виджет и CLI расходились: переключение «не работало».
 CURRENT_FILE="${OPENCODE_GO_CURRENT_FILE:-$BASE/current}"
-REQ_FILE="${OPENCODE_GO_REQ:-$BASE/switch-request}"
 API="$SERVER/api/go/status"
 TOKEN_URL="$SERVER/auth/device/token"
 UA="opencode-go-auth/2.0 (noctalia widget)"
@@ -166,7 +170,6 @@ commit_switch() {
   elif [ "$cli_rc" -eq 3 ]; then
     msg="CLI-switch не удался — виджет переключён, CLI остался на прежнем"
   fi
-  rm -f "$REQ_FILE"
   refresh_widget
   if [ "$name" != "$old" ]; then
     notify "OpenCode Go → $name" "$msg"
@@ -182,6 +185,7 @@ SECRETS_BEGIN="# >>> opencode-go-auth >>>"
 SECRETS_END="# <<< opencode-go-auth <<<"
 
 sync_secrets() {
+  local nopush="${1:-}"
   [ -f "$SECRETS" ] || die "$SECRETS not found (run: chezmoi apply)"
 
   local names; names="$(account_list)"
@@ -236,7 +240,7 @@ export OPENCODE_GO_EXPIRES_$UP=\"$expires\""
       && log "re-encrypted $SECRETS into ~/dotfiles" \
       || log "warning: chezmoi re-add failed for $SECRETS"
   fi
-  if [ "${OPENCODE_GO_NO_PUSH:-0}" != "1" ] && command -v dsync >/dev/null 2>&1; then
+  if [ "$nopush" != "nopush" ] && [ "${OPENCODE_GO_NO_PUSH:-0}" != "1" ] && command -v dsync >/dev/null 2>&1; then
     log "pushing the new token to the other machines (dsync push)"
     dsync push >/dev/null 2>&1 || log "warning: dsync push failed - run it by hand"
   fi
@@ -328,12 +332,19 @@ cmd_login() {
 # ── status: что показывает виджет ─────────────────────────────────────────────
 
 cmd_status() {
-  local name="${1:-}"
+  local json=0 name="" arg
+  for arg in "$@"; do
+    case "$arg" in
+      --json) json=1 ;;
+      -h|--help) printf 'usage: opencode-go-auth status [--json] [NAME]\n'; return 0 ;;
+      *) name="$arg" ;;
+    esac
+  done
   [ -z "$name" ] && { name="$(active_name 2>/dev/null || true)"; }
   [ -n "$name" ] || die "no active account (run: opencode-go-auth login --account a)"
   local org access
-  org="$(account_field "$name" org_id)" || die "no org_id for '$name'"
-  access="$(account_field "$name" access_token)" || die "no access_token for '$name'"
+  org="$(account_field "$name" org_id)"; [ -n "$org" ] || die "no org_id for '$name'"
+  access="$(account_field "$name" access_token)"; [ -n "$access" ] || die "no access_token for '$name'"
 
   local body code
   body="$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $access" \
@@ -347,7 +358,27 @@ cmd_status() {
   [ "$code" = "200" ] || die "HTTP $code: $body"
 
   local expires
-  if expires="$(account_field "$name" expires_at 2>/dev/null)" && [ "${expires:-0}" -gt 0 ] 2>/dev/null; then
+  expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+  case "$expires" in ''|*[!0-9]*) expires=0 ;; esac
+
+  if [ "$json" = "1" ]; then
+    printf '%s\n' "$body" | jq -c --arg account "$name" --arg org "$org" \
+      --argjson expires "$expires" --argjson now "$(date +%s)" '
+      { account: $account, org_id: $org, expires_at: $expires,
+        expires_in: (($expires - $now) | if . > 0 then . else 0 end),
+        meters: (.access.meters | with_entries(
+          .value |= {
+            used:    (.usedMicroCents  | tonumber),
+            limit:   (.limitMicroCents | tonumber),
+            percent: (if (.limitMicroCents | tonumber) > 0
+                      then (((.usedMicroCents | tonumber) * 100 / (.limitMicroCents | tonumber)) | floor)
+                      else 0 end),
+            resets_at: (.resetsAt // null)
+          })) }'
+    return 0
+  fi
+
+  if [ "$expires" -gt 0 ]; then
     printf 'account %s: token valid for %s more (%s)\n' \
       "$name" "$(humanize $(( expires - $(date +%s) )))" \
       "$(date -d "@$expires" '+%Y-%m-%d %H:%M')" >&2
@@ -391,6 +422,7 @@ cmd_use() {
   valid_name "$name" || die "invalid account name '$name'"
   [ -f "$(account_file "$name")" ] || die "no credentials for account '$name' — run: opencode-go-auth login --account $name"
   commit_switch "$name"
+  [ -f "$SECRETS" ] && sync_secrets nopush || true
   echo "switched to $name"
 }
 
@@ -405,6 +437,55 @@ cmd_toggle() {
   done
   [ -n "$next" ] || next="$(printf '%s\n' "$names" | head -1)"
   cmd_use "$next"
+}
+
+# Индекс половины месяца — монотонно растёт каждые 1–15 / 16–конец и НЕ зависит
+# от текущего состояния. Поэтому rotate идемпотентен: повтор ничего не меняет,
+# а две машины сходятся к одному аккаунту. `toggle` же «флипает» и может
+# сдвоиться (a→b на ноуте и b→a на десктопе даст рассинхрон).
+half_month_index() {
+  local y m d
+  y="$(date +%Y)"; m="$(date +%-m)"; d="$(date +%-d)"
+  printf '%s' "$(( y * 24 + (m - 1) * 2 + (d >= 16 ? 1 : 0) ))"
+}
+
+cmd_rotate() {
+  local names; names="$(account_list)"
+  [ -n "$names" ] || die "no accounts configured (run: opencode-go-auth login --account a)"
+  local count idx target
+  count="$(printf '%s\n' "$names" | grep -c .)"
+  idx="$(( $(half_month_index) % count ))"
+  target="$(printf '%s\n' "$names" | sed -n "$(( idx + 1 ))p")"
+  [ -n "$target" ] || die "cannot pick an account"
+  if [ "$target" = "$(active_name 2>/dev/null || true)" ]; then
+    log "rotate: $target уже активен (половина $(date +%Y-%m-%d))"
+    printf 'active %s\n' "$target"
+    return 0
+  fi
+  cmd_use "$target"
+}
+
+# Уведомить, если токен аккаунта скоро истечёт (по умолчанию за 3 суток).
+# Работает и без виджета: дергается systemd-таймером opencode-go-tokencheck.
+cmd_check() {
+  local threshold="${1:-259200}"
+  case "$threshold" in ''|*[!0-9]*) threshold=259200 ;; esac
+  local names; names="$(account_list)"
+  [ -n "$names" ] || return 0
+  local now; now="$(date +%s)"
+  local name expires left
+  for name in $names; do
+    expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+    case "$expires" in ''|*[!0-9]*) expires=0 ;; esac
+    [ "$expires" -gt 0 ] || continue
+    left="$(( expires - now ))"
+    if [ "$left" -le 0 ]; then
+      notify "OpenCode Go: токен '$name' истёк" "opencode-go-auth login --account $name"
+    elif [ "$left" -lt "$threshold" ]; then
+      notify "OpenCode Go: токен '$name' истекает через $(humanize "$left")" "opencode-go-auth login --account $name"
+    fi
+  done
+  return 0
 }
 
 cmd_apply() {
@@ -457,16 +538,18 @@ case "${1:-}" in
     [ "${2:-}" = "--account" ] && name="${3:-}" && [ -n "$name" ] || name="${2:-}"
     cmd_login "$name"
     ;;
-  use)   cmd_use "${2:?usage: opencode-go-auth use <name|toggle>}" ;;
+  use)   cmd_use "${2:?usage: opencode-go-auth use <name>}" ;;
   toggle) cmd_toggle ;;
+  rotate) cmd_rotate ;;
+  check) cmd_check "${2:-}" ;;
   apply) cmd_apply "${2:-}" ;;
   list)  cmd_list ;;
   link)  cmd_link "${2:-}" "${3:-}" ;;
-  status) cmd_status "${2:-}" ;;
+  status) shift; cmd_status "$@" ;;
   sync)  sync_secrets ;;
   logout) cmd_logout "${2:-}" ;;
   *)
-    sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//' >&2
+    sed -n '3,/^set -euo pipefail/p' "$0" | sed 's/^# \{0,1\}//' >&2
     exit 2
     ;;
 esac

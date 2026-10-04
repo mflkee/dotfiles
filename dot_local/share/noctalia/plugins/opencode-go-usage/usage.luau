@@ -57,6 +57,7 @@ local readings = {}
 local status = "setup"
 local detail = ""
 local refreshed = false
+local updatedAt = 0
 local lastAttempt = 0
 local busy = false
 local manual = false
@@ -64,6 +65,7 @@ local loadedExpires = nil
 local activeAccount = ""
 local transitionalAccount = ""
 local switchBusy = false
+local staleAt = 0
 
 -- render определён ниже (секция rendering), но зовётся из runSwitch(),
 -- который объявлен раньше по тексту. Без форвард-декларации ссылка внутри
@@ -320,7 +322,7 @@ local function expiringSoon()
 end
 
 render = function()
-  if status == "ok" and #readings > 0 then
+  if #readings > 0 and (status == "ok" or status == "stale") then
     local top = worst(readings)
     local prefix = SHOW_ACCOUNT and accountLabel() or PREFIX
     if DISPLAY == "all" then
@@ -330,6 +332,8 @@ render = function()
     end
     if switchBusy then
       barWidget.setColor(COLOR_BUSY)
+    elseif status == "stale" then
+      barWidget.setColor(COLOR_MUTED)
     elseif expiringSoon() then
       barWidget.setColor(COLOR_WARN, "script")
     elseif top.percent >= 90 then
@@ -352,11 +356,14 @@ render = function()
     if switchBusy then
       table.insert(rows, { key = "status", value = detail })
     end
+    if status == "stale" then
+      table.insert(rows, { key = "связь", value = "нет свежих данных · последние в " .. os.date("%H:%M", updatedAt) })
+    end
     if expiringSoon() then
       table.insert(rows, { key = "token", value = "истекает — opencode-go-auth login" })
     end
     if refreshed then
-      table.insert(rows, { key = "updated", value = noctalia.formatTime("%H:%M") })
+      table.insert(rows, { key = "updated", value = os.date("%H:%M", updatedAt) })
     end
     if CLICK_ACTION == "switch" then
       table.insert(rows, { key = "клик", value = "переключить аккаунт" })
@@ -377,7 +384,14 @@ render = function()
 end
 
 local function fail(nextStatus, message)
-  status = nextStatus
+  if #readings > 0 and (nextStatus == "network" or nextStatus == "error") then
+    -- Сеть/сервер отвалились: не теряем последние удачные цифры, показываем
+    -- их приглушённо, пока не придёт свежий ответ.
+    status = "stale"
+    staleAt = os.time()
+  else
+    status = nextStatus
+  end
   detail = message
   if manual then
     noctalia.notifyError("OpenCode Go", message)

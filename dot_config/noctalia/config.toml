@@ -1,0 +1,34 @@
+# Noctalia v5 — декларативный конфиг (chezmoi).
+#
+# GUI-оверрайды живут в ~/.local/state/noctalia/settings.toml и имеют приоритет
+# над этим файлом. Если ключ задан и тут, и в state — победит state; чтобы этот
+# файл был источником истины, соответствующий ключ из state надо убрать.
+
+[plugins]
+enabled = [ "noctalia/bongocat", "mflkee/opencode-go-usage", "mflkee/awgq" ]
+
+[bar.default]
+center = [ "clock", "cat" ]
+end = [
+    "media",
+    "tray",
+    "notifications",
+    "clipboard",
+    "network",
+    "awgq",
+    "bluetooth",
+    "volume",
+    "brightness",
+    "battery",
+    "control-center",
+    "session",
+    "keyboard_layout"
+]
+start = [ "launcher", "wallpaper", "workspaces", "oc-usage" ]
+
+# awgq VPN (AmneziaWG): клик — тогл, правый клик — сводка.
+# Плагин: ~/.local/share/noctalia/plugins/awgq/ (dotfiles).
+[widget.awgq]
+type = "mflkee/awgq:vpn"
+show_config = true
+refresh_seconds = 3
