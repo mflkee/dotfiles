@@ -27,6 +27,10 @@
       "label": "Refresh interval (seconds)",
       "description": "How often the tunnel state is re-checked"
     },
+    "timeout_seconds": {
+      "label": "Toggle timeout (seconds)",
+      "description": "Max wait for awgq on/off (it sleeps 5s and applies the netbird fix). Noctalia caps it at 60; the real state decides success."
+    },
     "unit": {
       "label": "systemd unit",
       "description": "VPN service unit, e.g. awg-quick@wg0.service"

@@ -27,6 +27,10 @@
       "label": "Интервал обновления (секунды)",
       "description": "Как часто перепроверять состояние туннеля"
     },
+    "timeout_seconds": {
+      "label": "Таймаут переключения (секунды)",
+      "description": "Сколько ждать awgq on/off (он спит 5 c и применяет netbird-fix). Noctalia ограничивает сверху 60; успех определяется реальным состоянием."
+    },
     "unit": {
       "label": "systemd-юнит",
       "description": "Юнит сервиса VPN, напр. awg-quick@wg0.service"

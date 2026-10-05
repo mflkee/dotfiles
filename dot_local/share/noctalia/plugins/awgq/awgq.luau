@@ -31,6 +31,10 @@ local IFACE = tostring(setting("interface", "wg0"))
 local SYMLINK = tostring(setting("symlink", "/etc/amnezia/amneziawg/wg0.conf"))
 local SHOW_CONFIG = setting("show_config", true) ~= false
 local REFRESH_MS = math.max(1000, (tonumber(setting("refresh_seconds", 3)) or 3) * 1000)
+-- `awgq on` поднимает туннель и затем применяет netbird-fix: ~15 c (sleep 5 +
+-- `ip rule`/`ip route`). У runAsync таймаут по умолчанию 5 c, поэтому процесс
+-- убивался ПОСЛЕ старта туннеля и плагин рапортовал ложную ошибку.
+local TIMEOUT_MS = math.min(60000, math.max(5000, (tonumber(setting("timeout_seconds", 60)) or 60) * 1000))
 
 local AWGQ = noctalia.expandPath("~/.local/bin/awgq")
 if not noctalia.fileExists(AWGQ) then
@@ -45,6 +49,10 @@ local ip = ""
 local detail = ""
 local busy = false
 local polling = false
+-- Ожидаемое состояние после действия: если процесс был убит по таймауту, но
+-- туннель всё же поднялся/опустился, ошибку НЕ показываем (сверяемся в poll()).
+local pendingAction = nil
+local pendingDetail = ""
 
 -- ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -148,10 +156,20 @@ poll = function()
     if busy then
       return
     end
-    if unitState == "active" then
-      state = "on"
-    else
-      state = "off"
+    local wasActive = (unitState == "active")
+    state = wasActive and "on" or "off"
+    if pendingAction ~= nil then
+      local wanted = pendingAction
+      local reached = (wanted and wasActive) or ((not wanted) and not wasActive)
+      pendingAction = nil
+      if reached then
+        pendingDetail = ""
+      else
+        local body = pendingDetail ~= "" and pendingDetail or noctalia.tr("errors.toggle")
+        pendingDetail = ""
+        detail = body
+        noctalia.notifyError(noctalia.tr("notify.title"), noctalia.tr("errors.toggle"))
+      end
     end
     render()
   end)
@@ -174,19 +192,26 @@ local function setPower(on)
   local action = on and "on" or "off"
   local accepted = noctalia.runAsync(shQuote(AWGQ) .. " " .. action, function(result)
     busy = false
-    if result == nil or result.exitCode ~= 0 then
+    local failed = (result == nil) or (result.exitCode ~= 0) or (result.timedOut == true)
+    if failed then
       local err = ""
       if result ~= nil then
-        err = result.stderr
-        if err == nil or err == "" then
-          err = result.stdout
-        end
+        err = (result.stderr ~= nil and result.stderr ~= "") and result.stderr or (result.stdout or "")
       end
-      detail = truncate(noctalia.string.trim(err or ""), 120)
-      noctalia.notifyError(noctalia.tr("notify.title"), noctalia.tr("errors.toggle"))
+      -- Не рапортуем сразу: процесс мог быть убит по таймауту ПОСЛЕ того, как
+      -- туннель уже переключился. poll() сверит реальное состояние и решит.
+      pendingAction = on
+      pendingDetail = truncate(noctalia.string.trim(err or ""), 120)
+      noctalia.log(
+        "awgq toggle '" .. action .. "': exit=" .. tostring(result and result.exitCode)
+          .. " timedOut=" .. tostring(result and result.timedOut) .. " err=" .. pendingDetail
+      )
+    else
+      pendingAction = nil
+      pendingDetail = ""
     end
     poll()
-  end)
+  end, TIMEOUT_MS)
   if not accepted then
     busy = false
     noctalia.notifyError(noctalia.tr("notify.title"), noctalia.tr("errors.toggle"))

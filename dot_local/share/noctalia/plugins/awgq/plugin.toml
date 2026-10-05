@@ -40,6 +40,17 @@ entry = "awgq.luau"
   step = 1
 
   [[widget.setting]]
+  key = "timeout_seconds"
+  type = "int"
+  label_key = "settings.timeout_seconds.label"
+  description_key = "settings.timeout_seconds.description"
+  default = 60
+  min = 5
+  max = 60
+  step = 1
+  advanced = true
+
+  [[widget.setting]]
   key = "unit"
   type = "string"
   label_key = "settings.unit.label"

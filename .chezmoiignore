@@ -64,3 +64,6 @@ test_write-opencode-go-credentials.sh
 # Test harness for the Noctalia widget (usage.luau): stubs the noctalia API and
 # asserts the render/stale logic. Run: lua5.4 test_usage.lua
 test_usage.lua
+# Test harness for the awgq Noctalia widget (awgq.luau): stubs noctalia.runAsync
+# and asserts the timeout/false-error logic. Run: lua5.4 test_awgq.lua
+test_awgq.lua
