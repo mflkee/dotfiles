@@ -341,6 +341,20 @@ window-rule {
     open-floating true
 }
 
+// Матовое стекло для терминала (ghostty: background-opacity = 0.88).
+// В niri 26.04 глобальный блок blur{} лишь задаёт параметры размытия — чтобы
+// оно реально включилось, окну нужен background-effect. При активном эффекте
+// niri сам включает xray, т.е. терминал размывает ТОЛЬКО обои, а не окна под
+// ним. Без этого сквозь прозрачный фон просвечивали окна (табы браузера), и
+// у верхней кромки получалась размазанная «растянутая вверх» полоса.
+window-rule {
+    match app-id=r#"^com\.mitchellh\.ghostty$"#
+
+    background-effect {
+        blur true
+    }
+}
+
 // Global blur settings (defaults shown).
 blur {
     passes 3
