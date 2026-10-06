@@ -26,11 +26,17 @@ cursor-opacity = 1
 #   • padding-x = 8               — один «пробельчик» слева/справа, чтобы промт
 #     не лип к краю. Эти поля заливаются цветом соседней ячейки (extend-always),
 #     поэтому выглядят как продолжение фона, а не как дырка.
+#   • padding-balance = false     — ВАЖНО: при true Ghostty раздаёт остаток
+#     пикселей по всем сторонам, в т.ч. пару px СВЕРХУ, а extend-always
+#     закрашивает этот верхний отступ цветом верхней строки (у yazi это шапка
+#     yatline «1 .config» / дата) → бар выглядит «уехавшим вверх / растянутым».
+#     При false сетка прижата к верху (как в Alacritty), весь остаток уходит
+#     вниз и по-прежнему заливается extend-always. Требует нового окна.
 # Прозрачность (background-opacity 0.88) сохраняется.
 window-padding-x = 8
 window-padding-y = 0
 window-padding-color = extend-always
-window-padding-balance = true
+window-padding-balance = false
 
 # Split divider
 cursor-click-to-move = true
