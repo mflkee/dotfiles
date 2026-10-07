@@ -34,8 +34,14 @@ if command -v niri >/dev/null 2>&1 && niri msg outputs >/dev/null 2>&1; then
     # Desktop (archlinux-desktop): Thunderobot F27H144F (DP-4) left, ASUS VP249 (HDMI-A-2) right
     setup_output "DP-4"    "1920x1080@165.003" 1.0 "normal"  0 0
     setup_output "HDMI-A-2" "1920x1080@144.013" 1.0 "270"   1920 -840
+{{ else if eq .chezmoi.hostname "archlinux-notebook" -}}
+    # Notebook (archlinux-notebook): eDP-1 left, Redmi Monitor 24" (XMI 9155) on HDMI-A-1 right.
+    # Монитор по EDID: max TMDS 190 MHz, диапазон 50-75 Hz — реальный максимум это
+    # 1920x1080@74.986, более высокие частоты niri молча проигнорирует.
+    setup_output "eDP-1"   "1920x1080@60.001"  1.0 "normal"  0 0
+    setup_output "HDMI-A-1" "1920x1080@74.986" 1.0 "normal"  1920 0
 {{ else -}}
-    # Laptop/notebook/mkair: eDP-1 left, HDMI-A-1 external right
+    # Laptop/mkair: eDP-1 left, HDMI-A-1 external right
     setup_output "eDP-1"   "1920x1080@60.004"  1.0 "normal"  0 0
     setup_output "HDMI-A-1" "2560x1440@60.000" 1.0 "normal"  1920 0
 {{ end -}}
