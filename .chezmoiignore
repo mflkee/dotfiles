@@ -55,9 +55,12 @@ dot_config/qt6ct/colors/
 # секреты живут в tokens.toml, который chezmoi не трогает и не захватывает.
 dot_config/dsync/dsync/tokens.toml
 
-# Генерируется per-machine скриптом run_onchange_set-outputs.sh.tmpl —
-# не управляется как статичный файл.
-.config/niri/set-outputs.sh
+# НЕ добавлять сюда .config/niri/set-outputs.sh: этот путь — target самого
+# run_onchange_set-outputs.sh.tmpl (имя скрипта = target-путь без префикса).
+# Запись здесь (добавлена 26.09, удалена 07.10) молча отключала скрипт целиком:
+# chezmoi не исполнял его, set-outputs.sh оставался устаревшим и монитор
+# не настраивался. Файл всё равно не managed (нет записи в source state),
+# поэтому dsync capture его не захватывает и без ignore-правила.
 # Test harness for run_after_write-opencode-go-credentials.sh: lives in the repo
 # for reference, never deployed to $HOME.
 test_write-opencode-go-credentials.sh
