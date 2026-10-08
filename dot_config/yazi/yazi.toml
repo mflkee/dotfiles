@@ -26,8 +26,8 @@ rules = [
 	{ name = "*.xml", run = "$EDITOR \"$@\"", block = true },
 
 	# pdf → okular
-	{ mime = "application/pdf", run = "okular", block = false, orphan = true },
-	{ name = "*.pdf", run = "okular", block = false, orphan = true },
+	{ mime = "application/pdf", run = "zathura", block = false, orphan = true },
+	{ name = "*.pdf", run = "zathura", block = false, orphan = true },
 
 	# office → libreoffice
 	{ mime = "application/msword", run = "libreoffice", block = false, orphan = true },
