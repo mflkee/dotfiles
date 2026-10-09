@@ -86,7 +86,7 @@
     },
     "gmail": {
       "type": "local",
-      "command": ["node", "/home/mflkee/Documents/mkair/mcp/gmail-mcp.js"],
+      "command": ["node", "/home/mflkee/Documents/finance_manager/mcp/gmail-mcp.js"],
       "enabled": true
     },
     "blender": {

@@ -8,19 +8,19 @@ description: |
   Excel report. Triggers on: командировка, командировочные, подотчёт,
   авансовый отчёт, суточные, Ленск, билет, чек, такси, хостел, мне должны,
   я должен, trip, отчёт по командировкам, gmail билет.
-  The ledger lives at ~/Documents/mkair — read its AGENTS.md for the full
+  The ledger lives at ~/Documents/finance_manager — read its AGENTS.md for the full
   operating manual before acting.
 ---
 
 # Командировочные средства (МКАИР)
 
-Система учёта командировочных денег живёт в `~/Documents/mkair`.
-**Полная инструкция — в `~/Documents/mkair/AGENTS.md`**: прочитай её, прежде
+Система учёта командировочных денег живёт в `~/Documents/finance_manager`.
+**Полная инструкция — в `~/Documents/finance_manager/AGENTS.md`**: прочитай её, прежде
 чем что-либо менять.
 
 Кратко:
 
-- CLI — команда `trip` (данные: `~/Documents/mkair/data/trips.sqlite3`).
+- CLI — команда `trip` (данные: `~/Documents/finance_manager/data/trips.sqlite3`).
 - `trip status` → сколько мне должны / я должен.
 - `trip report` → `out/Командировки.xlsx` (сводка + лист на месяц).
 - Кошельки: `podotchet` (деньги МКАИР под отчёт) и `personal` (деньги «не в
