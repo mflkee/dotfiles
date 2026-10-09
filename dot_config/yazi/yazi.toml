@@ -1,4 +1,4 @@
-[manager]
+[mgr]
 ratio = [1, 2, 3]
 sort_by = "natural"
 sort_dir_first = true
@@ -10,44 +10,55 @@ tab_size = 2
 max_width = 1200
 max_height = 1800
 
+# yazi 26: [opener] — это ТОЛЬКО определения именованных опенеров.
+# Какой опенер для каких файлов — задаётся в [open] через use = "имя".
 [opener]
-default = [
-	{ run = "xdg-open", block = false, orphan = true },
+edit = [
+	{ run = "${EDITOR:-vi} %s", desc = "$EDITOR", block = true, for = "unix" },
+]
+zathura = [
+	{ run = "zathura %s", desc = "Zathura (PDF)", orphan = true },
+]
+libreoffice = [
+	{ run = "libreoffice %s", desc = "LibreOffice", orphan = true },
 ]
 
-rules = [
-	# text & code → editor (blocking, works on every machine)
-	{ mime = "text/*", run = "$EDITOR \"$@\"", block = true },
-	{ name = "*.json", run = "$EDITOR \"$@\"", block = true },
-	{ name = "*.jsonc", run = "$EDITOR \"$@\"", block = true },
-	{ name = "*.yaml", run = "$EDITOR \"$@\"", block = true },
-	{ name = "*.yml", run = "$EDITOR \"$@\"", block = true },
-	{ name = "*.toml", run = "$EDITOR \"$@\"", block = true },
-	{ name = "*.xml", run = "$EDITOR \"$@\"", block = true },
+# prepend_rules вставляются ПЕРЕД встроенными правилами yazi, поэтому папки,
+# архивы, картинки и видео продолжают открываться дефолтными опенерами.
+[open]
+prepend_rules = [
+	# text & code → редактор (блокирующе, работает на любой машине)
+	{ mime = "text/*", use = "edit" },
+	{ url = "*.json", use = "edit" },
+	{ url = "*.jsonc", use = "edit" },
+	{ url = "*.yaml", use = "edit" },
+	{ url = "*.yml", use = "edit" },
+	{ url = "*.toml", use = "edit" },
+	{ url = "*.xml", use = "edit" },
 
-	# pdf → okular
-	{ mime = "application/pdf", run = "zathura", block = false, orphan = true },
-	{ name = "*.pdf", run = "zathura", block = false, orphan = true },
+	# pdf → zathura
+	{ mime = "application/pdf", use = "zathura" },
+	{ url = "*.pdf", use = "zathura" },
 
 	# office → libreoffice
-	{ mime = "application/msword", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.ms-excel", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.ms-powerpoint", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.oasis.opendocument.text", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.oasis.opendocument.spreadsheet", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/vnd.oasis.opendocument.presentation", run = "libreoffice", block = false, orphan = true },
-	{ mime = "application/rtf", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.doc", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.docx", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.xls", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.xlsx", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.ppt", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.pptx", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.odt", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.ods", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.odp", run = "libreoffice", block = false, orphan = true },
-	{ name = "*.rtf", run = "libreoffice", block = false, orphan = true },
+	{ mime = "application/msword", use = "libreoffice" },
+	{ mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", use = "libreoffice" },
+	{ mime = "application/vnd.ms-excel", use = "libreoffice" },
+	{ mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use = "libreoffice" },
+	{ mime = "application/vnd.ms-powerpoint", use = "libreoffice" },
+	{ mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation", use = "libreoffice" },
+	{ mime = "application/vnd.oasis.opendocument.text", use = "libreoffice" },
+	{ mime = "application/vnd.oasis.opendocument.spreadsheet", use = "libreoffice" },
+	{ mime = "application/vnd.oasis.opendocument.presentation", use = "libreoffice" },
+	{ mime = "application/rtf", use = "libreoffice" },
+	{ url = "*.doc", use = "libreoffice" },
+	{ url = "*.docx", use = "libreoffice" },
+	{ url = "*.xls", use = "libreoffice" },
+	{ url = "*.xlsx", use = "libreoffice" },
+	{ url = "*.ppt", use = "libreoffice" },
+	{ url = "*.pptx", use = "libreoffice" },
+	{ url = "*.odt", use = "libreoffice" },
+	{ url = "*.ods", use = "libreoffice" },
+	{ url = "*.odp", use = "libreoffice" },
+	{ url = "*.rtf", use = "libreoffice" },
 ]

@@ -249,7 +249,7 @@ spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY DISPLAY
 spawn-sh-at-startup "sh $HOME/.config/niri/set-outputs.sh"
 
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
-spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-Dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-dracula'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
+spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-yellow'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
 
 // Idle/локскрин — целиком на Noctalia (встроенный session-lock, виджеты с часами).
 // Авто-лок и поведение по простою настраиваются в ~/.config/noctalia/settings.json:
