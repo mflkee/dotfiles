@@ -1,0 +1,10 @@
+# ~/.config/zathura/zathurarc — пользовательский конфиг zathura.
+# Ayu-палитра генерируется Noctalia в отдельный файл noctaliarc,
+# поэтому подключаем её здесь (zathura читает именно zathurarc).
+include noctaliarc
+
+# --- удобства ---
+set selection-clipboard clipboard   # выделение мышью -> системный буфер (Ctrl+V), а не primary
+set adjust-open width               # открывать, вписывая страницу по ширине окна
+set incremental-search true         # искать по мере набора
+set scroll-page-aware true          # скролл не разрывает страницу посередине
