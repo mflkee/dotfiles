@@ -84,6 +84,11 @@
       "command": ["node", "/home/mflkee/.config/opencode/scripts/sync-ops-mcp.js"],
       "enabled": true
     },
+    "gmail": {
+      "type": "local",
+      "command": ["node", "/home/mflkee/Documents/mkair/mcp/gmail-mcp.js"],
+      "enabled": true
+    },
     "blender": {
       "type": "local",
       "command": ["uvx", "mcp-for-blender"],
