@@ -1,8 +1,8 @@
 ---
-name: Komandirovki
+name: Finance Manager
 description: |
-  Use when working with the personal business-trip money ledger (командировочные)
-  of МКАИР: recording advances/funding, expenses (tickets, hostels, taxis,
+  Use when working with the personal finance ledger in ~/Documents/finance_manager
+  (МКАИР) — mainly business-trip money (командировочные): recording advances/funding, expenses (tickets, hostels, taxis,
   per diem 700 ₽/day), pulling tickets and receipts from Gmail, attaching PDF
   receipts, answering "сколько мне должны / я должен", building the monthly
   Excel report. Triggers on: командировка, командировочные, подотчёт,
