@@ -70,3 +70,6 @@ test_usage.lua
 # Test harness for the awgq Noctalia widget (awgq.luau): stubs noctalia.runAsync
 # and asserts the timeout/false-error logic. Run: lua5.4 test_awgq.lua
 test_awgq.lua
+# Test harness for noctalia-lock-watchdog: run from the repo
+# (bash ~/dotfiles/test_noctalia-lock-watchdog.sh), never deployed to $HOME.
+test_noctalia-lock-watchdog.sh
