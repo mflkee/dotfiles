@@ -1,19 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "model": "opencode-go/deepseek-v4.1-flash",
-  "instructions": [
-    "instructions/machines.md"
-  ],
-  "skills": {
-    "paths": ["~/.config/opencode/skills"]
-  },
-  "provider": {
-    "openai":     { "options": { "baseURL": "https://api.proxyapi.ru/openai/v1" } },
-    "anthropic":  { "options": { "baseURL": "https://api.proxyapi.ru/anthropic/v1" } },
-    "google":     { "options": { "baseURL": "https://api.proxyapi.ru/google/v1beta" } },
-    "openrouter": { "options": { "baseURL": "https://api.proxyapi.ru/openrouter/v1" } }
-  },
+  "skills": ["~/.config/opencode/skills"],
   "providers": {
+    "openai":     { "settings": { "baseURL": "https://api.proxyapi.ru/openai/v1" } },
+    "anthropic":  { "settings": { "baseURL": "https://api.proxyapi.ru/anthropic/v1" } },
+    "google":     { "settings": { "baseURL": "https://api.proxyapi.ru/google/v1beta" } },
+    "openrouter": { "settings": { "baseURL": "https://api.proxyapi.ru/openrouter/v1" } },
     "routerai": {
       "name": "RouterAI",
       "env": ["ROUTERAI_API_KEY"],
@@ -58,88 +51,78 @@
     }
   },
   "mcp": {
-    "obsidian": {
-      "type": "local",
-      "command": ["npx", "-y", "obsidian-mcp", "/home/mflkee/obs_main"],
-      "enabled": true
-    },
-    "github": {
-      "type": "local",
-      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
-      "enabled": true,
-      "environment": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+    "servers": {
+      "obsidian": {
+        "type": "local",
+        "command": ["npx", "-y", "obsidian-mcp", "/home/mflkee/obs_main"]
+      },
+      "github": {
+        "type": "local",
+        "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+        "environment": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+        }
+      },
+      "netbird": {
+        "type": "local",
+        "command": ["node", "/home/mflkee/.config/opencode/scripts/netbird-mcp.js"],
+        "environment": {
+          "NETBIRD_API_KEY": "{env:NETBIRD_API_KEY}"
+        }
+      },
+      "sync-ops": {
+        "type": "local",
+        "command": ["node", "/home/mflkee/.config/opencode/scripts/sync-ops-mcp.js"]
+      },
+      "gmail": {
+        "type": "local",
+        "command": ["node", "/home/mflkee/Documents/finance_manager/mcp/gmail-mcp.js"]
+      },
+      "duckdb": {
+        "type": "local",
+        "command": [
+          "uvx",
+          "--with",
+          "mcp==1.0.0",
+          "mcp-server-duckdb",
+          "--db-path",
+          "/tmp/opencode/data/analysis.duckdb"
+        ]
+      },
+      "playwright": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@playwright/mcp@latest",
+          "--browser",
+          "chromium",
+          "--executable-path",
+          "/usr/bin/chromium",
+          "--headless",
+          "--isolated"
+        ]
+      },
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "oauth": false
+      },
+      "blender": {
+        "type": "local",
+        "command": ["uvx", "mcp-for-blender"],
+        "disabled": true
+      },
+      "zen": {
+        "type": "remote",
+        "url": "http://127.0.0.1:8877/mcp",
+        "disabled": true
+      },
+      "shadcn": {
+        "type": "local",
+        "command": ["npx", "-y", "shadcn@latest", "mcp"],
+        "disabled": true
       }
-    },
-    "netbird": {
-      "type": "local",
-      "command": ["node", "/home/mflkee/.config/opencode/scripts/netbird-mcp.js"],
-      "enabled": true,
-      "environment": {
-        "NETBIRD_API_KEY": "{env:NETBIRD_API_KEY}"
-      }
-    },
-    "sync-ops": {
-      "type": "local",
-      "command": ["node", "/home/mflkee/.config/opencode/scripts/sync-ops-mcp.js"],
-      "enabled": true
-    },
-    "gmail": {
-      "type": "local",
-      "command": ["node", "/home/mflkee/Documents/finance_manager/mcp/gmail-mcp.js"],
-      "enabled": true
-    },
-    "blender": {
-      "type": "local",
-      "command": ["uvx", "mcp-for-blender"],
-      "enabled": true
-    },
-    "zen": {
-      "type": "remote",
-      "url": "http://127.0.0.1:8877/mcp",
-      "enabled": true
-    },
-    "shadcn": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "shadcn@latest",
-        "mcp",
-        "--cwd",
-        "/home/mflkee/projects/rustrade/rustrade-dashboard/web"
-      ],
-      "enabled": true
-    },
-    "duckdb": {
-      "type": "local",
-      "command": [
-        "uvx",
-        "--with",
-        "mcp==1.0.0",
-        "mcp-server-duckdb",
-        "--db-path",
-        "/tmp/opencode/data/analysis.duckdb"
-      ],
-      "enabled": true
-    },
-    "playwright": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@playwright/mcp@latest",
-        "--browser",
-        "chromium",
-        "--executable-path",
-        "/usr/bin/chromium",
-        "--headless",
-        "--isolated"
-      ],
-      "enabled": true
     }
-  },
-  "experimental": {
-    "mcp_timeout": 30000
   }
 }
