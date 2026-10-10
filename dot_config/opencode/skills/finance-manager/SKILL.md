@@ -1,8 +1,8 @@
 ---
 name: Finance Manager
 description: |
-  Use when working with the personal finance ledger in ~/Documents/finance_manager
-  (МКАИР) — mainly business-trip money (командировочные): recording advances/funding, expenses (tickets, hostels, taxis,
+  Use when working with the business-trip money ledger (командировочные) of МКАИР
+  in ~/Documents/finance_manager: recording advances/funding, expenses (tickets, hostels, taxis,
   per diem 700 ₽/day), pulling tickets and receipts from Gmail, attaching PDF
   receipts, answering "сколько мне должны / я должен", building the monthly
   Excel report. Triggers on: командировка, командировочные, подотчёт,
@@ -28,6 +28,9 @@ description: |
 - Чеки: `receipts/inbox/` — оттуда `trip receipt attach <expense_id> <файл>`.
 - Билеты/чеки из почты — через Gmail-MCP (`gmail_search`,
   `gmail_get`, `gmail_download_attachments`).
+- ⚠️ Леджер и БД синкаются через Syncthing (`~/Documents`) на весь флот — правь
+  с ОДНОЙ машины за раз (иначе `*.sync-conflict*`); `trip report` коммитит и
+  **пушит в GitHub**. Детали — в AGENTS.md, раздел «Несколько машин, Syncthing и offsite».
 
 Главное правило: суммы не выдумывать, при неоднозначности — уточнять у
 пользователя.
