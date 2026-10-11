@@ -121,6 +121,23 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   mp4+aac пишет в лог безобидное `non monotonically increasing dts` — файл целиком валиден.
   Старый скрипт на wf-recorder/tofi/**hyprctl** был сломан: `hyprctl` есть только у Hyprland, а не у niri.
 
+## Крышка ноутбука (archlinux-notebook)
+- **Поведение**: крышка закрыта + зарядка (или внешний монитор) → система работает, встроенная
+  матрица гаснет; крышка закрыта + батарея → сон (logind).
+- **logind**: `/etc/systemd/logind.conf.d/10-lid.conf` — `HandleLidSwitch=suspend`,
+  `HandleLidSwitchExternalPower=ignore`, `HandleLidSwitchDocked=ignore`. Файл в dotfiles НЕ лежит
+  (ставится руками с sudo), после правки — `systemctl restart systemd-logind` (сессии не рвутся).
+- **Матрица**: user-сервис `lid-display.service` (`~/.local/bin/lid-display`, оба файла в dotfiles,
+  `WantedBy=graphical-session.target`). Слушает D-Bus logind (`LidClosed` + `PrepareForSleep`) и
+  дёргает `niri msg output <выход> off/on`; внутренний выход ищет сам (`eDP*/LVDS*/DSI*`).
+  Опции в юните: `LID_OUTPUT=eDP-1`, `LID_LOCK=1` (блокировать сессию при закрытии крышки — по
+  умолчанию нет).
+- **Грабли**: udev-правилом не сделать — `SW_LID` не генерирует uevent (в input core его нет),
+  крышку обрабатывает только logind. `LidClosed` эмитится всегда, независимо от `HandleLidSwitch`;
+  `OnExternalPower` изменений не эмитит, поэтому питание читается в момент события.
+- Проверка: `systemctl --user status lid-display`, `journalctl --user -u lid-display -f`,
+  `busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager LidClosed`.
+
 ## NetBird MCP (machine management)
 - Opencode has a built-in NetBird MCP tool (`netbird` MCP server).
 - Requires `NETBIRD_API_KEY` env var (personal access token from NetBird dashboard).

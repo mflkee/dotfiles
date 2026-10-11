@@ -1,0 +1,99 @@
+#!/bin/sh
+# lid-display — реакция на крышку ноутбука (запускается из lid-display.service).
+#
+#   крышка закрыта → встроенная матрица гаснет (внешние мониторы работают дальше)
+#   крышка открыта → матрица включается обратно
+#   от батареи     → вдобавок logind усыпляет ноут, см.
+#                    /etc/systemd/logind.conf.d/10-lid.conf (HandleLidSwitch=suspend)
+#
+# Почему не udev-правилом: SW_LID не генерирует uevent (в input core его нет),
+# крышку целиком обрабатывает systemd-logind. Зато logind отдаёт состояние через
+# D-Bus (Manager.LidClosed, свойство с EMITS_CHANGE) — причём всегда, независимо
+# от значения HandleLidSwitch. Слушаем PropertiesChanged и повторяем состояние
+# после пробуждения (niri может вернуть выход сама).
+#
+# Опции (задаются в lid-display.service):
+#   LID_OUTPUT=eDP-1  вручную указать внутренний выход; по умолчанию ищется сам
+#                     (eDP*/LVDS*/DSI* среди выходов niri)
+#   LID_LOCK=1        блокировать сессию при закрытии крышки (по умолчанию нет)
+set -eu
+
+log() { printf '%s [lid-display] %s\n' "$(date -Is)" "$*" >&2; }
+
+# ── niri ─────────────────────────────────────────────────────────────────────
+# Сервис стартует в юзер-менеджере, NIRI_SOCKET там есть (niri его импортирует),
+# но если нет — ищем сокет сами.
+niri_socket() {
+    if [ -n "${NIRI_SOCKET:-}" ] && [ -S "${NIRI_SOCKET}" ]; then
+        return 0
+    fi
+    for cand in "$XDG_RUNTIME_DIR/niri/session.sock" "$XDG_RUNTIME_DIR"/niri.*.sock; do
+        if [ -S "$cand" ]; then
+            NIRI_SOCKET="$cand"
+            export NIRI_SOCKET
+            return 0
+        fi
+    done
+    return 1
+}
+
+internal_output() {
+    if [ -n "${LID_OUTPUT:-}" ]; then
+        printf '%s\n' "$LID_OUTPUT"
+        return 0
+    fi
+    niri msg --json outputs 2>/dev/null |
+        tr ',' '\n' |
+        sed -n 's/.*"name":"\([^"]*\)".*/\1/p' |
+        grep -m1 -Ei '^(edp|lvds|dsi)' || true
+}
+
+# ── состояние ────────────────────────────────────────────────────────────────
+lid_closed() {
+    [ "$(busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+        org.freedesktop.login1.Manager LidClosed 2>/dev/null | awk '{print $2}')" = true ]
+}
+
+apply_state() {
+    if ! niri_socket; then
+        log "niri недоступен — выход не трогаю"
+        return 0
+    fi
+    out=$(internal_output)
+    if [ -z "$out" ]; then
+        log "внутренний выход не найден — нечего выключать"
+        return 0
+    fi
+
+    if lid_closed; then
+        if [ "${LID_LOCK:-0}" = 1 ]; then
+            loginctl lock-session >/dev/null 2>&1 || true
+        fi
+        niri msg output "$out" off >/dev/null 2>&1 || true
+        log "крышка закрыта: выход $out выключен"
+    else
+        niri msg output "$out" on >/dev/null 2>&1 || true
+        log "крышка открыта: выход $out включён"
+    fi
+}
+
+apply_state
+log "слушаю logind (LidClosed, PrepareForSleep)"
+
+gdbus monitor --system --dest org.freedesktop.login1 --object-path /org/freedesktop/login1 |
+    while IFS= read -r line; do
+        case "$line" in
+            *LidClosed*)
+                apply_state
+                ;;
+            *PrepareForSleep*)
+                # хвост строки: (true) — уходим в сон, (false) — проснулись
+                case "${line##* }" in
+                    '(false)')
+                        sleep 1
+                        apply_state
+                        ;;
+                esac
+                ;;
+        esac
+    done

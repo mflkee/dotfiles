@@ -1,0 +1,20 @@
+[Unit]
+Description=Крышка ноутбука: гасить матрицу, когда крышка закрыта
+Documentation=man:logind.conf(5)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/lid-display
+Restart=always
+RestartSec=2
+
+# Опции:
+# LID_OUTPUT=eDP-1  вручную указать внутренний выход (по умолчанию — авто)
+# LID_LOCK=1        блокировать сессию при закрытии крышки
+#Environment=LID_OUTPUT=eDP-1
+#Environment=LID_LOCK=1
+
+[Install]
+WantedBy=graphical-session.target
