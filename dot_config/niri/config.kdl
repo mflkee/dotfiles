@@ -247,6 +247,13 @@ spawn-sh-at-startup "sh $HOME/.config/niri/set-outputs.sh"
 // Keep GTK and libadwaita apps on the dark variant in non-GNOME sessions.
 spawn-sh-at-startup "gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'; gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'; gsettings set org.gnome.desktop.interface icon-theme 'Tela-circle-yellow'; gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita'; gsettings set org.gnome.desktop.interface cursor-size 24; gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Mono 11'"
 
+// Раскладка для X11/XWayland-приложений.
+// XWayland-satellite (X-сервер, через который идут X11-приложения) поднимается со своей
+// раскладкой (одна «us») и переключений от niri не получает. Из-за этого в X-приложениях
+// (например, MasterSCADA 4D) Win+Space вставлялся пробелом, а раскладка не менялась.
+// Задаём раскладку прямо X-серверу; цикл — X-сервер может подняться позже niri.
+spawn-sh-at-startup "for i in $(seq 1 60); do DISPLAY=${DISPLAY:-:0} setxkbmap -layout us,ru -option grp:win_space_toggle 2>/dev/null && exit 0; sleep 0.5; done"
+
 // Idle/локскрин — целиком на Noctalia (встроенный session-lock, виджеты с часами).
 // Авто-лок и поведение по простою настраиваются в ~/.config/noctalia/settings.json:
 //   idle.enabled = true, idle.lockTimeout = 600 (10 минут).
