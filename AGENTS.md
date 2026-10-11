@@ -126,7 +126,12 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   матрица гаснет; крышка закрыта + батарея → сон (logind).
 - **logind**: `/etc/systemd/logind.conf.d/10-lid.conf` — `HandleLidSwitch=suspend`,
   `HandleLidSwitchExternalPower=ignore`, `HandleLidSwitchDocked=ignore`. Файл в dotfiles НЕ лежит
-  (ставится руками с sudo), после правки — `systemctl restart systemd-logind` (сессии не рвутся).
+  (ставится руками с sudo).
+  **Применять только `sudo systemctl reload systemd-logind`** — юнит `Type=notify-reload`, reload =
+  SIGHUP, logind просто перечитывает конфиг (сессии/seat не трогает).
+  **`restart` НЕЛЬЗЯ**: 2026-10-12 после `systemctl restart systemd-logind` живая сессия niri
+  (запуск через lemurs) потеряла seat/DRM и сложилась в чёрный экран с TTY; при жёстком сбросе
+  ext4 потеряла незафлашенный конфиг (файл остался 0 байт — проверять размер после установки!).
 - **Матрица**: user-сервис `lid-display.service` (`~/.local/bin/lid-display`, оба файла в dotfiles,
   `WantedBy=graphical-session.target`). Слушает D-Bus logind (`LidClosed` + `PrepareForSleep`) и
   дёргает `niri msg output <выход> off/on`; внутренний выход ищет сам (`eDP*/LVDS*/DSI*`).
@@ -136,7 +141,9 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   крышку обрабатывает только logind. `LidClosed` эмитится всегда, независимо от `HandleLidSwitch`;
   `OnExternalPower` изменений не эмитит, поэтому питание читается в момент события.
 - Проверка: `systemctl --user status lid-display`, `journalctl --user -u lid-display -f`,
-  `busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager LidClosed`.
+  `busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager LidClosed`;
+  после reload у logind должно быть `HandleLidSwitch=suspend`, `HandleLidSwitchExternalPower=ignore`,
+  `HandleLidSwitchDocked=ignore` (в журнале — `systemd-logind: Config file reloaded.`).
 
 ## NetBird MCP (machine management)
 - Opencode has a built-in NetBird MCP tool (`netbird` MCP server).
