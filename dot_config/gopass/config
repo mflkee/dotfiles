@@ -1,0 +1,5 @@
+[mounts]
+	path = ~/.password-store
+
+[core]
+	autosync = false

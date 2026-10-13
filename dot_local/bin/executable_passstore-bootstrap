@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# passstore-bootstrap — подготовка gopass-хранилища секретов на машине.
+#
+# Делает:
+#   1) ставит gopass user-local (без sudo) из пакета Arch, если его нет в PATH;
+#   2) проверяет, что в связке есть приватный ключ 0x2B32D33832DB3E12;
+#   3) клонирует хранилище mflkee/passstore в ~/.password-store (если каталога нет);
+#   4) напоминает про конфиг ~/.config/gopass/config (едет из dotfiles).
+#
+# Приватный ключ этим скриптом НЕ переносится — импортировать отдельно с машины,
+# где он есть (спросит парольную фразу ключа):
+#   gpg --export-secret-keys --armor 32DB3E12 | ssh <машина> 'gpg --import'
+#
+# Документация: vault → 🖥 servers/secret-store.md
+set -euo pipefail
+
+KEYID=32DB3E12
+STORE="$HOME/.password-store"
+REPO="git@github.com:mflkee/passstore.git"
+PKG_MIRROR="https://geo.mirror.pkgbuild.com/extra/os/x86_64"
+
+say() { printf '%s\n' "$*"; }
+
+# 1. gopass
+if ! command -v gopass >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/gopass" ]; then
+  say "gopass не найден — ставлю user-local (без sudo)…"
+  tmp=$(mktemp -d)
+  file=$(curl -s https://archlinux.org/packages/extra/x86_64/gopass/json/ \
+    | grep -oP '"filename":\s*"\K[^"]+')
+  curl -sL -o "$tmp/$file" "$PKG_MIRROR/$file"
+  (cd "$tmp" && bsdtar -xf "$file")
+  install -m 755 "$tmp/usr/bin/gopass" "$HOME/.local/bin/gopass"
+  rm -rf "$tmp"
+  say "gopass установлен: $HOME/.local/bin/gopass (каноничный вариант — sudo pacman -S gopass)"
+fi
+
+# 2. приватный ключ
+if ! gpg --list-secret-keys "$KEYID" >/dev/null 2>&1; then
+  say "ВНИМАНИЕ: приватного ключа $KEYID в связке нет — без него хранилище не расшифровать."
+  say "Импортируй его с машины-источника (потребуется парольная фраза ключа):"
+  say "  gpg --export-secret-keys --armor $KEYID | ssh \"\$(hostname)\" 'gpg --import'"
+  exit 1
+fi
+
+# 3. хранилище
+if [ ! -d "$STORE/.git" ]; then
+  say "клонирую хранилище в $STORE…"
+  git clone "$REPO" "$STORE"
+fi
+
+# 4. конфиг
+if [ ! -f "$HOME/.config/gopass/config" ]; then
+  say "конфиг gopass отсутствует — ожидается из dotfiles (~/.config/gopass/config)"
+fi
+
+say "готово. Проверка: gopass ls"
