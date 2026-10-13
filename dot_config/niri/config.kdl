@@ -432,6 +432,9 @@ binds {
     }
     Mod+Ctrl+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Mod+Z hotkey-overlay-title="Open Zen Browser" { spawn "zen-browser"; }
+    // Стенд MasterSCADA в KVM: поднять уже открытую консоль VM (или открыть её).
+    // Выход из консоли — Mod+Left/Right, Mod+1..9, Mod+Shift+F, Mod+Q (домен продолжает работать).
+    Mod+Shift+C repeat=false hotkey-overlay-title="Show VM Console (ms4d-astra)" { spawn "ms4d-vm" "focus"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
