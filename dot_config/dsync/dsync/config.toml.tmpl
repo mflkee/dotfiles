@@ -31,6 +31,19 @@ branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 post_pull = "bash ~/projects/awgq/scripts/awgq-post-pull.sh"
 
+{{ if ne .chezmoi.hostname "archlinux-server" }}
+# gopass-хранилище (репозиторий mflkee/passstore, private).
+# Намеренно БЕЗ archlinux-server: там приёмник бэкапов, а в хранилище лежит
+# приватный ключ расшифровки бэкапов metro* — на приёмнике ему быть нельзя,
+# иначе шифрование бэкапов теряет смысл. Условие продублировано в шаблоне,
+# чтобы хост не тянул хранилище даже через dotfiles.
+# Требуется: установленный gopass и приватный GPG-ключ 0x2B32D33832DB3E12.
+[projects.passstore]
+path = "/home/mflkee/.password-store"
+branch = "main"
+machines = ["notebook", "desktop", "archlinux-mkair"]
+{{ end }}
+
 # ~/projects: КОНТРОЛЬ СОСТОЯНИЙ через dsync (без разворота содержимого).
 # Каждая машина при dsync push анонсирует состояния своих git-репо (ветка,
 # dirty, ahead/behind, url, последний коммит); hub копит их — смотришь в
