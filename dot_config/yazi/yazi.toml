@@ -23,11 +23,140 @@ libreoffice = [
 	{ run = "libreoffice %s", desc = "LibreOffice", orphan = true },
 ]
 
+# ── Craft App Suite (ArtCraft) ───────────────────────────────────────────────
+# Приложения ставит ArtCraft Launcher (AppImage в ~/Applications), ассоциации
+# форматов прописывает ~/.config/scripts/craft-defaults.sh.
+# gtk-launch берёт Exec из .desktop приложения, поэтому путь к AppImage не
+# дублируется и не устаревает; xdg-open — фолбэк для машин без этого приложения.
+wordcraft    = [ { run = "gtk-launch ai.storyteller.wordcraft %s || xdg-open %s", desc = "WordCraft", orphan = true } ]
+deckcraft    = [ { run = "gtk-launch ai.storyteller.deckcraft %s || xdg-open %s", desc = "DeckCraft", orphan = true } ]
+gridcraft    = [ { run = "gtk-launch ai.storyteller.gridcraft %s || xdg-open %s", desc = "GridCraft", orphan = true } ]
+pdfcraft     = [ { run = "gtk-launch ai.storyteller.pdfcraft %s || xdg-open %s", desc = "PdfCraft", orphan = true } ]
+vectorcraft  = [ { run = "gtk-launch ai.storyteller.vectorcraft %s || xdg-open %s", desc = "VectorCraft", orphan = true } ]
+figcraft     = [ { run = "gtk-launch ai.storyteller.figcraft %s || xdg-open %s", desc = "FigCraft", orphan = true } ]
+photocraft   = [ { run = "gtk-launch ai.storyteller.photocraft %s || xdg-open %s", desc = "PhotoCraft", orphan = true } ]
+lightcraft   = [ { run = "gtk-launch ai.storyteller.lightcraft %s || xdg-open %s", desc = "LightCraft", orphan = true } ]
+filmcraft    = [ { run = "gtk-launch ai.storyteller.filmcraft %s || xdg-open %s", desc = "FilmCraft", orphan = true } ]
+soundcraft   = [ { run = "gtk-launch ai.storyteller.soundcraft %s || xdg-open %s", desc = "SoundCraft", orphan = true } ]
+cadcraft     = [ { run = "gtk-launch ai.storyteller.cadcraft %s || xdg-open %s", desc = "CADCraft", orphan = true } ]
+
 # prepend_rules вставляются ПЕРЕД встроенными правилами yazi, поэтому папки,
-# архивы, картинки и видео продолжают открываться дефолтными опенерами.
+# архивы и всё, что не перечислено ниже, продолжает открываться дефолтными
+# опенерами. Правки форматов — синхронно с ~/.config/scripts/craft-defaults.sh.
 [open]
 prepend_rules = [
-	# text & code → редактор (блокирующе, работает на любой машине)
+	# ── Craft App Suite ──
+	# WordCraft: документы
+	{ url = "*.doc", use = "wordcraft" },
+	{ url = "*.docx", use = "wordcraft" },
+	{ url = "*.docm", use = "wordcraft" },
+	{ url = "*.dot", use = "wordcraft" },
+	{ url = "*.dotx", use = "wordcraft" },
+	{ url = "*.dotm", use = "wordcraft" },
+	{ url = "*.odt", use = "wordcraft" },
+	{ url = "*.rtf", use = "wordcraft" },
+	{ url = "*.tex", use = "wordcraft" },
+
+	# DeckCraft: презентации
+	{ url = "*.pptx", use = "deckcraft" },
+	{ url = "*.pptm", use = "deckcraft" },
+	{ url = "*.potx", use = "deckcraft" },
+	{ url = "*.potm", use = "deckcraft" },
+	{ url = "*.ppsx", use = "deckcraft" },
+	{ url = "*.ppsm", use = "deckcraft" },
+
+	# GridCraft: таблицы
+	{ url = "*.xlsx", use = "gridcraft" },
+	{ url = "*.xlsm", use = "gridcraft" },
+	{ url = "*.xlsb", use = "gridcraft" },
+	{ url = "*.ods", use = "gridcraft" },
+	{ url = "*.csv", use = "gridcraft" },
+	{ url = "*.tsv", use = "gridcraft" },
+
+	# PdfCraft / VectorCraft: pdf и вектор
+	{ url = "*.pdf", use = "pdfcraft" },
+	{ url = "*.svg", use = "vectorcraft" },
+	{ url = "*.svgz", use = "vectorcraft" },
+	{ url = "*.fig", use = "figcraft" },
+
+	# LightCraft: RAW (раньше, чем растровые ниже)
+	{ url = "*.dng", use = "lightcraft" },
+	{ url = "*.arw", use = "lightcraft" },
+	{ url = "*.cr2", use = "lightcraft" },
+	{ url = "*.cr3", use = "lightcraft" },
+	{ url = "*.nef", use = "lightcraft" },
+	{ url = "*.raf", use = "lightcraft" },
+	{ url = "*.orf", use = "lightcraft" },
+	{ url = "*.rw2", use = "lightcraft" },
+	{ url = "*.rw", use = "lightcraft" },
+	{ url = "*.pef", use = "lightcraft" },
+
+	# PhotoCraft: растровая графика и рабочие форматы редакторов
+	{ url = "*.png", use = "photocraft" },
+	{ url = "*.jpg", use = "photocraft" },
+	{ url = "*.jpeg", use = "photocraft" },
+	{ url = "*.jfif", use = "photocraft" },
+	{ url = "*.tif", use = "photocraft" },
+	{ url = "*.tiff", use = "photocraft" },
+	{ url = "*.webp", use = "photocraft" },
+	{ url = "*.gif", use = "photocraft" },
+	{ url = "*.bmp", use = "photocraft" },
+	{ url = "*.avif", use = "photocraft" },
+	{ url = "*.qoi", use = "photocraft" },
+	{ url = "*.exr", use = "photocraft" },
+	{ url = "*.hdr", use = "photocraft" },
+	{ url = "*.ico", use = "photocraft" },
+	{ url = "*.xpm", use = "photocraft" },
+	{ url = "*.pbm", use = "photocraft" },
+	{ url = "*.pgm", use = "photocraft" },
+	{ url = "*.ppm", use = "photocraft" },
+	{ url = "*.pnm", use = "photocraft" },
+	{ url = "*.tga", use = "photocraft" },
+	{ url = "*.psd", use = "photocraft" },
+	{ url = "*.psb", use = "photocraft" },
+	{ url = "*.kra", use = "photocraft" },
+	{ url = "*.ora", use = "photocraft" },
+	{ url = "*.pdn", use = "photocraft" },
+
+	# FilmCraft: видео
+	{ url = "*.mp4", use = "filmcraft" },
+	{ url = "*.m4v", use = "filmcraft" },
+	{ url = "*.mov", use = "filmcraft" },
+	{ url = "*.mkv", use = "filmcraft" },
+	{ url = "*.webm", use = "filmcraft" },
+	{ url = "*.avi", use = "filmcraft" },
+	{ url = "*.mxf", use = "filmcraft" },
+	{ url = "*.ts", use = "filmcraft" },
+	{ url = "*.m2ts", use = "filmcraft" },
+	{ url = "*.mpg", use = "filmcraft" },
+	{ url = "*.mpeg", use = "filmcraft" },
+	{ url = "*.mpe", use = "filmcraft" },
+	{ url = "*.3gp", use = "filmcraft" },
+
+	# SoundCraft: звук
+	{ url = "*.wav", use = "soundcraft" },
+	{ url = "*.wave", use = "soundcraft" },
+	{ url = "*.aif", use = "soundcraft" },
+	{ url = "*.aiff", use = "soundcraft" },
+	{ url = "*.aifc", use = "soundcraft" },
+	{ url = "*.flac", use = "soundcraft" },
+	{ url = "*.mp3", use = "soundcraft" },
+	{ url = "*.mid", use = "soundcraft" },
+	{ url = "*.midi", use = "soundcraft" },
+
+	# CADCraft: чертежи
+	{ url = "*.dxf", use = "cadcraft" },
+	{ url = "*.dwg", use = "cadcraft" },
+
+	# ── то, что Craft не заявляет: остаётся LibreOffice ──
+	{ mime = "application/vnd.ms-excel", use = "libreoffice" },
+	{ mime = "application/vnd.ms-powerpoint", use = "libreoffice" },
+	{ url = "*.xls", use = "libreoffice" },
+	{ url = "*.ppt", use = "libreoffice" },
+	{ url = "*.odp", use = "libreoffice" },
+	{ url = "*.odg", use = "libreoffice" },
+
+	# ── текст и код → редактор (последним, чтобы не перехватить csv/tsv/tex) ──
 	{ mime = "text/*", use = "edit" },
 	{ url = "*.json", use = "edit" },
 	{ url = "*.jsonc", use = "edit" },
@@ -35,30 +164,4 @@ prepend_rules = [
 	{ url = "*.yml", use = "edit" },
 	{ url = "*.toml", use = "edit" },
 	{ url = "*.xml", use = "edit" },
-
-	# pdf → zathura
-	{ mime = "application/pdf", use = "zathura" },
-	{ url = "*.pdf", use = "zathura" },
-
-	# office → libreoffice
-	{ mime = "application/msword", use = "libreoffice" },
-	{ mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document", use = "libreoffice" },
-	{ mime = "application/vnd.ms-excel", use = "libreoffice" },
-	{ mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use = "libreoffice" },
-	{ mime = "application/vnd.ms-powerpoint", use = "libreoffice" },
-	{ mime = "application/vnd.openxmlformats-officedocument.presentationml.presentation", use = "libreoffice" },
-	{ mime = "application/vnd.oasis.opendocument.text", use = "libreoffice" },
-	{ mime = "application/vnd.oasis.opendocument.spreadsheet", use = "libreoffice" },
-	{ mime = "application/vnd.oasis.opendocument.presentation", use = "libreoffice" },
-	{ mime = "application/rtf", use = "libreoffice" },
-	{ url = "*.doc", use = "libreoffice" },
-	{ url = "*.docx", use = "libreoffice" },
-	{ url = "*.xls", use = "libreoffice" },
-	{ url = "*.xlsx", use = "libreoffice" },
-	{ url = "*.ppt", use = "libreoffice" },
-	{ url = "*.pptx", use = "libreoffice" },
-	{ url = "*.odt", use = "libreoffice" },
-	{ url = "*.ods", use = "libreoffice" },
-	{ url = "*.odp", use = "libreoffice" },
-	{ url = "*.rtf", use = "libreoffice" },
 ]
