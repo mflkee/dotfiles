@@ -4,6 +4,7 @@
 #   screenrec-toggle.sh            — интерактивное меню (fuzzel)
 #   screenrec-toggle.sh video      — старт/стоп записи видео
 #   screenrec-toggle.sh window     — старт/стоп записи одного окна (диалог портала)
+#   screenrec-toggle.sh window-last — то же окно, что выбирал в прошлый раз (без диалога)
 #   screenrec-toggle.sh replay     — старт/стоп replay-буфера (60 с)
 #   screenrec-toggle.sh save       — сохранить клип из replay-буфера
 #   screenrec-toggle.sh audio      — старт/стоп записи только звука (mp3)
@@ -11,8 +12,9 @@
 #   screenrec-toggle.sh status     — состояние + последние строки логов
 #
 # Источник и звук можно задать сразу, без диалогов (см. apply_source/apply_audio):
-#   screenrec-toggle.sh video window mute        — только окно VM, без звука
-#   screenrec-toggle.sh window mute              — то же самое
+#   screenrec-toggle.sh window mute        — только окно VM, без звука
+#   screenrec-toggle.sh window-last mute   — то же окно без диалога (restore-token)
+#   screenrec-toggle.sh video window mute  — то же, что window mute
 #   screenrec-toggle.sh video region system      — область + звук системы
 #   screenrec-toggle.sh video both both          — оба монитора + система с микрофоном
 #   screenrec-toggle.sh video HDMI-A-1 mute      — конкретный монитор
@@ -22,6 +24,13 @@
 #            notify-send, pactl, ffmpeg (только для аудио), опционально obs.
 # Для записи ОКНА (на Wayland это возможно только через портал) нужен
 # xdg-desktop-portal-gnome: sudo pacman -S xdg-desktop-portal-gnome
+#
+# Грабли (niri + xdg-desktop-portal-gnome): gsr запрашивает все три типа
+# источника (монитор+окно+виртуальный), поэтому в диалоге портала есть пункт
+# «Virtual Monitor» — а niri метода RecordVirtual не реализует, и при выборе
+# этого пункта Start падает с «Unknown method RecordVirtual». Окно надо выбирать
+# в разделе «Окна»/«Windows» диалога; после первого выбора его можно писать без
+# диалога (режим window-last, restore-token в ~/.config/gpu-screen-recorder/).
 set -uo pipefail
 
 MODE="${1:-menu}"
@@ -156,7 +165,8 @@ apply_audio() {
   if [[ "$key" == mic:* ]]; then
     key="mic:${key#*:}"
   else
-    case "${key,,}" in
+    local lc="${key,,}"; lc="${lc//_/-}"
+    case "$lc" in
       both|all|оба|всё|все)         key="both" ;;
       system|sys|система|монитор)    key="system" ;;
       mute|none|no|off|нет|без|тихо) key="mute" ;;
@@ -210,8 +220,9 @@ pick_audio() {
 # --------------------------------------------------------------- источник ----
 
 # Заполняет CAPTURE_ARGS по ключу:
-# BOTH | MON:<имя монитора> | FOCUSED | REGION | PORTAL
-# Плюс человеческие алиасы: window/окно/vm, region/область, both/оба, HDMI-A-1 …
+# BOTH | MON:<имя монитора> | FOCUSED | REGION | PORTAL | PORTAL_LAST
+# Плюс человеческие алиасы: window/окно/vm, window-last/окно-last,
+# region/область, both/оба, HDMI-A-1 …
 CAPTURE_ARGS=()
 PORTAL_CAPTURE=0
 SRC_KEY=""
@@ -220,12 +231,15 @@ apply_source() {
   if [[ "$key" == *:* ]]; then
     key="MON:${key#*:}"
   else
-    case "${key,,}" in
-      portal|window|окно|vm)         key="PORTAL" ;;
-      region|area|область|выделить)  key="REGION" ;;
-      focused|this|здесь)            key="FOCUSED" ;;
-      both|all|оба|всё|все)          key="BOTH" ;;
-      *)                             key="MON:$key" ;;
+    local lc="${key,,}"; lc="${lc//_/-}"
+    case "$lc" in
+      portal|window|окно|vm)              key="PORTAL" ;;
+      window-last|окно-last|окно-прошлое|portal-last|restore|last|vm-last|last-window)
+                                          key="PORTAL_LAST" ;;
+      region|area|область|выделить)       key="REGION" ;;
+      focused|this|здесь)                 key="FOCUSED" ;;
+      both|all|оба|всё|все)               key="BOTH" ;;
+      *)                                  key="MON:$key" ;;
     esac
   fi
 
@@ -258,7 +272,7 @@ apply_source() {
       [[ -n "$region" ]] || return 1
       CAPTURE_ARGS=(-w region -region "$region")
       ;;
-    PORTAL)
+    PORTAL|PORTAL_LAST)
       # Отдельное окно на Wayland пишется только через xdg-desktop-portal
       # (niri отдаёт окна в диалог портала; gsr получает поток по PipeWire).
       # Проверяем наличие интерфейса ScreenCast (GetAvailableSourceTypes в новых
@@ -271,6 +285,15 @@ apply_source() {
         return 1
       fi
       CAPTURE_ARGS=(-w portal)
+      # PORTAL_LAST — переиспользовать окно, выбранное в прошлый раз (gsr хранит
+      # restore-token в ~/.config/gpu-screen-recorder/restore_token), диалога нет.
+      if [[ "$key" == "PORTAL_LAST" ]]; then
+        if [[ -s "${XDG_CONFIG_HOME:-$HOME/.config}/gpu-screen-recorder/restore_token" ]]; then
+          CAPTURE_ARGS+=(-restore-portal-session yes)
+        else
+          notify "Запись окна" "Прошлого выбора нет — выбери окно в диалоге"
+        fi
+      fi
       PORTAL_CAPTURE=1
       ;;
     *) return 1 ;;
@@ -289,8 +312,9 @@ pick_source() {
     labels+=("🖥 Монитор $name ($res)")
     keys+=("MON:$name")
   done < <(gpu-screen-recorder --list-monitors 2>/dev/null || true)
-  labels+=("🖥 Этот монитор (где курсор)" "✂️ Область (выделить мышью)" "🪟 Окно (выбрать в диалоге)")
-  keys+=("FOCUSED" "REGION" "PORTAL")
+  labels+=("🖥 Этот монитор (где курсор)" "✂️ Область (выделить мышью)" \
+           "🪟 Окно (выбрать в диалоге)" "🪟 Окно (то же, что в прошлый раз)")
+  keys+=("FOCUSED" "REGION" "PORTAL" "PORTAL_LAST")
 
   local sel idx
   sel=$(pick "Что записывать?" "${labels[@]}")
@@ -339,7 +363,11 @@ start_video() {
     return 1
   fi
   if (( PORTAL_CAPTURE )); then
-    notify "⏺ Запись окна" "$(basename "$out") — выбери окно в диалоге портала"
+    if [[ "$SRC_KEY" == "PORTAL_LAST" ]]; then
+      notify "⏺ Запись окна" "$(basename "$out") — то же окно, что в прошлый раз (без диалога)"
+    else
+      notify "⏺ Запись окна" "$(basename "$out") — в диалоге раздел «Окна», не «Virtual Monitor»"
+    fi
   else
     notify "⏺ Запись экрана" "$(basename "$out") — ${FPS} FPS"
   fi
@@ -573,10 +601,12 @@ case "$MODE" in
   menu|"")  menu ;;
   video)    SRC_PREF="${2:-}"   AUDIO_PREF="${3:-}"  start_video ;;
   window)   SRC_PREF=PORTAL    AUDIO_PREF="${2:-}"  start_video ;;
+  window-last|last)
+            SRC_PREF=PORTAL_LAST AUDIO_PREF="${2:-}" start_video ;;
   replay)   SRC_PREF="${2:-}"   AUDIO_PREF="${3:-}"  start_replay ;;
   save)     save_replay ;;
   audio)    start_audio ;;
   stop-all) stop_all ;;
   status)   status ;;
-  *)        echo "usage: $(basename "$0") [menu|video|window|replay|save|audio|stop-all|status] [источник] [звук]" >&2; exit 2 ;;
+  *)        echo "usage: $(basename "$0") [menu|video|window|window-last|replay|save|audio|stop-all|status] [источник] [звук]" >&2; exit 2 ;;
 esac

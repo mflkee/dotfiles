@@ -111,10 +111,24 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 ## Запись экрана / скриншоты (niri)
 - **Хоткеи**: `Ctrl+Shift+R` — меню записи (fuzzel); `Alt+Shift+R` — сохранить клип из replay-буфера;
   `Super+Shift+M` — запись только звука (MP3); `Mod+Shift+O` — OBS Studio; `Mod+Shift+S` — скриншот области.
-- **Скрипт**: `~/.config/scripts/screenrec-toggle.sh` (режимы `menu|video|replay|save|audio|stop-all|status`).
+- **Скрипт**: `~/.config/scripts/screenrec-toggle.sh` (режимы `menu|video|window|window-last|replay|save|audio|stop-all|status`;
+  источник и звук можно задать аргументами без диалогов: `video window mute`, `window-last mute`,
+  `video region system`, `video HDMI-A-1 mute`, `replay window mute`).
   Видео — **gpu-screen-recorder** (`gsr-cli -ipc $XDG_RUNTIME_DIR/screenrec-*.sock` для стоп/пауза/replay),
   аудио — `-a "default_output|<mic>"` (микрофон выбирается из `pactl list sources`, `mic_clean` первым),
   звук-онли — ffmpeg + монитор дефолтного сынка (`pactl get-default-sink`.monitor) или выбранный микрофон в mp3. Зависимости: gsr+gsr-cli, fuzzel, slurp/grim, wl-copy, pactl, ffmpeg.
+- **Запись отдельного ОКНА (например, окна VM)**: на Wayland gsr умеет только `-w portal`, нужен
+  `xdg-desktop-portal-gnome` (niri отдаёт окна в диалог портала; в `~/.config/xdg-desktop-portal/portals.conf`
+  — `default=gnome` + gtk для Access/Notification/FileChooser). Поток приходит по PipeWire, размер = размер окна.
+  **Грабли (2026-10-16)**: gsr запрашивает `types=7` (монитор+окно+виртуальный), а niri реализует только
+  `RecordMonitor`/`RecordWindow` (нет `RecordVirtual`), и в диалоге «Virtual Monitor» выбирается
+  автоматически, т.к. niri отдаёт DisplayConfig без актуальной конфигурации
+  (`Monitor 'Built-in display' has no configuration which is-current!`). При выборе этого пункта
+  Start падает: `Unknown method 'RecordVirtual'`. Надо выбирать окно в разделе «Окна»/«Windows».
+  После первого выбора работает `window-last`: gsr переиспользует restore-token
+  (`~/.config/gpu-screen-recorder/restore_token`, окно сопоставляется по app-id+title) — диалога нет.
+  Проверка: `screenrec-toggle.sh window-last mute` → в логе `~/.cache/screenrec/video.log` должно быть
+  `pipewire negotiation finished`.
 - **Куда пишет**: видео → `~/Videos/`, replay-клипы → `~/Videos/Replays/`, mp3 → `~/Music/`,
   логи/pid → `~/.cache/screenrec/`. OBS Studio (32.2.2) установлен — качать не нужно.
 - **Грабли**: replay-режим gsr требует явных `-c mp4` и `-ro <dir>` (иначе `option -c/-ro is required`);
