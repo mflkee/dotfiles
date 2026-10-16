@@ -109,7 +109,7 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 ```
 
 ## Запись экрана / скриншоты (niri)
-- **Хоткеи**: `Ctrl+Shift+R` — меню записи (fuzzel); `Alt+Shift+R` — сохранить клип из replay-буфера;
+- **Хоткеи**: `Ctrl+Shift+R` — меню записи (Noctalia-лавнчер, фолбэк fuzzel); `Alt+Shift+R` — сохранить клип из replay-буфера;
   `Super+Shift+M` — запись только звука (MP3); `Mod+Shift+O` — OBS Studio; `Mod+Shift+S` — скриншот области.
 - **Скрипт**: `~/.config/scripts/screenrec-toggle.sh` (режимы `menu|video|window|window-last|replay|save|audio|stop-all|status`;
   источник и звук можно задать аргументами без диалогов: `video window mute`, `window-last mute`,
@@ -129,6 +129,23 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   (`~/.config/gpu-screen-recorder/restore_token`, окно сопоставляется по app-id+title) — диалога нет.
   Проверка: `screenrec-toggle.sh window-last mute` → в логе `~/.cache/screenrec/video.log` должно быть
   `pipewire negotiation finished`.
+- **Меню скрипта** — в стиле Noctalia: `noctalia dmenu -p <prompt>` (лавнчер шелла), фолбэк — fuzzel
+  (только если Noctalia не запущен). Форсировать: `SCREENREC_MENU=fuzzel|rofi|noctalia`.
+- **Готовый визуальный UI (ShadowPlay-style)**: пакет `gpu-screen-recorder-ui` (стоит, автозапуск
+  `~/.config/autostart/gpu-screen-recorder-ui.desktop` → systemd-юнит
+  `app-gpu\x2dscreen\x2drecorder\x2dui@autostart.service`, демон `gsr-ui launch-daemon`) — полноэкранный
+  оверлей по **`Alt+Z`**: список источников (монитор, region, **portal** = выбор окна через портал, камеры),
+  replay-буфер, качество, хоткеи. CLI: `gsr-ui-cli toggle-show|toggle-record|toggle-record-window|
+  toggle-record-region|toggle-pause|toggle-stream`. Работает через XWayland (нужен `xwayland-satellite`).
+  **Грабли**: демон проверяет портал ScreenCast только при старте — если он стартовал до установки
+  `xdg-desktop-portal-gnome`, захват окна не работает, лечится
+  `systemctl --user restart "app-gpu\x2dscreen\x2drecorder\x2dui@autostart.service"`.
+- **Ещё варианты «с выбором источника»**: `kooha` (extra, GTK4/libadwaita + портал, движок GStreamer),
+  `gpu-screen-recorder-gtk` (AUR, GTK-фронтенд к тому же gsr), OBS Studio (сцены/источники).
+- **Визуальные плюшки**: виджеты бара Noctalia — `PrivacyWidget` (индикатор screen-sharing/mic/camera)
+  и `CustomButtonWidget` (кнопка в баре на `screenrec-toggle.sh` / `gsr-ui-cli`); niri window-rule
+  `match is-window-cast-target=true` с красным focus-ring (подсветка записываемого окна);
+  пакет `gpu-screen-recorder-notification` (`gsr-notify`).
 - **Куда пишет**: видео → `~/Videos/`, replay-клипы → `~/Videos/Replays/`, mp3 → `~/Music/`,
   логи/pid → `~/.cache/screenrec/`. OBS Studio (32.2.2) установлен — качать не нужно.
 - **Грабли**: replay-режим gsr требует явных `-c mp4` и `-ro <dir>` (иначе `option -c/-ro is required`);

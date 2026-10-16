@@ -689,21 +689,15 @@ binds {
         spawn-sh "sh $HOME/.config/scripts/screenshot_region_clipboard.sh"
     }
 
-    // Запись экрана (меню): gpu-screen-recorder — старт/стоп записи, replay-буфер 60 с,
-    // только звук (mp3), скриншот области, запуск OBS Studio. Скрипт: screenrec-toggle.sh.
-    // Если чего-то нет — пункт меню сам скажет, что установить (obs уже стоит).
-    Shift+Ctrl+R repeat=false hotkey-overlay-title="Меню записи (gsr / OBS / скриншот)" {
-        spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh"
-    }
-    // Быстрое сохранение клипа из replay-буфера (последние 60 с).
-    Alt+Shift+R repeat=false hotkey-overlay-title="Сохранить клип (replay 60 с)" {
-        spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh save"
-    }
-    Super+Shift+M repeat=false hotkey-overlay-title="Записать только звук (MP3)" {
-        spawn-sh "sh $HOME/.config/scripts/screenrec-toggle.sh audio"
-    }
+    // Запись экрана — штатными средствами (свой скрипт screenrec-toggle.sh удалён 2026-10-16):
+    //  • Alt+Z — оверлей gpu-screen-recorder-ui (ShadowPlay-style): выбор источника
+    //    (монитор / region / portal-окно), replay-буфер, качество, хоткеи. Ловит клавиши сам (evdev).
+    //  • виджет Noctalia «Screen Recorder» в правом блоке бара (плагин screen-recorder):
+    //    левый клик — старт/стоп, правый — настройки (источник portal, fps, кодек, аудио, replay).
+    // Если понадобятся бинды — есть CLI без диалогов:
+    //   gsr-ui-cli toggle-show|toggle-record|toggle-record-window|toggle-record-region|replay-save
 
-    // OBS Studio — отдельной кнопкой (или из меню записи).
+    // OBS Studio — отдельной кнопкой.
     Mod+Shift+O hotkey-overlay-title="Открыть OBS Studio" { spawn "obs"; }
 
     // Applications such as remote-desktop clients and software KVM switches may
