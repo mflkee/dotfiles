@@ -3,14 +3,25 @@
 #
 #   screenrec-toggle.sh            — интерактивное меню (fuzzel)
 #   screenrec-toggle.sh video      — старт/стоп записи видео
+#   screenrec-toggle.sh window     — старт/стоп записи одного окна (диалог портала)
 #   screenrec-toggle.sh replay     — старт/стоп replay-буфера (60 с)
 #   screenrec-toggle.sh save       — сохранить клип из replay-буфера
 #   screenrec-toggle.sh audio      — старт/стоп записи только звука (mp3)
 #   screenrec-toggle.sh stop-all   — остановить всё
 #   screenrec-toggle.sh status     — состояние + последние строки логов
 #
+# Источник и звук можно задать сразу, без диалогов (см. apply_source/apply_audio):
+#   screenrec-toggle.sh video window mute        — только окно VM, без звука
+#   screenrec-toggle.sh window mute              — то же самое
+#   screenrec-toggle.sh video region system      — область + звук системы
+#   screenrec-toggle.sh video both both          — оба монитора + система с микрофоном
+#   screenrec-toggle.sh video HDMI-A-1 mute      — конкретный монитор
+#   screenrec-toggle.sh replay window mute       — replay-буфер по окну
+#
 # Требуется: gpu-screen-recorder + gsr-cli, fuzzel, slurp/grim, wl-copy,
 #            notify-send, pactl, ffmpeg (только для аудио), опционально obs.
+# Для записи ОКНА (на Wayland это возможно только через портал) нужен
+# xdg-desktop-portal-gnome: sudo pacman -S xdg-desktop-portal-gnome
 set -uo pipefail
 
 MODE="${1:-menu}"
@@ -28,10 +39,12 @@ video_sock="$runtime_dir/screenrec-video.sock"
 video_out="$state_dir/video.out"
 video_via_replay="$state_dir/video.via-replay"
 video_log="$state_dir/video.log"
+video_src="$state_dir/video.src"
 
 replay_pid_file="$state_dir/replay.pid"
 replay_sock="$runtime_dir/screenrec-replay.sock"
 replay_log="$state_dir/replay.log"
+replay_src="$state_dir/replay.src"
 
 audio_pid="$state_dir/audiorec.pid"
 audio_out="$state_dir/audiorec.out"
@@ -134,26 +147,23 @@ system_monitor() {
   [[ -n "$sink" ]] && printf '%s.monitor' "$sink"
 }
 
-# Заполняет AUDIO_ARGS для gpu-screen-recorder
+# Заполняет AUDIO_ARGS для gpu-screen-recorder по ключу:
+# both | system | mute | mic:<имя устройства>  (или просто имя устройства)
 AUDIO_ARGS=()
-pick_audio() {
-  local labels=("🔊 Система + микрофон" "🔊 Только система")
-  local keys=("both" "system")
-  local n d
-  while IFS='|' read -r n d; do
-    [[ -n "$n" ]] || continue
-    labels+=("🎤 Только микрофон: $d")
-    keys+=("mic:$n")
-  done < <(list_mics)
-  labels+=("🔇 Без звука")
-  keys+=("mute")
-
-  local sel idx
-  sel=$(pick "Источник звука" "${labels[@]}")
-  [[ -z "$sel" ]] && return 1
-  idx=$(index_of "$sel" "${labels[@]}")
-  (( idx < 0 )) && return 1
-  local key="${keys[$idx]}"
+AUDIO_KEY=""
+apply_audio() {
+  local key="${1:-both}"
+  if [[ "$key" == mic:* ]]; then
+    key="mic:${key#*:}"
+  else
+    case "${key,,}" in
+      both|all|оба|всё|все)         key="both" ;;
+      system|sys|система|монитор)    key="system" ;;
+      mute|none|no|off|нет|без|тихо) key="mute" ;;
+      *)                             key="mic:$key" ;;
+    esac
+  fi
+  AUDIO_KEY="$key"
 
   AUDIO_ARGS=()
   case "$key" in
@@ -175,43 +185,53 @@ pick_audio() {
   return 0
 }
 
-# --------------------------------------------------------------- источник ----
+pick_audio() {
+  [[ -n "${AUDIO_PREF:-}" ]] && { apply_audio "$AUDIO_PREF"; return 0; }
 
-CAPTURE_ARGS=()
-pick_source() {
-  local labels=("🖥 Оба монитора")
-  local keys=("BOTH")
-  local name res
-  while IFS='|' read -r name res; do
-    [[ -n "$name" ]] || continue
-    labels+=("🖥 Монитор $name ($res)")
-    keys+=("MON:$name")
-  done < <(gpu-screen-recorder --list-monitors 2>/dev/null || true)
-  labels+=("🖥 Этот монитор (где курсор)" "✂️ Область (выделить мышью)")
+  local labels=("🔊 Система + микрофон" "🔊 Только система")
+  local keys=("both" "system")
+  local n d
+  while IFS='|' read -r n d; do
+    [[ -n "$n" ]] || continue
+    labels+=("🎤 Только микрофон: $d")
+    keys+=("mic:$n")
+  done < <(list_mics)
+  labels+=("🔇 Без звука")
+  keys+=("mute")
 
   local sel idx
-  sel=$(pick "Что записывать?" "${labels[@]}")
+  sel=$(pick "Источник звука" "${labels[@]}")
   [[ -z "$sel" ]] && return 1
   idx=$(index_of "$sel" "${labels[@]}")
   (( idx < 0 )) && return 1
+  apply_audio "${keys[$idx]}"
+}
 
-  if (( idx == ${#keys[@]} )); then     # «этот монитор»
-    local focused
-    focused=$(niri msg --json focused-output 2>/dev/null | jq -r '.name' 2>/dev/null || true)
-    ([ -z "$focused" ] || [ "$focused" = "null" ]) && focused=$(gpu-screen-recorder --list-monitors 2>/dev/null | head -n1 | cut -d'|' -f1)
-    [[ -n "$focused" ]] || { notify "Запись" "Не удалось определить монитор"; return 1; }
-    CAPTURE_ARGS=(-w "$focused")
-    return 0
-  fi
-  if (( idx == ${#keys[@]} + 1 )); then # «область»
-    local region
-    region=$(slurp 2>/dev/null || true)
-    [[ -n "$region" ]] || return 1
-    CAPTURE_ARGS=(-w region -region "$region")
-    return 0
+# --------------------------------------------------------------- источник ----
+
+# Заполняет CAPTURE_ARGS по ключу:
+# BOTH | MON:<имя монитора> | FOCUSED | REGION | PORTAL
+# Плюс человеческие алиасы: window/окно/vm, region/область, both/оба, HDMI-A-1 …
+CAPTURE_ARGS=()
+PORTAL_CAPTURE=0
+SRC_KEY=""
+apply_source() {
+  local key="${1:-BOTH}"
+  if [[ "$key" == *:* ]]; then
+    key="MON:${key#*:}"
+  else
+    case "${key,,}" in
+      portal|window|окно|vm)         key="PORTAL" ;;
+      region|area|область|выделить)  key="REGION" ;;
+      focused|this|здесь)            key="FOCUSED" ;;
+      both|all|оба|всё|все)          key="BOTH" ;;
+      *)                             key="MON:$key" ;;
+    esac
   fi
 
-  local key="${keys[$idx]}"
+  CAPTURE_ARGS=()
+  PORTAL_CAPTURE=0
+  SRC_KEY="$key"
   case "$key" in
     BOTH)
       local args=() mon
@@ -225,9 +245,59 @@ pick_source() {
       CAPTURE_ARGS=(-w "$joined")
       ;;
     MON:*) CAPTURE_ARGS=(-w "${key#MON:}") ;;
+    FOCUSED)
+      local focused
+      focused=$(niri msg --json focused-output 2>/dev/null | jq -r '.name' 2>/dev/null || true)
+      ([ -z "$focused" ] || [ "$focused" = "null" ]) && focused=$(gpu-screen-recorder --list-monitors 2>/dev/null | head -n1 | cut -d'|' -f1)
+      [[ -n "$focused" ]] || { notify "Запись" "Не удалось определить монитор"; return 1; }
+      CAPTURE_ARGS=(-w "$focused")
+      ;;
+    REGION)
+      local region
+      region=$(slurp 2>/dev/null || true)
+      [[ -n "$region" ]] || return 1
+      CAPTURE_ARGS=(-w region -region "$region")
+      ;;
+    PORTAL)
+      # Отдельное окно на Wayland пишется только через xdg-desktop-portal
+      # (niri отдаёт окна в диалог портала; gsr получает поток по PipeWire).
+      # Проверяем наличие интерфейса ScreenCast (GetAvailableSourceTypes в новых
+      # версиях портала убран, поэтому спрашиваем свойство version).
+      if ! timeout 10 gdbus call --session --dest org.freedesktop.portal.Desktop \
+             --object-path /org/freedesktop/portal/desktop \
+             --method org.freedesktop.DBus.Properties.Get \
+             org.freedesktop.portal.ScreenCast version >/dev/null 2>&1; then
+        notify "Запись окна недоступна" "Нет портала ScreenCast: sudo pacman -S xdg-desktop-portal-gnome"
+        return 1
+      fi
+      CAPTURE_ARGS=(-w portal)
+      PORTAL_CAPTURE=1
+      ;;
     *) return 1 ;;
   esac
   return 0
+}
+
+pick_source() {
+  [[ -n "${SRC_PREF:-}" ]] && { apply_source "$SRC_PREF"; return $?; }
+
+  local labels=("🖥 Оба монитора")
+  local keys=("BOTH")
+  local name res
+  while IFS='|' read -r name res; do
+    [[ -n "$name" ]] || continue
+    labels+=("🖥 Монитор $name ($res)")
+    keys+=("MON:$name")
+  done < <(gpu-screen-recorder --list-monitors 2>/dev/null || true)
+  labels+=("🖥 Этот монитор (где курсор)" "✂️ Область (выделить мышью)" "🪟 Окно (выбрать в диалоге)")
+  keys+=("FOCUSED" "REGION" "PORTAL")
+
+  local sel idx
+  sel=$(pick "Что записывать?" "${labels[@]}")
+  [[ -z "$sel" ]] && return 1
+  idx=$(index_of "$sel" "${labels[@]}")
+  (( idx < 0 )) && return 1
+  apply_source "${keys[$idx]}"
 }
 
 # ------------------------------------------------------------------ видео ----
@@ -260,14 +330,19 @@ start_video() {
   local p=$!
   echo "$p" > "$video_pid"
   echo "$out" > "$video_out"
+  echo "${SRC_KEY:-?}" > "$video_src"
   sleep 1.5
   if ! kill -0 "$p" 2>/dev/null; then
     local err; err=$(log_tail "$video_log")
-    rm -f "$video_pid" "$video_out"
+    rm -f "$video_pid" "$video_out" "$video_src"
     notify "⛔ Запись не началась" "${err:-см. $video_log}"
     return 1
   fi
-  notify "⏺ Запись экрана" "$(basename "$out") — ${FPS} FPS"
+  if (( PORTAL_CAPTURE )); then
+    notify "⏺ Запись окна" "$(basename "$out") — выбери окно в диалоге портала"
+  else
+    notify "⏺ Запись экрана" "$(basename "$out") — ${FPS} FPS"
+  fi
 }
 
 stop_video() {
@@ -327,14 +402,19 @@ start_replay() {
     -r 60 -replay-storage ram -o "$replay_dir" -ro "$videos_dir" -ipc "$replay_sock" >"$replay_log" 2>&1 &
   local p=$!
   echo "$p" > "$replay_pid_file"
+  echo "${SRC_KEY:-?}" > "$replay_src"
   sleep 1.5
   if ! kill -0 "$p" 2>/dev/null; then
     local err; err=$(log_tail "$replay_log")
-    rm -f "$replay_pid_file"
+    rm -f "$replay_pid_file" "$replay_src"
     notify "⛔ Replay-буфер не запустился" "${err:-см. $replay_log}"
     return 1
   fi
-  notify "🔁 Replay-буфер включён" "Последние 60 с. Сохранение: Ctrl+Shift+R → «Сохранить клип» (или Alt+Shift+R)"
+  if (( PORTAL_CAPTURE )); then
+    notify "🔁 Replay-буфер (окно) включён" "Выбери окно в диалоге. Сохранение: Alt+Shift+R"
+  else
+    notify "🔁 Replay-буфер включён" "Последние 60 с. Сохранение: Ctrl+Shift+R → «Сохранить клип» (или Alt+Shift+R)"
+  fi
 }
 
 save_replay() {
@@ -465,12 +545,20 @@ status() {
     if [[ -f "$video_via_replay" ]]; then
       s+="видео: ЗАПИСЬ (внутри replay-процесса)\n"
     else
-      s+="видео: ЗАПИСЬ ($(basename "$(cat "$video_out" 2>/dev/null)" 2>/dev/null))\n"
+      s+="видео: ЗАПИСЬ ($(basename "$(cat "$video_out" 2>/dev/null)" 2>/dev/null)"
+      [[ -r "$video_src" ]] && s+=", источник: $(cat "$video_src")"
+      s+=")\n"
     fi
   else
     s+="видео: стоп\n"
   fi
-  replay_running && s+="replay: ВКЛ (60 с)\n" || s+="replay: выкл\n"
+  if replay_running; then
+    s+="replay: ВКЛ (60 с"
+    [[ -r "$replay_src" ]] && s+=", источник: $(cat "$replay_src")"
+    s+=")\n"
+  else
+    s+="replay: выкл\n"
+  fi
   if audio_running; then
     s+="аудио: ЗАПИСЬ ($(basename "$(cat "$audio_out" 2>/dev/null)" 2>/dev/null))\n"
   else
@@ -483,11 +571,12 @@ status() {
 
 case "$MODE" in
   menu|"")  menu ;;
-  video)    start_video ;;
-  replay)   start_replay ;;
+  video)    SRC_PREF="${2:-}"   AUDIO_PREF="${3:-}"  start_video ;;
+  window)   SRC_PREF=PORTAL    AUDIO_PREF="${2:-}"  start_video ;;
+  replay)   SRC_PREF="${2:-}"   AUDIO_PREF="${3:-}"  start_replay ;;
   save)     save_replay ;;
   audio)    start_audio ;;
   stop-all) stop_all ;;
   status)   status ;;
-  *)        echo "usage: $(basename "$0") [menu|video|replay|save|audio|stop-all|status]" >&2; exit 2 ;;
+  *)        echo "usage: $(basename "$0") [menu|video|window|replay|save|audio|stop-all|status] [источник] [звук]" >&2; exit 2 ;;
 esac
