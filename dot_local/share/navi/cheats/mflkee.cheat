@@ -19,11 +19,23 @@ $ dsync doctor
 ## Скриншот области (grim+slurp, файл+буфер)
 $ sh ~/.config/scripts/screenshot_region_clipboard.sh
 
-## Запись экрана (toggle, wf-recorder)
-$ sh ~/.config/scripts/screenrec-toggle.sh
+## Запись экрана: оверлей gsr-ui (ShadowPlay-style, клавиша Alt+Z)
+$ gsr-ui-cli toggle-show
 
-## Запись аудио (toggle, ffmpeg)
-$ sh ~/.config/scripts/screenrec-toggle.sh audio
+## Запись: старт/стоп без оверлея
+$ gsr-ui-cli toggle-record
+
+## Запись окна / области (диалог портала)
+$ gsr-ui-cli toggle-record-window
+
+## Replay: вкл/выкл буфер и сохранить клип
+$ gsr-ui-cli toggle-replay
+
+## Сохранить последние N секунд из replay-буфера
+$ gsr-ui-cli replay-save
+
+## Скриншот: область/монитор/окно (noctalia)
+$ noctalia msg screenshot-region
 
 ## Локскрин (Noctalia, можно с биндом Super+Alt+L)
 $ noctalia msg session lock

@@ -109,49 +109,46 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 ```
 
 ## Запись экрана / скриншоты (niri)
-- **Хоткеи**: `Ctrl+Shift+R` — меню записи (Noctalia-лавнчер, фолбэк fuzzel); `Alt+Shift+R` — сохранить клип из replay-буфера;
-  `Super+Shift+M` — запись только звука (MP3); `Mod+Shift+O` — OBS Studio; `Mod+Shift+S` — скриншот области.
-- **Скрипт**: `~/.config/scripts/screenrec-toggle.sh` (режимы `menu|video|window|window-last|replay|save|audio|stop-all|status`;
-  источник и звук можно задать аргументами без диалогов: `video window mute`, `window-last mute`,
-  `video region system`, `video HDMI-A-1 mute`, `replay window mute`).
-  Видео — **gpu-screen-recorder** (`gsr-cli -ipc $XDG_RUNTIME_DIR/screenrec-*.sock` для стоп/пауза/replay),
-  аудио — `-a "default_output|<mic>"` (микрофон выбирается из `pactl list sources`, `mic_clean` первым),
-  звук-онли — ffmpeg + монитор дефолтного сынка (`pactl get-default-sink`.monitor) или выбранный микрофон в mp3. Зависимости: gsr+gsr-cli, fuzzel, slurp/grim, wl-copy, pactl, ffmpeg.
-- **Запись отдельного ОКНА (например, окна VM)**: на Wayland gsr умеет только `-w portal`, нужен
-  `xdg-desktop-portal-gnome` (niri отдаёт окна в диалог портала; в `~/.config/xdg-desktop-portal/portals.conf`
-  — `default=gnome` + gtk для Access/Notification/FileChooser). Поток приходит по PipeWire, размер = размер окна.
+- **Основной путь записи** (с 2026-10-16; свой скрипт `screenrec-toggle.sh` удалён — был «визуально странный»):
+  - **`Alt+Z`** — оверлей **gpu-screen-recorder-ui** (ShadowPlay-style). Пакет `gpu-screen-recorder-ui`,
+    автозапуск `~/.config/autostart/gpu-screen-recorder-ui.desktop` → юнит
+    `app-gpu\x2dscreen\x2drecorder\x2dui@autostart.service`, демон `gsr-ui launch-daemon`.
+    Источники: монитор, `region`, **`portal`** (= диалог выбора окна/монитора), камеры; плюс replay-буфер,
+    качество, хоткеи, настройки. Клавиши ловит сам через evdev (`/dev/input`, пользователь в группе `input`),
+    поддержка композитора не нужна; работает через XWayland (`xwayland-satellite`).
+    CLI (для биндов): `gsr-ui-cli toggle-show|toggle-record|toggle-record-window|toggle-record-region|
+    toggle-pause|toggle-replay|replay-save|take-screenshot{,-region,-window}|status`.
+    **Грабли**: портал ScreenCast демон проверяет только на старте — если он стартовал до установки
+    `xdg-desktop-portal-gnome`, захват окна не работает; лечится
+    `systemctl --user restart "app-gpu\x2dscreen\x2drecorder\x2dui@autostart.service"`.
+  - **Виджет Noctalia «Screen Recorder»** — официальный плагин `screen-recorder` (v1.3.7, включён, стоит
+    в правом блоке бара: `bar.widgets.right[].id = plugin:screen-recorder`): левый клик — старт/стоп,
+    правый — настройки (`videoSource=portal` по умолчанию, fps, кодек, качество, аудио, replay,
+    `restorePortalSession`, папка вывода), плюс виджет в Control Center. IPC:
+    `noctalia msg plugin <author/plugin:entry> plugin:screen-recorder <event>`
+    (toggle/start/stop/toggleReplay/saveReplay). **Не держать одновременно с gsr-ui**: оба запускают свой
+    `gpu-screen-recorder`.
+- **Запись отдельного ОКНА (например, окна VM)**: на Wayland и gsr, и плагин умеют это только через портал
+  (`-w portal`), нужен `xdg-desktop-portal-gnome` (niri отдаёт окна в диалог портала; в
+  `~/.config/xdg-desktop-portal/portals.conf` — `default=gnome` + gtk для Access/Notification/FileChooser).
+  Поток приходит по PipeWire, размер кадра = размер окна.
   **Грабли (2026-10-16)**: gsr запрашивает `types=7` (монитор+окно+виртуальный), а niri реализует только
-  `RecordMonitor`/`RecordWindow` (нет `RecordVirtual`), и в диалоге «Virtual Monitor» выбирается
+  `RecordMonitor`/`RecordWindow` (нет `RecordVirtual`), и «Virtual Monitor» в диалоге выбирается
   автоматически, т.к. niri отдаёт DisplayConfig без актуальной конфигурации
-  (`Monitor 'Built-in display' has no configuration which is-current!`). При выборе этого пункта
-  Start падает: `Unknown method 'RecordVirtual'`. Надо выбирать окно в разделе «Окна»/«Windows».
-  После первого выбора работает `window-last`: gsr переиспользует restore-token
-  (`~/.config/gpu-screen-recorder/restore_token`, окно сопоставляется по app-id+title) — диалога нет.
-  Проверка: `screenrec-toggle.sh window-last mute` → в логе `~/.cache/screenrec/video.log` должно быть
-  `pipewire negotiation finished`.
-- **Меню скрипта** — в стиле Noctalia: `noctalia dmenu -p <prompt>` (лавнчер шелла), фолбэк — fuzzel
-  (только если Noctalia не запущен). Форсировать: `SCREENREC_MENU=fuzzel|rofi|noctalia`.
-- **Готовый визуальный UI (ShadowPlay-style)**: пакет `gpu-screen-recorder-ui` (стоит, автозапуск
-  `~/.config/autostart/gpu-screen-recorder-ui.desktop` → systemd-юнит
-  `app-gpu\x2dscreen\x2drecorder\x2dui@autostart.service`, демон `gsr-ui launch-daemon`) — полноэкранный
-  оверлей по **`Alt+Z`**: список источников (монитор, region, **portal** = выбор окна через портал, камеры),
-  replay-буфер, качество, хоткеи. CLI: `gsr-ui-cli toggle-show|toggle-record|toggle-record-window|
-  toggle-record-region|toggle-pause|toggle-stream`. Работает через XWayland (нужен `xwayland-satellite`).
-  **Грабли**: демон проверяет портал ScreenCast только при старте — если он стартовал до установки
-  `xdg-desktop-portal-gnome`, захват окна не работает, лечится
-  `systemctl --user restart "app-gpu\x2dscreen\x2drecorder\x2dui@autostart.service"`.
-- **Ещё варианты «с выбором источника»**: `kooha` (extra, GTK4/libadwaita + портал, движок GStreamer),
-  `gpu-screen-recorder-gtk` (AUR, GTK-фронтенд к тому же gsr), OBS Studio (сцены/источники).
-- **Визуальные плюшки**: виджеты бара Noctalia — `PrivacyWidget` (индикатор screen-sharing/mic/camera)
-  и `CustomButtonWidget` (кнопка в баре на `screenrec-toggle.sh` / `gsr-ui-cli`); niri window-rule
-  `match is-window-cast-target=true` с красным focus-ring (подсветка записываемого окна);
-  пакет `gpu-screen-recorder-notification` (`gsr-notify`).
-- **Куда пишет**: видео → `~/Videos/`, replay-клипы → `~/Videos/Replays/`, mp3 → `~/Music/`,
-  логи/pid → `~/.cache/screenrec/`. OBS Studio (32.2.2) установлен — качать не нужно.
-- **Грабли**: replay-режим gsr требует явных `-c mp4` и `-ro <dir>` (иначе `option -c/-ro is required`);
-  регулярная запись во время replay идёт через тот же процесс (`gsr-cli start-replay-recording`).
-  mp4+aac пишет в лог безобидное `non monotonically increasing dts` — файл целиком валиден.
-  Старый скрипт на wf-recorder/tofi/**hyprctl** был сломан: `hyprctl` есть только у Hyprland, а не у niri.
+  (`Monitor 'Built-in display' has no configuration which is-current!`). При выборе этого пункта Start
+  падает: `Unknown method 'RecordVirtual'`. Окно надо выбирать в разделе «Окна»/«Windows».
+  Повторно то же окно без диалога: включить `restorePortalSession` / `-restore-portal-session yes` —
+  gsr переиспользует restore-token `~/.config/gpu-screen-recorder/restore_token` (окно сопоставляется
+  по app-id+title). Проверка в логе: `pipewire negotiation finished`.
+- **Альтернативы с выбором источника**: `kooha` (extra, GTK4/libadwaita + портал, движок GStreamer),
+  `gpu-screen-recorder-gtk` (AUR, GTK-фронтенд к тому же gsr), OBS Studio (`Mod+Shift+O`).
+- **Возможные плюшки**: виджеты бара Noctalia `PrivacyWidget` (индикатор screen-sharing/mic/camera) и
+  `CustomButtonWidget`; niri window-rule `match is-window-cast-target=true` с красным focus-ring
+  (подсветка записываемого окна); пакет `gpu-screen-recorder-notification` (`gsr-notify`).
+- **Куда пишет**: видео → `~/Videos/` (у Noctalia-плагина — папка из его настроек), replay-клипы;
+  OBS Studio (32.2.2) установлен. Скриншоты: `Mod+Shift+S` — область в файл+буфер
+  (`~/.config/scripts/screenshot_region_clipboard.sh`); у Noctalia свои — `noctalia msg screenshot-region`,
+  `screenshot-fullscreen`, `screenshot-annotate`.
 
 ## Крышка ноутбука (archlinux-notebook)
 - **Поведение**: крышка закрыта + зарядка (или внешний монитор) → система работает, встроенная
