@@ -66,7 +66,8 @@ local function json_decode(s)
 end
 
 -- ── stubs ────────────────────────────────────────────────────────────────────
-local H = { pending = nil, stream = nil, notified = {}, errors = {}, logs = {}, noCreds = false }
+local H = { pending = nil, stream = nil, done = nil, timeout = nil, asyncFails = false,
+  notified = {}, errors = {}, logs = {}, noCreds = false, accountExpiry = nil }
 local widget = { text = nil, color = nil, tooltip = nil }
 
 local function make_noctalia(cfg)
@@ -80,11 +81,21 @@ local function make_noctalia(cfg)
       if path:match("credentials%.json$") then
         return '{"org_id":"wrk_A","access_token":"tok_a","expires_at":2111111111}'
       end
+      local acct = path:match("accounts/([%w_%-]+)%.json$")
+      if acct then
+        local e = H.accountExpiry and H.accountExpiry[acct]
+        if e == nil then return nil end
+        return '{"org_id":"wrk_X","access_token":"t","expires_at":' .. e .. '}'
+      end
       return nil
     end,
     json = { decode = function(s) local ok, v = pcall(json_decode, s); if ok then return v end return nil end },
     http = function(req, cb) H.pending = cb; H.lastReq = req; return true end,
-    runStream = function(cmd, onLine) H.stream = cmd; if onLine then onLine("switched") end; return true end,
+    runAsync = function(cmd, cb, timeout)
+      H.stream = cmd; H.done = cb; H.timeout = timeout
+      if not H.asyncFails then return true end
+      return false
+    end,
     listDir = function() return { "a.json", "b.json" } end,
     fileExists = function() return true end,
     setUpdateInterval = function() end,
@@ -96,7 +107,8 @@ local function make_noctalia(cfg)
 end
 
 local function newWidget(cfg)
-  H.pending, H.stream, H.notified, H.errors, H.logs, H.noCreds = nil, nil, {}, {}, {}, false
+  H.pending, H.stream, H.done, H.timeout, H.asyncFails = nil, nil, nil, nil, false
+  H.notified, H.errors, H.logs, H.noCreds, H.accountExpiry = {}, {}, {}, false, nil
   widget.text, widget.color, widget.tooltip = nil, nil, nil
   _G.noctalia = make_noctalia(cfg)
   _G.barWidget = {
@@ -164,12 +176,53 @@ w.onIpc("refresh")
 respond("{}", 403, true)
 check("текст A ⚠", w.widget.text == "A ⚠")
 
-print("### 6: клик в режиме switch -> runStream с 'use')")
+print("### 6: клик в режиме switch -> runAsync с 'use', метка без разметки")
 local w6 = newWidget()
 respond(meters(0, 0, 0))
 w6.onClick()
-check("runStream вызван", H.stream ~= nil and H.stream:find("opencode%-go%-auth") ~= nil)
+check("runAsync вызван", H.stream ~= nil and H.stream:find("opencode%-go%-auth") ~= nil)
 check("цель = b", H.stream ~= nil and H.stream:find("use 'b'") ~= nil)
+check("таймаут задан", H.timeout == 30000)
+check("метка B… (без <span>)", w6.widget.text == "B… 0%")
+check("в баре нет тегов", w6.widget.text:find("[<>]") == nil)
+
+print("### 6b: переключение завершилось -> метка активного аккаунта")
+H.done({ exitCode = 0 })
+check("после done запрос ушёл", H.pending ~= nil)
+respond(meters(120000000, 0, 0))
+check("текст A 10%", w6.widget.text == "A 10%")
+check("без ошибок", #H.errors == 0)
+
+print("### 6c: новый аккаунт без подписки (403) -> метка без разметки и не залипает")
+local w6c = newWidget()
+respond(meters(0, 0, 0))
+w6c.onClick()
+H.done({ exitCode = 0 })
+respond("{}", 403, true)
+check("метка A ⚠ (не B…)", w6c.widget.text == "A ⚠")
+check("нет тегов", w6c.widget.text:find("[<>]") == nil)
+
+print("### 6d: переключение упало -> notifyError, метка сброшена")
+local w6d = newWidget()
+respond(meters(0, 0, 0))
+w6d.onClick()
+H.done({ exitCode = 1, stderr = "no credentials for account 'b'\n" })
+check("есть ошибка", #H.errors == 1)
+check("в ошибке есть stderr", H.errors[1] ~= nil and H.errors[1][2]:find("no credentials") ~= nil)
+check("метка сброшена", w6d.widget.text:find("…") == nil)
+check("нет тегов", w6d.widget.text:find("[<>]") == nil)
+
+print("### 6e: сторож снимает залипшее переключение через 30с")
+local w6e = newWidget()
+respond(meters(0, 0, 0))
+w6e.onClick()
+check("идёт переключение", w6e.widget.text:find("B…") ~= nil)
+local realTime = os.time
+os.time = function() return realTime() + 120 end
+w6e.update()
+os.time = realTime
+check("метка вернулась к активному", w6e.widget.text:find("B…") == nil)
+check("нет тегов", w6e.widget.text:find("[<>]") == nil)
 
 print("### 7: display=all -> все метры в баре")
 local w7 = newWidget({ display = "all" })
@@ -202,6 +255,24 @@ local w12 = newWidget()
 respond(meters(0, 0, 0))
 w12.onIpc("refresh")
 check("после onIpc появился новый запрос", H.pending ~= nil)
+
+print("### 13: протухший токен соседа -> не переключаемся на мёртвый аккаунт")
+local w13 = newWidget()
+respond(meters(0, 0, 0))
+H.accountExpiry = { a = os.time() + 86400, b = os.time() - 86400 }
+w13.onClick()
+check("переключения нет", H.stream == nil)
+check("это обновление данных", H.pending ~= nil)
+check("нет ошибок", #H.errors == 0)
+
+print("### 14: все токены протухли -> понятная ошибка, без переключения")
+local w14 = newWidget()
+respond(meters(0, 0, 0))
+H.accountExpiry = { a = os.time() - 10, b = os.time() - 10 }
+w14.onClick()
+check("переключения нет", H.stream == nil)
+check("есть ошибка", #H.errors == 1)
+check("ошибка про токены", H.errors[1] ~= nil and H.errors[1][2]:find("протухли") ~= nil)
 
 print()
 print(("%d/%d checks passed"):format(checks - fails, checks))

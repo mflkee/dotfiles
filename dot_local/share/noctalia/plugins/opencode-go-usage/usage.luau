@@ -17,6 +17,13 @@
 -- creds активного аккаунта — из ~/.config/opencode-go/credentials.json
 -- (копию активного аккаунта обновляет opencode-go-auth). Клик по виджету
 -- запускает `opencode-go-auth use <следующий>` — переключение занимает ~1с.
+--
+-- v1.3: метка «переключаюсь» — обычный текст (B…). Раньше в ней был
+--   <span>B</span>: бар не понимает разметку и печатал теги как есть, а если
+--   после переключения fetch падал (нет подписки/токен/сеть), transitional
+--   аккаунт не сбрасывался и теги висели в баре, пока не придёт удачный ответ.
+--   Теперь состояние переключения закрывается по exit-коду runAsync и по
+--   таймауту-сторожу в update(), поэтому «залипнуть» не может.
 
 local API = "https://opencode.ai/console/api/go/status"
 local BASE_DIR = noctalia.expandPath("~/.config/opencode-go")
@@ -65,13 +72,17 @@ local loadedExpires = nil
 local activeAccount = ""
 local transitionalAccount = ""
 local switchBusy = false
+local switchStartedAt = 0
 local staleAt = 0
+local pendingFetch = false
 
 -- render определён ниже (секция rendering), но зовётся из runSwitch(),
 -- который объявлен раньше по тексту. Без форвард-декларации ссылка внутри
 -- runSwitch резолвилась в ГЛОБАЛЬНУЮ render (nil) → клик по виджету падал
 -- с "attempt to call a nil value" и аккаунты не переключались.
+-- То же самое для fetch: runSwitch завершает переключение его вызовом.
 local render
+local fetch
 
 -- ── account state ────────────────────────────────────────────────────────────
 
@@ -89,7 +100,10 @@ end
 
 local function accountLabel()
   if transitionalAccount ~= "" then
-    return "<span>" .. transitionalAccount:upper() .. "</span>"
+    -- Обычный текст: бар НЕ понимает разметку, и <span>…</span> печатался
+    -- в строке как есть. Многоточие + цвет COLOR_BUSY и так читаются
+    -- как «переключаюсь».
+    return transitionalAccount:upper() .. "…"
   end
   if activeAccount ~= "" then
     return activeAccount:upper()
@@ -97,7 +111,24 @@ local function accountLabel()
   return PREFIX
 end
 
+-- Срок действия токена аккаунта из accounts/<name>.json: nil, если файла нет
+-- или в нём нет expires_at.
+local function accountExpires(name)
+  local raw = noctalia.readFile(ACCOUNTS_DIR .. "/" .. name .. ".json")
+  if raw == nil then
+    return nil
+  end
+  local decoded = noctalia.json.decode(raw)
+  if type(decoded) ~= "table" then
+    return nil
+  end
+  return tonumber(decoded.expires_at)
+end
+
 -- Следующий за активным аккаунт из списка accounts/*.json; fallback a->b/b->a.
+-- Возвращает name или nil + причину. Протухшие токены пропускаются: раньше
+-- клик уводил виджет на мёртвый аккаунт (401), и бар показывал вместо цифр
+-- голую метку с ⚠.
 local function nextAccount()
   local entries = noctalia.listDir(ACCOUNTS_DIR)
   local names = {}
@@ -123,14 +154,71 @@ local function nextAccount()
   end
   table.sort(names)
   if #names < 2 then
-    return nil
+    return nil, "настроен только один аккаунт — добавь второй: opencode-go-auth login --account b"
   end
+
+  local now = os.time()
+  local usable, expired = {}, {}
   for _, name in ipairs(names) do
+    local expires = accountExpires(name)
+    if expires ~= nil and expires > 0 and expires <= now then
+      table.insert(expired, name)
+    else
+      table.insert(usable, name)
+    end
+  end
+  if #usable == 0 then
+    return nil, "у всех аккаунтов протухли токены — opencode-go-auth login --account "
+      .. table.concat(expired, "/")
+  end
+  for _, name in ipairs(usable) do
     if name ~= activeAccount then
       return name
     end
   end
-  return names[1]
+  return usable[1]
+end
+
+-- Код возврата из результата runAsync. Разные версии API отдают либо число в
+-- exitCode/exit_code, либо булево; nil/true = успех.
+local function exitCodeOf(result)
+  if type(result) == "table" then
+    local code = tonumber(result.exitCode) or tonumber(result.exit_code)
+    if code ~= nil then
+      return code
+    end
+    if result.success == false then
+      return 1
+    end
+    return 0
+  end
+  if result == false then
+    return 1
+  end
+  return 0
+end
+
+local function resultText(result)
+  if type(result) ~= "table" then
+    return ""
+  end
+  local text = result.stderr
+  if type(text) ~= "string" or text == "" then
+    text = result.stdout
+  end
+  if type(text) ~= "string" then
+    return ""
+  end
+  return (text:gsub("%s+$", ""))
+end
+
+-- Закрыть состояние переключения: без этого метка «переключаюсь» (и раньше —
+-- теги <span>) оставалась в баре, если после `use` не приходило удачного
+-- ответа API (нет подписки на аккаунте, протухший токен, сеть).
+local function endSwitch()
+  switchBusy = false
+  switchStartedAt = 0
+  transitionalAccount = ""
 end
 
 local function runSwitch(target)
@@ -138,27 +226,32 @@ local function runSwitch(target)
     return
   end
   switchBusy = true
+  switchStartedAt = os.time()
   transitionalAccount = target
   status = "ok"
   detail = "переключаюсь на " .. target:upper() .. "…"
   render()
 
   local tool = noctalia.expandPath("~/.local/bin/opencode-go-auth")
-  local command = "'" .. tool .. "' use '" .. target .. "' 2>/dev/null"
-  local function onLine(line)
-    if line ~= nil and tostring(line) ~= "" then
-      detail = tostring(line)
+  local command = "'" .. tool .. "' use '" .. target .. "' 2>&1"
+  local function done(result)
+    endSwitch()
+    loadActiveAccount()
+    if exitCodeOf(result) ~= 0 then
+      local text = resultText(result)
+      noctalia.notifyError("OpenCode Go", "не удалось переключить на " .. target:upper()
+        .. (text ~= "" and (": " .. text) or ""))
     end
+    -- Перечитываем лимиты уже нового аккаунта. Если запрос ещё летит,
+    -- fetch отложится (pendingFetch), а не потеряется.
+    fetch()
+    render()
   end
-  if not noctalia.runStream(command, onLine) then
-    switchBusy = false
-    transitionalAccount = ""
+  if not noctalia.runAsync(command, done, 30000) then
+    endSwitch()
     noctalia.notifyError("OpenCode Go", "не удалось запустить opencode-go-auth")
     render()
-    return
   end
-  -- runStream асинхронный; финальное состояние придёт через onIpc("refresh"),
-  -- который вызовет сам скрипт. Дополнительно пробуем обновиться через 2с.
 end
 
 -- ── credentials ──────────────────────────────────────────────────────────────
@@ -384,6 +477,9 @@ render = function()
 end
 
 local function fail(nextStatus, message)
+  -- Любой финальный ответ закрывает переключение: иначе метка «переключаюсь»
+  -- остаётся в баре навсегда, если новый аккаунт без подписки / токен отвергнут.
+  endSwitch()
   if #readings > 0 and (nextStatus == "network" or nextStatus == "error") then
     -- Сеть/сервер отвалились: не теряем последние удачные цифры, показываем
     -- их приглушённо, пока не придёт свежий ответ.
@@ -414,8 +510,7 @@ local function finish(body)
   refreshed = true
   updatedAt = os.time()
   staleAt = 0
-  transitionalAccount = ""
-  switchBusy = false
+  endSwitch()
   render()
   if manual then
     noctalia.notify("OpenCode Go", accountLabel() .. " " .. summary())
@@ -423,8 +518,10 @@ local function finish(body)
   end
 end
 
-local function fetch()
+fetch = function()
   if busy then
+    -- Переключение закончилось, пока летел запрос: не теряем обновление.
+    pendingFetch = true
     return
   end
   lastAttempt = os.time()
@@ -451,17 +548,17 @@ local function fetch()
     busy = false
     if response == nil or not response.ok then
       fail("network", "сетевая ошибка")
-      return
-    end
-    if response.status == 401 or response.status == 403 then
+    elseif response.status == 401 or response.status == 403 then
       fail("auth", "токен отвергнут (HTTP " .. tostring(response.status) .. ") — opencode-go-auth login")
-      return
-    end
-    if response.status ~= 200 then
+    elseif response.status ~= 200 then
       fail("network", "HTTP " .. tostring(response.status))
-      return
+    else
+      finish(response.body or "")
     end
-    finish(response.body or "")
+    if pendingFetch then
+      pendingFetch = false
+      fetch()
+    end
   end)
 
   if not started then
@@ -476,6 +573,12 @@ noctalia.setUpdateInterval(30000)
 
 function update()
   local now = os.time()
+  -- Сторож переключения: runAsync может не позвать callback (зависший процесс,
+  -- таймаут не сработал) — не держим метку «переключаюсь» дольше 30 секунд.
+  if switchBusy and switchStartedAt > 0 and now - switchStartedAt > 30 then
+    endSwitch()
+    render()
+  end
   if now - lastAttempt >= REFRESH_SECONDS then
     fetch()
   end
@@ -487,9 +590,9 @@ function onClick()
     fetch()
     return
   end
-  local target = nextAccount()
+  local target, reason = nextAccount()
   if target == nil then
-    noctalia.notifyError("OpenCode Go", "настроен только один аккаунт — добавь второй: opencode-go-auth login --account b")
+    noctalia.notifyError("OpenCode Go", reason or "некуда переключаться")
     return
   end
   if target == activeAccount then
@@ -506,6 +609,8 @@ function onIpc(event)
     fetch()
   elseif type(event) == "string" and event:match("^switched:") then
     transitionalAccount = event:match("^switched:(.*)$")
+    switchBusy = true
+    switchStartedAt = os.time()
     fetch()
   end
 end

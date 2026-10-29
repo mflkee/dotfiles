@@ -157,7 +157,7 @@ HH:MM». Раньше на любой сетевой сбой вместо чи�
 
 ```bash
 noctalia plugins lint ~/.local/share/noctalia/plugins/opencode-go-usage/
-lua5.4 ~/dotfiles/test_usage.lua                 # 18 сценариев на стабах API
+lua5.4 ~/dotfiles/test_usage.lua                 # 39 проверок на стабах API
 bash ~/dotfiles/test_write-opencode-go-credentials.sh   # 13 сценариев на secrets.zsh
 opencode-go-auth status                          # живой API, не виджет
 opencode-go-auth status --json | jq .            # то же машинно-читаемо
@@ -176,6 +176,14 @@ opencode-go-auth status --json | jq .            # то же машинно-чи
 - Активный аккаунт — в `~/.config/opencode-go/current` (`a`/`b`); метка показывается в баре (`A …`/`B …`).
 - Токены аккаунтов — `~/.config/opencode-go/accounts/<name>.json` (создаёт `opencode-go-auth login --account <name>`, device flow).
 - Клик по виджету = переключение на следующий аккаунт (`opencode-go-auth use <next>`; хоткей в niri: `Mod+Ctrl+O`).
+  Аккаунты с протухшим токеном (`expires_at` в прошлом) пропускаются: раньше
+  клик уводил на мёртвый аккаунт, API отвечал 401, и в баре вместо цифр висела
+  голая метка с `⚠`. Если живой только текущий аккаунт — клик просто обновляет
+  данные, а если протухли все — приходит уведомление «opencode-go-auth login».
+- Во время переключения метка выглядит как `B…` (обычный текст: бар не понимает
+  разметку, `<span>` из v1.2 печатался тегами). Состояние «переключаюсь»
+  закрывается по exit-коду `noctalia.runAsync` и сторожем в `update()` (30 с),
+  поэтому в баре не залипает ни при 401, ни при отсутствии подписки.
 - Полумесячная ротация (1-е и 16-е в 10:00) — systemd-таймер `opencode-rotate.timer`,
   который зовёт `opencode-go-auth rotate`.
 
