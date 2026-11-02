@@ -109,14 +109,41 @@ active_name() {
 }
 
 write_account() {
-  local name="$1" org="$2" access="$3" expires_at="$4"
+  local name="$1" org="$2" access="$3" expires_at="$4" label="${5:-}" email="${6:-}"
   valid_name "$name" || die "invalid account name: '$name' (use [a-z0-9])"
+  # Метка/email — не часть токена: при повторном login сохраняем то, что уже
+  # было, иначе `login --account a` стирал бы имя аккаунта.
+  if [ -f "$(account_file "$name")" ]; then
+    [ -n "$label" ] || label="$(account_field "$name" label 2>/dev/null || true)"
+    [ -n "$email" ] || email="$(account_field "$name" email 2>/dev/null || true)"
+  fi
   local tmp; tmp="$(mktemp "$(account_file "$name").XXXXXX")"
   chmod 600 "$tmp"
   jq -n --arg org "$org" --arg access "$access" --argjson expires "$expires_at" \
-    '{org_id: $org, access_token: $access, expires_at: $expires}' >"$tmp"
+    --arg label "$label" --arg email "$email" \
+    '{org_id: $org, access_token: $access, expires_at: $expires}
+     + (if $label == "" then {} else {label: $label} end)
+     + (if $email == "" then {} else {email: $email} end)' >"$tmp"
   mv -f "$tmp" "$(account_file "$name")"
   chmod 600 "$(account_file "$name")"
+}
+
+# Метка аккаунта: человеческое имя (Kimi / Mfokinors). Живёт в secrets.zsh
+# (OPENCODE_GO_LABEL_<NAME>), поэтому приезжает на все машины вместе с токенами.
+set_label() {
+  local name="$1" label="$2" f tmp
+  f="$(account_file "$name")"
+  [ -f "$f" ] || return 1
+  case "$label" in -|rem|none) label="" ;; esac
+  if [ -n "$label" ]; then
+    case "$label" in *[!A-Za-z0-9_.:\ -]*) die "label: разрешены буквы, цифры, пробел и -_.:" ;; esac
+  fi
+  tmp="$(mktemp "$f.XXXXXX")" || return 1
+  chmod 600 "$tmp"
+  jq --arg l "$label" 'if $l == "" then del(.label) else .label = $l end' "$f" >"$tmp" \
+    || { rm -f "$tmp"; return 1; }
+  mv -f "$tmp" "$f"
+  chmod 600 "$f"
 }
 
 # Активный аккаунт: current-файл + копия в credentials.json (его читает виджет).
