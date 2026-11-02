@@ -377,11 +377,13 @@ cmd_login() {
       if [ -n "$email" ]; then
         log "  account: $email"
         if [ -z "$(account_field "$name" label 2>/dev/null || true)" ]; then
-          auto_label="${email%%@*}"
+          # Короткая метка из email: первые 3 буквы/цифры локальной части
+          # (kimicode404@gmail.com -> kim), чтобы бар не распухал.
+          auto_label="$(printf '%s' "${email%%@*}" | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9' | cut -c1-3)"
           case "$auto_label" in
             ''|*[!A-Za-z0-9_.-]*) : ;;
             *) set_label "$name" "$auto_label"
-               log "  label: $auto_label  (переименовать: opencode-go-auth label $name \"Kimi\")" ;;
+               log "  label: $auto_label  (переименовать: opencode-go-auth label $name \"…\")" ;;
           esac
         fi
       fi

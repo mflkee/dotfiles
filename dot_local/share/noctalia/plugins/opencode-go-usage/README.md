@@ -219,25 +219,26 @@ opencode-go-auth check               # предупредить, если ток
 opencode-go-auth list                # статус всех аккаунтов
 ```
 
-## Метки аккаунтов: Kimi / Mfokinors (v1.4)
+## Метки аккаунтов: kim / mfl (v1.4)
 
 `a` и `b` — это имена файлов, а не люди. Чтобы в баре и уведомлениях было
-видно, **чей** аккаунт кончился, у каждого есть метка:
+видно, **чей** аккаунт кончился, у каждого есть короткая метка:
 
 ```bash
-opencode-go-auth label a Kimi
-opencode-go-auth label b Mfokinors
-opencode-go-auth list                # *a  Kimi  org=wrk_…  expires=2026-12-02
+opencode-go-auth label a kim     # kimicode404@gmail.com
+opencode-go-auth label b mfl     # второй аккаунт
+opencode-go-auth list            # *a  kim  org=wrk_…  expires=2026-12-02
 ```
 
 - Метка живёт в `accounts/<name>.json` (`"label": "Kimi"`) и дублируется в
   `secrets.zsh` как `OPENCODE_GO_LABEL_<NAME>` — значит, приезжает на все
   машины вместе с токенами (chezmoi + dsync), руками на каждой машине не нужна.
 - `login` сам спрашивает консоль (`GET /console/api/user`) и пишет email в
-  `accounts/<name>.json`, а если метки ещё нет — ставит её из локальной части
-  email. Поэтому после `login --account b` видно, какой аккаунт попал в `b`.
-- Бар показывает метку (`Kimi 42%`) вместо `A 42%`; в тултипе — обе строки:
-  `• Kimi (a) 42% · до 2026-12-02` и `  Mfokinors (b) токен истёк 01.11`.
+  `accounts/<name>.json`, а если метки ещё нет — ставит её из первых трёх букв
+  локальной части email (`kimicode404@…` → `kim`). Поэтому после
+  `login --account b` видно, какой аккаунт попал в `b`.
+- Бар показывает метку (`kim 42%`) вместо `A 42%`; в тултипе — обе строки:
+  `• kim (a) 42% · до 2026-12-02` и `  mfl (b) токен истёк 01.11`.
 - Убрать метку: `opencode-go-auth label a -`.
 
 ## Авто-переключение, когда аккаунт кончился (v1.4)
