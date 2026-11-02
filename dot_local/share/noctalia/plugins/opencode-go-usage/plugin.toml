@@ -15,7 +15,7 @@
 
 id = "mflkee/opencode-go-usage"
 name = "OpenCode Go Usage"
-version = "1.3.0"
+version = "1.4.0"
 plugin_api = 3
 author = "mflkee"
 license = "MIT"
@@ -74,6 +74,18 @@ entry = "usage.luau"
     options = [
       { value = "switch", label_key = "settings.click_action.option.switch" },
       { value = "refresh", label_key = "settings.click_action.option.refresh" },
+    ]
+
+  [[widget.setting]]
+  key = "auto_switch"
+  type = "select"
+  label_key = "settings.auto_switch.label"
+  description_key = "settings.auto_switch.description"
+  default = "auth"
+    options = [
+      { value = "off", label_key = "settings.auto_switch.option.off" },
+      { value = "auth", label_key = "settings.auto_switch.option.auth" },
+      { value = "always", label_key = "settings.auto_switch.option.always" },
     ]
 
   [[widget.setting]]

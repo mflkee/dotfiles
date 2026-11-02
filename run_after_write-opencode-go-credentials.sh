@@ -35,18 +35,25 @@ read_secret() {
 }
 
 write_json() {
-  local target="$1" org="$2" token="$3" expires="$4"
+  local target="$1" org="$2" token="$3" expires="$4" label="${5:-}"
   [ -n "$org" ] && [ -n "$token" ] || return 1
   case "$expires" in
     ''|*[!0-9]*) expires=0 ;;
   esac
   local tmp; tmp="$(mktemp "${target}.XXXXXX" 2>/dev/null)"
   if command -v jq >/dev/null 2>&1; then
-    jq -n --arg org "$org" --arg token "$token" --argjson expires "$expires" \
-      '{org_id: $org, access_token: $token, expires_at: $expires}' >"$tmp" || { rm -f "$tmp"; return 1; }
+    jq -n --arg org "$org" --arg token "$token" --argjson expires "$expires" --arg label "$label" \
+      '{org_id: $org, access_token: $token, expires_at: $expires}
+       + (if $label == "" then {} else {label: $label} end)' >"$tmp" \
+      || { rm -f "$tmp"; return 1; }
   else
-    printf '{"org_id":"%s","access_token":"%s","expires_at":%s}\n' \
-      "$org" "$token" "$expires" >"$tmp"
+    if [ -n "$label" ]; then
+      printf '{"org_id":"%s","access_token":"%s","expires_at":%s,"label":"%s"}\n' \
+        "$org" "$token" "$expires" "$label" >"$tmp"
+    else
+      printf '{"org_id":"%s","access_token":"%s","expires_at":%s}\n' \
+        "$org" "$token" "$expires" >"$tmp"
+    fi
   fi
   chmod 600 "$tmp"
   if [ ! -f "$target" ] || ! cmp -s "$tmp" "$target"; then
@@ -68,13 +75,17 @@ active="$(read_secret OPENCODE_GO_CURRENT)"
 names=""
 org="$(read_secret OPENCODE_GO_ORG_A)"; token="$(read_secret OPENCODE_GO_TOKEN_A)"
 expires="$(read_secret OPENCODE_GO_EXPIRES_A)"
+label="$(read_secret OPENCODE_GO_LABEL_A)"
+[ -n "$label" ] || label="$(jq -r '.label // empty' "${DIR}/a.json" 2>/dev/null || true)"
 if [ -n "$org" ] && [ -n "$token" ]; then
-  write_json "${DIR}/a.json" "$org" "$token" "$expires" && names="$names a"
+  write_json "${DIR}/a.json" "$org" "$token" "$expires" "$label" && names="$names a"
 fi
 org="$(read_secret OPENCODE_GO_ORG_B)"; token="$(read_secret OPENCODE_GO_TOKEN_B)"
 expires="$(read_secret OPENCODE_GO_EXPIRES_B)"
+label="$(read_secret OPENCODE_GO_LABEL_B)"
+[ -n "$label" ] || label="$(jq -r '.label // empty' "${DIR}/b.json" 2>/dev/null || true)"
 if [ -n "$org" ] && [ -n "$token" ]; then
-  write_json "${DIR}/b.json" "$org" "$token" "$expires" && names="$names b"
+  write_json "${DIR}/b.json" "$org" "$token" "$expires" "$label" && names="$names b"
 fi
 
 # Легаси: если B нет, но есть старые OPENCODE_GO_ORG/TOKEN — это аккаунт a.
@@ -97,7 +108,8 @@ act_file="${DIR}/${active}.json"
 org="$(jq -r '.org_id // empty' "$act_file" 2>/dev/null)"
 token="$(jq -r '.access_token // empty' "$act_file" 2>/dev/null)"
 expires="$(jq -r '.expires_at // 0' "$act_file" 2>/dev/null)"
-write_json "$CREDS" "$org" "$token" "$expires"
+label="$(jq -r '.label // empty' "$act_file" 2>/dev/null)"
+write_json "$CREDS" "$org" "$token" "$expires" "$label"
 
 # current: держим в соответствии с secrets (OPENCODE_GO_CURRENT — источник истины
 # для флота). Пишем только при изменении содержимого.

@@ -56,6 +56,7 @@ end
 local PREFIX = tostring(setting("label", "OC"))
 local DISPLAY = tostring(setting("display", "worst"))
 local CLICK_ACTION = tostring(setting("click_action", "switch"))
+local AUTO_SWITCH = tostring(setting("auto_switch", "auth"))
 local SHOW_ACCOUNT = setting("show_account", true) ~= false
 local CREDENTIALS_PATH = noctalia.expandPath(tostring(setting("credentials_file", DEFAULT_CREDENTIALS)))
 local REFRESH_SECONDS = (tonumber(setting("refresh_minutes", 5)) or 5) * 60
@@ -75,6 +76,9 @@ local switchBusy = false
 local switchStartedAt = 0
 local staleAt = 0
 local pendingFetch = false
+local lastSeen = {}
+local autoBusy = false
+local lastAutoAt = 0
 
 -- render определён ниже (секция rendering), но зовётся из runSwitch(),
 -- который объявлен раньше по тексту. Без форвард-декларации ссылка внутри
@@ -98,22 +102,9 @@ local function loadActiveAccount()
   activeAccount = ""
 end
 
-local function accountLabel()
-  if transitionalAccount ~= "" then
-    -- Обычный текст: бар НЕ понимает разметку, и <span>…</span> печатался
-    -- в строке как есть. Многоточие + цвет COLOR_BUSY и так читаются
-    -- как «переключаюсь».
-    return transitionalAccount:upper() .. "…"
-  end
-  if activeAccount ~= "" then
-    return activeAccount:upper()
-  end
-  return PREFIX
-end
-
--- Срок действия токена аккаунта из accounts/<name>.json: nil, если файла нет
--- или в нём нет expires_at.
-local function accountExpires(name)
+-- Метаданные аккаунта из accounts/<name>.json: срок токена, метка (Kimi /
+-- Mfokinors) и email (заполняется при login через /console/api/user).
+local function accountMeta(name)
   local raw = noctalia.readFile(ACCOUNTS_DIR .. "/" .. name .. ".json")
   if raw == nil then
     return nil
@@ -122,14 +113,57 @@ local function accountExpires(name)
   if type(decoded) ~= "table" then
     return nil
   end
-  return tonumber(decoded.expires_at)
+  return {
+    expires = tonumber(decoded.expires_at),
+    label = type(decoded.label) == "string" and decoded.label or "",
+    email = type(decoded.email) == "string" and decoded.email or "",
+  }
 end
 
--- Следующий за активным аккаунт из списка accounts/*.json; fallback a->b/b->a.
--- Возвращает name или nil + причину. Протухшие токены пропускаются: раньше
--- клик уводил виджет на мёртвый аккаунт (401), и бар показывал вместо цифр
--- голую метку с ⚠.
-local function nextAccount()
+-- Срок действия токена аккаунта: nil, если файла нет или в нём нет expires_at.
+local function accountExpires(name)
+  local meta = accountMeta(name)
+  if meta == nil then
+    return nil
+  end
+  return meta.expires
+end
+
+local function tokenExpired(name)
+  local expires = accountExpires(name)
+  return expires ~= nil and expires > 0 and expires <= os.time()
+end
+
+-- Как аккаунт зовут в баре: метка из accounts/<name>.json (`opencode-go-auth
+-- label a Kimi`), иначе email без домена, иначе просто A/B.
+local function accountDisplay(name)
+  local meta = accountMeta(name)
+  if meta ~= nil then
+    if meta.label ~= "" then
+      return meta.label
+    end
+    if meta.email ~= "" then
+      return (meta.email:gsub("@.*$", ""))
+    end
+  end
+  return name:upper()
+end
+
+local function accountLabel()
+  if transitionalAccount ~= "" then
+    -- Обычный текст: бар НЕ понимает разметку, и <span>…</span> печатался
+    -- в строке как есть. Многоточие + цвет COLOR_BUSY и так читаются
+    -- как «переключаюсь».
+    return accountDisplay(transitionalAccount) .. "…"
+  end
+  if activeAccount ~= "" then
+    return accountDisplay(activeAccount)
+  end
+  return PREFIX
+end
+
+-- Все аккаунты из accounts/*.json (fallback a/b). Отсортированы по имени.
+local function accountNames()
   local entries = noctalia.listDir(ACCOUNTS_DIR)
   local names = {}
   if type(entries) == "table" then
@@ -153,15 +187,49 @@ local function nextAccount()
     if noctalia.fileExists(ACCOUNTS_DIR .. "/b.json") then table.insert(names, "b") end
   end
   table.sort(names)
+  return names
+end
+
+-- Строки тултипа по всем аккаунтам: кто это, жив ли токен и последние цифры.
+local function accountRows(rows)
+  for _, name in ipairs(accountNames()) do
+    local meta = accountMeta(name)
+    local marker = name == activeAccount and "•" or " "
+    local value
+    if meta == nil then
+      value = "нет токена"
+    elseif tokenExpired(name) then
+      value = "токен истёк " .. os.date("%d.%m", meta.expires)
+    elseif lastSeen[name] ~= nil then
+      value = lastSeen[name].percent .. "%"
+      if lastSeen[name].reset ~= "" then
+        value = value .. " · до " .. lastSeen[name].reset
+      end
+    elseif meta.expires ~= nil and meta.expires > 0 then
+      value = "токен жив до " .. os.date("%d.%m", meta.expires)
+    else
+      value = "токен без срока"
+    end
+    table.insert(rows, {
+      key = marker .. " " .. accountDisplay(name) .. " (" .. name .. ")",
+      value = value,
+    })
+  end
+end
+
+-- Следующий за активным аккаунт из списка accounts/*.json; fallback a->b/b->a.
+-- Возвращает name или nil + причину. Протухшие токены пропускаются: раньше
+-- клик уводил виджет на мёртвый аккаунт (401), и бар показывал вместо цифр
+-- голую метку с ⚠.
+local function nextAccount()
+  local names = accountNames()
   if #names < 2 then
     return nil, "настроен только один аккаунт — добавь второй: opencode-go-auth login --account b"
   end
 
-  local now = os.time()
   local usable, expired = {}, {}
   for _, name in ipairs(names) do
-    local expires = accountExpires(name)
-    if expires ~= nil and expires > 0 and expires <= now then
+    if tokenExpired(name) then
       table.insert(expired, name)
     else
       table.insert(usable, name)
@@ -415,6 +483,14 @@ local function expiringSoon()
 end
 
 render = function()
+  if autoBusy then
+    local who = activeAccount ~= "" and accountDisplay(activeAccount) or PREFIX
+    barWidget.setText(who .. " …")
+    barWidget.setColor(COLOR_BUSY)
+    barWidget.setTooltip({ { key = "OpenCode Go", value = detail } })
+    return
+  end
+
   if #readings > 0 and (status == "ok" or status == "stale") then
     local top = worst(readings)
     local prefix = SHOW_ACCOUNT and accountLabel() or PREFIX
@@ -438,7 +514,7 @@ render = function()
     end
 
     local rows = {}
-    table.insert(rows, { key = "аккаунт", value = accountLabel() })
+    accountRows(rows)
     for _, reading in ipairs(readings) do
       local value = reading.percent .. "%"
       if reading.reset ~= "" then
@@ -473,7 +549,11 @@ render = function()
     barWidget.setText(accountLabel() .. " !")
   end
   barWidget.setColor(COLOR_MUTED)
-  barWidget.setTooltip({ { key = "OpenCode Go", value = detail } })
+  local rows = { { key = "OpenCode Go", value = detail } }
+  if #accountNames() > 0 then
+    accountRows(rows)
+  end
+  barWidget.setTooltip(rows)
 end
 
 local function fail(nextStatus, message)
@@ -496,21 +576,86 @@ local function fail(nextStatus, message)
   render()
 end
 
+-- ── auto-failover ────────────────────────────────────────────────────────────
+--
+-- Аккаунт кончился (токен умер или лимит выбран) — уходим на живой. Решение
+-- принимает `opencode-go-auth auto`: он проверяет кандидатов по API, поэтому
+-- виджет не прыгает на такой же мёртвый аккаунт. Настройка auto_switch:
+--   off     — никогда,
+--   auth    — только когда консоль отвергает токен (401/403/истёк срок),
+--   always  — ещё и когда лимит выбран на 100%.
+-- Кулдаун 60 с, чтобы 401 на обоих аккаунтах не превращался в карусель.
+
+local function runAutoSwitch(reason)
+  if AUTO_SWITCH == "off" or autoBusy or switchBusy then
+    return false
+  end
+  if AUTO_SWITCH == "auth" and reason ~= "auth" then
+    return false
+  end
+  if os.time() - lastAutoAt < 60 then
+    return false
+  end
+
+  autoBusy = true
+  lastAutoAt = os.time()
+  local before = activeAccount
+  detail = "подбираю живой аккаунт…"
+  render()
+
+  local tool = noctalia.expandPath("~/.local/bin/opencode-go-auth")
+  local command = "'" .. tool .. "' auto 2>&1"
+  local function done(result)
+    autoBusy = false
+    loadActiveAccount()
+    if exitCodeOf(result) ~= 0 then
+      local text = resultText(result)
+      fail("auth", text ~= "" and text or "все аккаунты недоступны — нужен opencode-go-auth login")
+      return
+    end
+    if activeAccount ~= "" and activeAccount ~= before then
+      noctalia.notify("OpenCode Go",
+        "переключил " .. accountDisplay(before) .. " → " .. accountDisplay(activeAccount))
+    end
+    fetch()
+    render()
+  end
+  if not noctalia.runAsync(command, done, 45000) then
+    autoBusy = false
+    fail("auth", "не удалось запустить opencode-go-auth auto")
+    return false
+  end
+  return true
+end
+
 -- ── fetching ─────────────────────────────────────────────────────────────────
 
 local function finish(body)
   local parsed, err = parseStatus(body, nowUtc())
   if parsed == nil then
+    if err == "console: Unauthorized" and runAutoSwitch("auth") then
+      return
+    end
     fail(err == "console: Unauthorized" and "auth" or "error", err or "не удалось прочитать лимиты")
     return
   end
   readings = parsed
+  local top = worst(readings)
+  if top ~= nil and activeAccount ~= "" then
+    lastSeen[activeAccount] = { percent = top.percent, reset = top.reset }
+  end
   status = "ok"
   detail = ""
   refreshed = true
   updatedAt = os.time()
   staleAt = 0
   endSwitch()
+  -- Лимит выбран на 100% (месяц/неделя/5ч) — если разрешено, уходим на второй
+  -- аккаунт. Решение за скриптом: он проверит, что там действительно есть чем
+  -- платить, иначе оставит всё как есть.
+  if top ~= nil and top.percent >= 100 and runAutoSwitch("quota") then
+    return
+  end
   render()
   if manual then
     noctalia.notify("OpenCode Go", accountLabel() .. " " .. summary())
@@ -532,6 +677,11 @@ fetch = function()
     fail("setup", "нет учётных данных: " .. CREDENTIALS_PATH .. " (opencode-go-auth login)")
     return
   end
+  -- Срок токена известен локально — не ждём 401 от API, а сразу уходим на
+  -- живой аккаунт (если он есть и авто-переключение разрешено).
+  if activeAccount ~= "" and tokenExpired(activeAccount) and runAutoSwitch("auth") then
+    return
+  end
 
   busy = true
   local started = noctalia.http({
@@ -549,7 +699,9 @@ fetch = function()
     if response == nil or not response.ok then
       fail("network", "сетевая ошибка")
     elseif response.status == 401 or response.status == 403 then
-      fail("auth", "токен отвергнут (HTTP " .. tostring(response.status) .. ") — opencode-go-auth login")
+      if not runAutoSwitch("auth") then
+        fail("auth", "токен отвергнут (HTTP " .. tostring(response.status) .. ") — opencode-go-auth login")
+      end
     elseif response.status ~= 200 then
       fail("network", "HTTP " .. tostring(response.status))
     else

@@ -101,6 +101,14 @@ account_field() {
   jq -r --arg k "$field" '.[$k] // empty' "$(account_file "$name")"
 }
 
+# Человеческое имя для уведомлений: метка, иначе имя аккаунта (a/b).
+account_display() {
+  local name="$1" label
+  label="$(account_field "$name" label 2>/dev/null || true)"
+  [ -n "$label" ] && { printf '%s' "$label"; return 0; }
+  printf '%s' "$name"
+}
+
 active_name() {
   [ -f "$CURRENT_FILE" ] || return 1
   local n; n="$(cat "$CURRENT_FILE" 2>/dev/null || true)"
@@ -202,9 +210,9 @@ commit_switch() {
   fi
   refresh_widget
   if [ "$name" != "$old" ]; then
-    notify "OpenCode Go → $name" "$msg"
+    notify "OpenCode Go → $(account_display "$name")" "$msg"
   elif [ -n "$msg" ]; then
-    notify "OpenCode Go: $name уже активен ($(basename "$0") apply)" "$msg"
+    notify "OpenCode Go: $(account_display "$name") уже активен ($(basename "$0") apply)" "$msg"
   fi
 }
 
@@ -221,21 +229,27 @@ sync_secrets() {
   local names; names="$(account_list)"
   [ -n "$names" ] || { sync_empty_block; return 0; }
 
-  local lines="" name org access expires active line
+  local lines="" name org access expires active line label up
   active="$(active_name 2>/dev/null || printf '%s' "$(printf '%s\n' "$names" | head -1)")"
   for name in $names; do
     org="$(account_field "$name" org_id)"; access="$(account_field "$name" access_token)"
     expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+    label="$(account_field "$name" label 2>/dev/null || true)"
     [ -n "$org" ] && [ -n "$access" ] || continue
-    UP="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
+    up="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
     for value in "$org" "$access"; do
       case "$value" in *[!A-Za-z0-9_.:-]*) die "refusing to store unexpected characters" ;; esac
     done
+    if [ -n "$label" ]; then
+      case "$label" in *[!A-Za-z0-9_.:\ -]*) die "refusing to store suspicious label '$label'" ;; esac
+    fi
     [ "${expires:-0}" -gt 0 ] 2>/dev/null || expires=0
     lines="$lines
-export OPENCODE_GO_ORG_$UP=\"$org\"
-export OPENCODE_GO_TOKEN_$UP=\"$access\"
-export OPENCODE_GO_EXPIRES_$UP=\"$expires\""
+export OPENCODE_GO_ORG_$up=\"$org\"
+export OPENCODE_GO_TOKEN_$up=\"$access\"
+export OPENCODE_GO_EXPIRES_$up=\"$expires\""
+    [ -n "$label" ] && lines="$lines
+export OPENCODE_GO_LABEL_$up=\"$label\""
   done
   [ -n "$lines" ] || { sync_empty_block; return 0; }
 
@@ -299,6 +313,18 @@ sync_empty_block() {
 
 # ── login: OAuth device flow ──────────────────────────────────────────────────
 
+# Кто это: консоль отдаёт /api/user по Bearer-токену (схему не документируют,
+# поэтому email/name вытаскиваются рекурсивно — первое строковое значение).
+identify_account() {
+  local token="$1" body email name
+  body="$(curl -sS -m 10 -H "Authorization: Bearer $token" \
+    -H 'Accept: application/json' -H "User-Agent: $UA" "$SERVER/api/user" 2>/dev/null || true)"
+  [ -n "$body" ] || return 0
+  email="$(printf '%s' "$body" | jq -r '[.. | objects | .email? | select(type == "string")] | first // empty' 2>/dev/null || true)"
+  name="$(printf '%s' "$body" | jq -r '[.. | objects | .name? | select(type == "string")] | first // empty' 2>/dev/null || true)"
+  printf '%s\t%s' "$email" "$name"
+}
+
 cmd_login() {
   local name="${1:-}"
   if [ -n "$name" ] && ! valid_name "$name"; then
@@ -338,12 +364,27 @@ cmd_login() {
       org="$(printf '%s' "$resp" | jq -r '.org_id // empty')"
       expires_at=$(( $(date +%s) + $(printf '%s' "$resp" | jq -r '.expires_in // 0') ))
       [ -n "$org" ] || die "no org_id in the token response (is the account a member of a workspace?)"
-      write_account "$name" "$org" "$access" "$expires_at"
+      local ident email auto_label
+      ident="$(identify_account "$access")"
+      email="${ident%%$'\t'*}"
+      [ "$email" = "$ident" ] && email=""
+      write_account "$name" "$org" "$access" "$expires_at" "" "$email"
       if ! active_name >/dev/null 2>&1; then
         set_current "$name"
       fi
       log "saved $(account_file "$name")"
       log "  org: $org"
+      if [ -n "$email" ]; then
+        log "  account: $email"
+        if [ -z "$(account_field "$name" label 2>/dev/null || true)" ]; then
+          auto_label="${email%%@*}"
+          case "$auto_label" in
+            ''|*[!A-Za-z0-9_.-]*) : ;;
+            *) set_label "$name" "$auto_label"
+               log "  label: $auto_label  (переименовать: opencode-go-auth label $name \"Kimi\")" ;;
+          esac
+        fi
+      fi
       log "  valid until: $(date -d "@$expires_at" '+%Y-%m-%d %H:%M')"
       sync_secrets
       refresh_widget
@@ -392,9 +433,10 @@ cmd_status() {
   case "$expires" in ''|*[!0-9]*) expires=0 ;; esac
 
   if [ "$json" = "1" ]; then
-    printf '%s\n' "$body" | jq -c --arg account "$name" --arg org "$org" \
+    local label; label="$(account_field "$name" label 2>/dev/null || true)"
+    printf '%s\n' "$body" | jq -c --arg account "$name" --arg org "$org" --arg label "$label" \
       --argjson expires "$expires" --argjson now "$(date +%s)" '
-      { account: $account, org_id: $org, expires_at: $expires,
+      { account: $account, label: $label, org_id: $org, expires_at: $expires,
         expires_in: (($expires - $now) | if . > 0 then . else 0 end),
         meters: (.access.meters | with_entries(
           .value |= {
@@ -430,15 +472,16 @@ cmd_list() {
     echo "accounts: none (run: opencode-go-auth login --account a)"
     return 0
   fi
-  local name org expires clicred clid
+  local name org expires clicred clid label
   for name in $names; do
     org="$(account_field "$name" org_id 2>/dev/null || true)"
     expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+    label="$(account_field "$name" label 2>/dev/null || true)"
     clicred="$(cat "$(cli_cred_file "$name")" 2>/dev/null || true)"
     clid=""; [ -n "$clicred" ] && clid="cli=$clicred"
     local star=" "; [ "$name" = "$active" ] && star="*"
-    printf '%s%s\torg=%s\tcli_id=%s\texpires=%s\n' \
-      "$star" "$name" "${org:-?}" "${clid:-—}" \
+    printf '%s%s\t%s\torg=%s\tcli_id=%s\texpires=%s\n' \
+      "$star" "$name" "${label:-—}" "${org:-?}" "${clid:-—}" \
       "$([ "${expires:-0}" -gt 0 ] 2>/dev/null && date -d "@$expires" '+%Y-%m-%d' || echo 'нет')"
   done
   echo
@@ -492,6 +535,15 @@ cmd_rotate() {
     printf 'active %s\n' "$target"
     return 0
   fi
+  # Не уводим на аккаунт с мёртвым токеном: иначе бар снова покажет ⚠, и
+  # виджету придётся чинить это авто-переключением через полминуты.
+  local active; active="$(active_name 2>/dev/null || true)"
+  if [ -n "$active" ] && [ "$(account_problem "$target")" = "auth" ] \
+     && [ -z "$(account_problem "$active")" ]; then
+    log "rotate: у «$(account_display "$target")» протух токен — остаюсь на «$(account_display "$active")»"
+    printf 'active %s\n' "$active"
+    return 0
+  fi
   cmd_use "$target"
 }
 
@@ -510,9 +562,9 @@ cmd_check() {
     [ "$expires" -gt 0 ] || continue
     left="$(( expires - now ))"
     if [ "$left" -le 0 ]; then
-      notify "OpenCode Go: токен '$name' истёк" "opencode-go-auth login --account $name"
+      notify "OpenCode Go: токен «$(account_display "$name")» истёк" "opencode-go-auth login --account $name"
     elif [ "$left" -lt "$threshold" ]; then
-      notify "OpenCode Go: токен '$name' истекает через $(humanize "$left")" "opencode-go-auth login --account $name"
+      notify "OpenCode Go: токен «$(account_display "$name")» истекает через $(humanize "$left")" "opencode-go-auth login --account $name"
     fi
   done
   return 0
@@ -525,6 +577,109 @@ cmd_apply() {
   [ -f "$(account_file "$name")" ] || die "no credentials for account '$name'"
   commit_switch "$name"
   echo "applied $name"
+}
+
+# ── label: человеческое имя аккаунта ──────────────────────────────────────────
+
+cmd_label() {
+  local name="${1:-}"
+  [ -n "$name" ] || die "usage: opencode-go-auth label <name> <text|->"
+  shift || true
+  valid_name "$name" || die "invalid account name '$name'"
+  [ -f "$(account_file "$name")" ] || die "no credentials for account '$name'"
+  set_label "$name" "$*"
+  [ -f "$SECRETS" ] && sync_secrets nopush || true
+  refresh_widget
+  printf 'label %s: %s\n' "$name" "$(account_field "$name" label 2>/dev/null || echo '—')"
+}
+
+# ── auto: переключиться на живой аккаунт ──────────────────────────────────────
+#
+# Пусто  — аккаунт живой (или сервер/сеть молчат: на сетевой сбое аккаунты не
+#         меняем, иначе один моргнувший DNS уводил бы бар на другой аккаунт).
+# auth   — токен протух по expires_at или консоль ответила 401/403.
+# quota  — выбран лимит (любой из meter'ов в 100%): месяц/неделя кончились.
+account_problem() {
+  local name="$1" org access expires now body code worst
+  now="$(date +%s)"
+  expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
+  case "$expires" in ''|*[!0-9]*) expires=0 ;; esac
+  if [ "$expires" -gt 0 ] && [ "$expires" -le "$now" ]; then
+    printf 'auth'
+    return 0
+  fi
+  org="$(account_field "$name" org_id)"; access="$(account_field "$name" access_token)"
+  [ -n "$org" ] && [ -n "$access" ] || { printf 'auth'; return 0; }
+
+  body="$(curl -sS -m 8 -w '\n%{http_code}' -H "Authorization: Bearer $access" \
+    -H "x-org-id: $org" -H 'Accept: application/json' -H "User-Agent: $UA" "$API" 2>/dev/null || true)"
+  code="${body##*$'\n'}"
+  body="${body%$'\n'*}"
+  case "$code" in
+    401|403) printf 'auth'; return 0 ;;
+    200) : ;;
+    *) return 0 ;;  # сеть/5xx — не повод уходить с аккаунта
+  esac
+  worst="$(printf '%s' "$body" | jq -r '
+    [.access.meters[]? | select((.limitMicroCents | tonumber) > 0)
+     | ((.usedMicroCents | tonumber) * 100 / (.limitMicroCents | tonumber))]
+    | max // 0 | floor' 2>/dev/null || echo 0)"
+  [ "${worst:-0}" -ge 100 ] 2>/dev/null && printf 'quota'
+  return 0
+}
+
+cmd_auto() {
+  local names active target reason best="" tried=""
+  names="$(account_list)"
+  [ -n "$names" ] || die "no accounts configured (run: opencode-go-auth login --account a)"
+  active="$(active_name 2>/dev/null || true)"
+  if [ -z "$active" ] || [ ! -f "$(account_file "$active")" ]; then
+    active="$(printf '%s\n' "$names" | head -1)"
+  fi
+
+  reason="$(account_problem "$active")"
+  if [ -z "$reason" ]; then
+    log "auto: $active в порядке — оставляю"
+    printf '%s' "$active"
+    return 0
+  fi
+  log "auto: $active — $reason"
+
+  for target in $names; do
+    [ "$target" = "$active" ] && continue
+    local r; r="$(account_problem "$target")"
+    if [ -z "$r" ]; then best="$target"; break; fi
+    tried="$tried $target:$r"
+  done
+
+  if [ -z "$best" ]; then
+    local hint="" n
+    for n in $names; do hint="$hint opencode-go-auth login --account $n;"; done
+    notify "OpenCode Go: все аккаунты недоступны" "нужен login:$hint"
+    die "некуда переключаться (${active}: ${reason}${tried})"
+  fi
+
+  commit_switch "$best"
+  [ -f "$SECRETS" ] && sync_secrets nopush || true
+  printf '%s\n' "$best"
+}
+
+# ── whoami: что консоль знает про токен ───────────────────────────────────────
+
+cmd_whoami() {
+  local name="${1:-}"
+  [ -z "$name" ] && name="$(active_name 2>/dev/null || true)"
+  [ -n "$name" ] || die "usage: opencode-go-auth whoami [NAME]"
+  local token org
+  token="$(account_field "$name" access_token)"; org="$(account_field "$name" org_id)"
+  [ -n "$token" ] || die "no access_token for '$name'"
+  printf 'account: %s  label: %s\n' "$name" "$(account_field "$name" label 2>/dev/null || echo '—')"
+  local ep body
+  for ep in user orgs; do
+    body="$(curl -sS -m 10 -H "Authorization: Bearer $token" -H "x-org-id: $org" \
+      -H 'Accept: application/json' -H "User-Agent: $UA" "$SERVER/api/$ep" 2>/dev/null || true)"
+    printf '/api/%s: %s\n' "$ep" "${body:-—}"
+  done
 }
 
 cmd_link() {
@@ -574,6 +729,9 @@ case "${1:-}" in
   check) cmd_check "${2:-}" ;;
   apply) cmd_apply "${2:-}" ;;
   list)  cmd_list ;;
+  label) shift; cmd_label "$@" ;;
+  auto)  cmd_auto ;;
+  whoami) cmd_whoami "${2:-}" ;;
   link)  cmd_link "${2:-}" "${3:-}" ;;
   status) shift; cmd_status "$@" ;;
   sync)  sync_secrets ;;

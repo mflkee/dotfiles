@@ -30,7 +30,16 @@
     },
     "show_account": {
       "label": "Show account name",
-      "description": "Prefix the widget with the active account (A/B)"
+      "description": "Prefix the widget with the active account label (Kimi / Mfokinors, else A/B)"
+    },
+    "auto_switch": {
+      "label": "Auto-switch account",
+      "description": "Move to the other account when the current one runs out",
+      "option": {
+        "off": "Never",
+        "auth": "When the token expires or is rejected",
+        "always": "Also when a limit is exhausted (100%)"
+      }
     }
   }
 }

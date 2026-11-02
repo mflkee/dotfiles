@@ -85,7 +85,9 @@ local function make_noctalia(cfg)
       if acct then
         local e = H.accountExpiry and H.accountExpiry[acct]
         if e == nil then return nil end
-        return '{"org_id":"wrk_X","access_token":"t","expires_at":' .. e .. '}'
+        local lbl = H.accountLabels and H.accountLabels[acct]
+        local extra = lbl and ('"label":"' .. lbl .. '",') or ""
+        return '{"org_id":"wrk_X","access_token":"t",' .. extra .. '"expires_at":' .. e .. '}'
       end
       return nil
     end,
@@ -109,6 +111,7 @@ end
 local function newWidget(cfg)
   H.pending, H.stream, H.done, H.timeout, H.asyncFails = nil, nil, nil, nil, false
   H.notified, H.errors, H.logs, H.noCreds, H.accountExpiry = {}, {}, {}, false, nil
+  H.accountLabels = nil
   widget.text, widget.color, widget.tooltip = nil, nil, nil
   _G.noctalia = make_noctalia(cfg)
   _G.barWidget = {
@@ -171,10 +174,33 @@ respond(meters(600000000, 300000000, 1800000000)) -- 50% / 10% / 30%
 check("текст A 50%", w.widget.text == "A 50%")
 check("нет строки связи", tooltip_text(w.widget.tooltip):find("связь=") == nil)
 
-print("### 5: 403 -> auth, показан ⚠ (цифры не показываем)")
+print("### 5: 403 -> авто-переключение на живой аккаунт (opencode-go-auth auto)")
 w.onIpc("refresh")
 respond("{}", 403, true)
-check("текст A ⚠", w.widget.text == "A ⚠")
+check("запущен auto", H.stream ~= nil and H.stream:find("' auto") ~= nil)
+check("служебная метка A …", w.widget.text == "A …")
+H.done({ exitCode = 0 })
+check("после auto запрос ушёл", H.pending ~= nil)
+respond(meters(0, 0, 0))
+check("цифры живого аккаунта", w.widget.text == "A 0%")
+
+print("### 5b: auto_switch=off -> 403 показывает ⚠ и не переключает")
+local w5b = newWidget({ auto_switch = "off" })
+respond("{}", 403, true)
+check("текст A ⚠", w5b.widget.text == "A ⚠")
+check("auto не запускался", H.stream == nil)
+
+print("### 5c: auto_switch=auth -> лимит 100% не переключает")
+local w5c = newWidget()
+respond(meters(1200000000, 0, 0)) -- 5h выбран на 100%
+check("текст A 100%", w5c.widget.text == "A 100%")
+check("auto не запускался", H.stream == nil)
+
+print("### 5d: auto_switch=always -> лимит 100% уводит на второй аккаунт")
+local w5d = newWidget({ auto_switch = "always" })
+respond(meters(1200000000, 0, 0))
+check("запущен auto", H.stream ~= nil and H.stream:find("' auto") ~= nil)
+check("служебная метка A …", w5d.widget.text == "A …")
 
 print("### 6: клик в режиме switch -> runAsync с 'use', метка без разметки")
 local w6 = newWidget()
@@ -193,14 +219,14 @@ respond(meters(120000000, 0, 0))
 check("текст A 10%", w6.widget.text == "A 10%")
 check("без ошибок", #H.errors == 0)
 
-print("### 6c: новый аккаунт без подписки (403) -> метка без разметки и не залипает")
+print("### 6c: новый аккаунт без подписки (403) -> не залипает, уходит в auto")
 local w6c = newWidget()
 respond(meters(0, 0, 0))
 w6c.onClick()
 H.done({ exitCode = 0 })
 respond("{}", 403, true)
-check("метка A ⚠ (не B…)", w6c.widget.text == "A ⚠")
-check("нет тегов", w6c.widget.text:find("[<>]") == nil)
+check("метка без разметки и не B…", w6c.widget.text ~= "B…" and w6c.widget.text:find("[<>]") == nil)
+check("запущен auto", H.stream ~= nil and H.stream:find("' auto") ~= nil)
 
 print("### 6d: переключение упало -> notifyError, метка сброшена")
 local w6d = newWidget()
@@ -234,10 +260,11 @@ local w8 = newWidget()
 respond(meters(9000000000, 0, 0)) -- 750% -> 100
 check("текст A 100%", w8.widget.text == "A 100%")
 
-print("### 9: нет access.meters + _tag -> auth")
+print("### 9: нет access.meters + _tag Unauthorized -> авто-переключение")
 local w9 = newWidget()
 respond('{"_tag":"Unauthorized"}')
-check("текст A ⚠", w9.widget.text == "A ⚠")
+check("запущен auto", H.stream ~= nil and H.stream:find("' auto") ~= nil)
+check("метка A …", w9.widget.text == "A …")
 
 print("### 10: ответ не JSON -> ! (нет данных для stale)")
 local w10 = newWidget()
@@ -273,6 +300,15 @@ w14.onClick()
 check("переключения нет", H.stream == nil)
 check("есть ошибка", #H.errors == 1)
 check("ошибка про токены", H.errors[1] ~= nil and H.errors[1][2]:find("протухли") ~= nil)
+
+print("### 15: метки аккаунтов (Kimi / Mfokinors) в баре и тултипе")
+local w15 = newWidget()
+H.accountExpiry = { a = os.time() + 86400, b = os.time() + 86400 }
+H.accountLabels = { a = "Kimi", b = "Mfokinors" }
+respond(meters(0, 0, 0))
+check("бар показывает метку Kimi", w15.widget.text == "Kimi 0%")
+check("тултип знает второй аккаунт", tooltip_text(w15.widget.tooltip):find("Mfokinors %(b%)") ~= nil)
+check("активный помечен точкой", tooltip_text(w15.widget.tooltip):find("• Kimi %(a%)") ~= nil)
 
 print()
 print(("%d/%d checks passed"):format(checks - fails, checks))
