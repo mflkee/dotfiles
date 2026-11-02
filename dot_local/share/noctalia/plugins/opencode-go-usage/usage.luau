@@ -742,6 +742,12 @@ function onClick()
     fetch()
     return
   end
+  -- Один аккаунт — переключать некуда: клик просто обновляет цифры.
+  if #accountNames() < 2 then
+    manual = true
+    fetch()
+    return
+  end
   local target, reason = nextAccount()
   if target == nil then
     noctalia.notifyError("OpenCode Go", reason or "некуда переключаться")

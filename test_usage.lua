@@ -98,8 +98,11 @@ local function make_noctalia(cfg)
       if not H.asyncFails then return true end
       return false
     end,
-    listDir = function() return { "a.json", "b.json" } end,
-    fileExists = function() return true end,
+    listDir = function() if H.oneAccount then return { "a.json" } end return { "a.json", "b.json" } end,
+    fileExists = function(p)
+      if H.oneAccount and tostring(p):find("b%.json$") then return false end
+      return true
+    end,
     setUpdateInterval = function() end,
     notify = function(t, b) H.notified[#H.notified+1] = { t, b } end,
     notifyError = function(t, b) H.errors[#H.errors+1] = { t, b } end,
@@ -112,6 +115,7 @@ local function newWidget(cfg)
   H.pending, H.stream, H.done, H.timeout, H.asyncFails = nil, nil, nil, nil, false
   H.notified, H.errors, H.logs, H.noCreds, H.accountExpiry = {}, {}, {}, false, nil
   H.accountLabels = nil
+  H.oneAccount = false
   widget.text, widget.color, widget.tooltip = nil, nil, nil
   _G.noctalia = make_noctalia(cfg)
   _G.barWidget = {
@@ -309,6 +313,15 @@ respond(meters(0, 0, 0))
 check("бар показывает метку Kimi", w15.widget.text == "Kimi 0%")
 check("тултип знает второй аккаунт", tooltip_text(w15.widget.tooltip):find("Mfokinors %(b%)") ~= nil)
 check("активный помечен точкой", tooltip_text(w15.widget.tooltip):find("• Kimi %(a%)") ~= nil)
+
+print("### 16: один аккаунт -> клик обновляет данные, без ошибки")
+local w16 = newWidget()
+respond(meters(0, 0, 0))
+H.oneAccount = true
+w16.onClick()
+check("переключения нет", H.stream == nil)
+check("запрошено обновление", H.pending ~= nil)
+check("нет ошибок", #H.errors == 0)
 
 print()
 print(("%d/%d checks passed"):format(checks - fails, checks))
