@@ -18,7 +18,10 @@
 #   opencode-go-auth use NAME | toggle         переключить активный аккаунт (ручной флип)
 #   opencode-go-auth rotate                    выставить аккаунт по половине месяца (идемпотентно)
 #   opencode-go-auth apply [NAME]              привести ЭТУ машину к активному (файлы + CLI)
-#   opencode-go-auth list                      список аккаунтов + активный + срок токенов
+#   opencode-go-auth list                      список аккаунтов + метка + активный + срок токенов
+#   opencode-go-auth label NAME TEXT|rem       человекочитаемая метка (Kimi / Mfokinors)
+#   opencode-go-auth auto                      переключиться на живой аккаунт, если текущий мёртв/выбран
+#   opencode-go-auth whoami [NAME]             что консоль знает о токене (email и т.п.)
 #   opencode-go-auth link NAME CLI_CRED_ID     привязать аккаунт к credential opencode CLI
 #   opencode-go-auth status [--json] [NAME]    лимиты Go-плана (как видит виджет)
 #   opencode-go-auth check [SECONDS]           уведомить, если токен скоро истекает
