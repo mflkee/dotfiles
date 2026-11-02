@@ -30,7 +30,7 @@
     },
     "show_account": {
       "label": "Show account name",
-      "description": "Prefix the widget with the active account label (Kimi / Mfokinors, else A/B)"
+      "description": "Prefix the widget with the active account label (kim / mfl, else A/B)"
     },
     "auto_switch": {
       "label": "Auto-switch account",
