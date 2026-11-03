@@ -43,6 +43,19 @@ cd ~/obs_main && git add -A && git commit -m "description"
   `let g:dsync_capture_enabled = v:false`.
 - Не захватываются: файлы с исходником `.tmpl` (правь шаблон), сгенерированные
   темы/`.desktop`, `~/Pictures`, вложенные git-репо и не-managed файлы.
+- **Грабли (2026-11-03): автозахват + генерируемые файлы = застрявший rebase.**
+  `~/.config/starship.toml` и `~/.config/niri/noctalia.kdl` пишет сама Noctalia
+  под локальную палитру, но оба лежат в chezmoi как обычные файлы. Машины
+  перегенерируют их по-разному → `dsync push` коммитит это в репо → на
+  `git pull --rebase` конфликтуют строки цветов. 01.11.2026 так встал rebase на
+  mkair: `dotfiles: pull FAILED (unmerged files)` **двое суток**, а поскольку
+  `chezmoi apply` у dsync живёт в `post_pull`, на машину не приезжало вообще
+  ничего (ни плагины, ни скрипты, ни аккаунты) — при живом хабе и живом GitHub.
+  Лечение: `[capture] exclude` в `dot_config/dsync/dsync/config.toml.tmpl`.
+  Диагностика застревания: `dsync status` → `dotfiles: pull FAILED (exit=128)`,
+  затем `cd ~/dotfiles && git status` (ищи `interactive rebase in progress`).
+  Чинится: `git rebase --abort` (или разрешить конфликт → `git add` →
+  `git rebase --continue`), после чего hub сам догонит за один цикл.
 
 ### Синхронизация состояния: tmux + сессии opencode
 - Управляется секцией `[state]` в конфиге (chezmoi-шаблон) и работает
