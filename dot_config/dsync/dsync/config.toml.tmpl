@@ -69,10 +69,18 @@ sync = false
 # hub двое суток не мог влить dotfiles (Pull FAILED: unmerged files), а значит
 # не выполнялся post_pull → chezmoi apply → не приезжали ни плагины, ни скрипты.
 # Теперь локальная регенерация палитры не превращается в коммиты.
+#
+# secrets.zsh — age-шифрованный файл: одинаковый плейнтекст шифруется каждый раз
+# в разные байты (случайный file key). Если машина с устаревшими креденшелами
+# автозахватит живой файл, в репо уезжает чужой (старый) токен, а git на
+# `pull --rebase` видит бинарный конфликт. Именно так 03.11.2026 встал
+# archlinux-notebook (ноут 4 дня был офлайн и при приезде запуш­ил старый токен).
+# Токены пишет только `opencode-go-auth` — он сам делает `chezmoi re-add`.
 [capture]
 exclude = [
   "~/.config/starship.toml",     # >>> NOCTALIA STARSHIP PALETTE >>>
   "~/.config/niri/noctalia.kdl", # цвета niri от Noctalia
+  "~/.config/zsh/secrets.zsh",   # age: бинарь, автозахват = конфликт + откат токенов
 ]
 
 # Не-git состояние флота: tmux-раскладка (tmux-resurrect) и сессии opencode.
