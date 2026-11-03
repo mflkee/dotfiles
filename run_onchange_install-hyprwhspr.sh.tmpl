@@ -1,6 +1,6 @@
 #!/bin/bash
 # vim: ft=bash
-# run_onchange hash-packages: {{ list "hyprwhspr" "wtype" "ydotool" | join "\n" | sha256sum }}
+# run_onchange hash-packages: {{ list "hyprwhspr" "wtype" "ydotool" "python-soundfile" | join "\n" | sha256sum }}
 
 {{- $has_niri := false -}}
 {{- if hasKey .machines .chezmoi.hostname -}}
@@ -32,6 +32,39 @@ if [[ ${#MISSING[@]} -gt 0 ]]; then
   paru -S --needed --noconfirm "${MISSING[@]}"
 else
   echo "[chezmoi] All hyprwhspr packages are already installed."
+fi
+
+# Core Python deps of hyprwhspr (CORE_IMPORTS in lib/src/dependency_plan.py:
+# sounddevice, numpy, soxr, soundfile). The app venv is created with
+# --system-site-packages, so distro packages satisfy it; soundfile lives in
+# [extra] as python-soundfile.
+# 2026-11-03: venv без soundfile → на каждом старте в журнале
+#   [ERROR] Missing Python modules: soundfile - run: hyprwhspr setup
+# (озвучивалось как «opervizor ругается»). Ставим пакет, а если sudo без
+# пароля недоступен (dsync post_pull, таймер) — докидываем модуль в venv
+# через pip, root для этого не нужен.
+HYPRWHSPR_VENV="$HOME/.local/share/hyprwhspr/venv"
+if [[ -x "$HYPRWHSPR_VENV/bin/python" ]]; then
+  if ! pacman -Q python-soundfile &>/dev/null && sudo -n true 2>/dev/null; then
+    echo "[chezmoi] Installing python-soundfile (hyprwhspr core dep)"
+    sudo pacman -S --needed --noconfirm python-soundfile
+  fi
+
+  CORE_MISSING=()
+  for mod in sounddevice numpy soxr soundfile; do
+    "$HYPRWHSPR_VENV/bin/python" -c "import $mod" &>/dev/null || CORE_MISSING+=("$mod")
+  done
+
+  if [[ ${#CORE_MISSING[@]} -gt 0 ]]; then
+    echo "[chezmoi] hyprwhspr venv is missing modules: ${CORE_MISSING[*]} — installing into venv"
+    "$HYPRWHSPR_VENV/bin/pip" install --quiet "${CORE_MISSING[@]}"
+    systemctl --user restart hyprwhspr.service 2>/dev/null || true
+  fi
+
+  for mod in sounddevice numpy soxr soundfile; do
+    "$HYPRWHSPR_VENV/bin/python" -c "import $mod" &>/dev/null \
+      || echo "[chezmoi] WARNING: $mod still missing in hyprwhspr venv (run: hyprwhspr setup)"
+  done
 fi
 
 # Setup udev rule for uinput access
