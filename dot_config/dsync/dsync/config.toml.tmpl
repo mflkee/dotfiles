@@ -58,11 +58,22 @@ machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
 sync = false
 
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
-# Всё опционально; по умолчанию watch = все файлы под chezmoi (managed),
-# а исключения уже встроены (шаблоны .tmpl, темы, ~/Pictures и т.п.).
-# [capture]
-# watch = ["~/.zshrc", "~/.config", "~/.local/bin"]
-# exclude = ["~/.config/ghostty/themes"]
+# По умолчанию watch = все файлы под chezmoi (managed); встроенные исключения —
+# шаблоны .tmpl, темы, ~/Pictures, ~/.config/dsync и т.п. (см. is_excluded в
+# src/client/capture.rs). watch не задаём — он нам не нужен.
+#
+# exclude — то, что Noctalia ГЕНЕРИРУЕТ на каждой машине из своей палитры.
+# Файлы лежат в chezmoi, поэтому каждая машина переписывает их своим цветом,
+# автозахват коммитил это в репо, и на `git pull --rebase` строки цветов
+# конфликтовали с версией флота. 01.11.2026 так и встал rebase на mkair:
+# hub двое суток не мог влить dotfiles (Pull FAILED: unmerged files), а значит
+# не выполнялся post_pull → chezmoi apply → не приезжали ни плагины, ни скрипты.
+# Теперь локальная регенерация палитры не превращается в коммиты.
+[capture]
+exclude = [
+  "~/.config/starship.toml",     # >>> NOCTALIA STARSHIP PALETTE >>>
+  "~/.config/niri/noctalia.kdl", # цвета niri от Noctalia
+]
 
 # Не-git состояние флота: tmux-раскладка (tmux-resurrect) и сессии opencode.
 # Синхронизируется через хаб (state_push/state_pull). tmux_restore = true
