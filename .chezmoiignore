@@ -5,12 +5,6 @@ study/**/env/
 study/**/venv/
 study/**/*venv/
 projects/**/dot_venv/
-# Ignoring OpenClaw secrets
-.openclaw/.env
-.openclaw/openclaw.json
-.openclaw/openclaw.json.last-good
-.openclaw/*.bak
-
 {{- $has_niri := false -}}
 {{- if hasKey .machines .chezmoi.hostname -}}
 {{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
