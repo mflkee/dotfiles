@@ -1,0 +1,26 @@
+[Desktop Entry]
+# Локальный override системного org.telegram.desktop.desktop:
+# QT_QPA_PLATFORMTHEME=xdgdesktopportal → диалог выбора файла идёт через
+# xdg-desktop-portal (gnome → выглядит как Nautilus), а не рисуется Qt-виджетом.
+# DBusActivatable выключен, иначе DBus поднимает Telegram без нашего env.
+Name=Telegram
+Comment=New era of messaging
+TryExec=/usr/bin/Telegram
+Exec=env QT_QPA_PLATFORMTHEME=xdgdesktopportal /usr/bin/Telegram -- %U
+Icon=org.telegram.desktop
+Terminal=false
+StartupWMClass=TelegramDesktop
+Type=Application
+Categories=Chat;Network;InstantMessaging;Qt;
+MimeType=x-scheme-handler/tg;x-scheme-handler/tonsite;x-scheme-handler/ton;
+Keywords=tg;chat;im;messaging;messenger;sms;tdesktop;
+Actions=quit;
+DBusActivatable=false
+SingleMainWindow=true
+X-GNOME-UsesNotifications=true
+X-GNOME-SingleWindow=true
+
+[Desktop Action quit]
+Exec=env QT_QPA_PLATFORMTHEME=xdgdesktopportal /usr/bin/Telegram -quit
+Name=Quit Telegram
+Icon=application-exit
