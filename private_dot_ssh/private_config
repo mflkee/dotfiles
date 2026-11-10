@@ -40,3 +40,9 @@ Host server archlinux-server.netbird.cloud
 Host mkair-server-tmn server-tmn mkair-server-tmn.netbird.cloud
     HostName 100.89.18.223
     User mflkee
+
+# Запасной путь, когда NetBird на сервере недоступен: через archlinux-server (та же сеть).
+Host tmn-lan
+    HostName 192.168.1.128
+    ProxyJump 100.89.126.211
+    User mflkee
