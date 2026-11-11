@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# polkit-agent-ensure — гарантирует, что в сессии есть polkit-агент.
+#
+# Зачем: без агента pkexec падает с кодом 127
+#   («Error creating textual authentication agent … No such device or address»),
+# и любой GUI-установщик (ArtCraft Launcher, обновляторы, Flatpak-репозитории,
+# монтирование дисков) умирает с «error 127 (usually refused permission or no
+# polkit authentication agent)».
+#
+# Логика:
+#   1) есть Noctalia → включает её встроенный агент (shell.polkit_agent=true);
+#      настройка пишется в ~/.local/state/noctalia/settings.toml и переживает
+#      перезагрузку, но при первом запуске/чистом профиле её надо выставить;
+#   2) Noctalia нет (например mkair-server-tmn) → запускает polkit-gnome;
+#   3) нет ни того, ни другого → пишет в лог и выходит.
+#
+# Вызывается из ~/.config/niri/config.kdl (spawn-sh-at-startup).
+set -uo pipefail
+
+log() { printf '[polkit-agent] %s\n' "$*"; }
+
+if command -v noctalia >/dev/null 2>&1; then
+  # noctalia-shell стартует параллельно (в niri она рестартует через systemd),
+  # поэтому ждём её сокет до 30 секунд.
+  for _ in $(seq 1 60); do
+    if cur=$(noctalia msg config-get shell.polkit_agent 2>/dev/null); then
+      if [[ $cur == true ]]; then
+        log "агент Noctalia включён"
+        exit 0
+      fi
+      if noctalia msg config-set shell.polkit_agent true >/dev/null 2>&1; then
+        log "включил встроенный polkit-агент Noctalia"
+        exit 0
+      fi
+      log "не смог выставить shell.polkit_agent=true"
+      exit 1
+    fi
+    sleep 0.5
+  done
+  log "Noctalia не ответила за 30 с — пробую polkit-gnome"
+fi
+
+AGENT=/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+if [[ -x $AGENT ]]; then
+  if pgrep -f polkit-gnome-authentication-agent >/dev/null; then
+    log "polkit-gnome уже запущен"
+    exit 0
+  fi
+  setsid "$AGENT" >/dev/null 2>&1 &
+  log "запустил polkit-gnome"
+  exit 0
+fi
+
+log "polkit-агента нет: ни Noctalia (shell.polkit_agent), ни polkit-gnome"
+log "поставь polkit-gnome или включи агент в Noctalia: Настройки → Shell → Polkit agent"
+exit 1

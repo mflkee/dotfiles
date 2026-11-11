@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# artcraft-setup — идемпотентная настройка репозитория ArtCraft в pacman.
+#
+# Делает то же, что официальный скрипт с getartcraft.com, но можно запускать
+# повторно сколько угодно: ключ/конфиг/Include проверяются, а не добавляются
+# вслепую; повторных строк в pacman.conf не появляется.
+#
+# Запуск:
+#   artcraft-setup                 — только настроить репозиторий (и pacman -Sy)
+#   artcraft-setup --no-sync       — без обновления баз
+#   artcraft-setup --install-all   — настроить и поставить весь набор (18 пакетов)
+#   artcraft-setup --install pkg…  — настроить и поставить перечисленные пакеты
+#
+# Требует sudo (на машинах с NOPASSWD работает неинтерактивно).
+set -euo pipefail
+
+KEY_FP=2B76741B414AAD6CD33E631213A005C0B9D7C3ED
+KEY_URL=https://getartcraft.com/keys/artcraft.asc
+REPO_URL=https://getartcraft.com/arch/artcraft.conf
+REPO_CONF=/etc/pacman.d/artcraft.conf
+PACMAN_CONF=/etc/pacman.conf
+INCLUDE_LINE='Include = /etc/pacman.d/artcraft.conf'
+
+# «Основные» приложения ArtCraft — весь набор из репозитория.
+ALL_PKGS=(
+  ai.storyteller.artcraft-launcher
+  ai.artcraft.app
+  ai.storyteller.anicraft
+  ai.storyteller.cadcraft
+  ai.storyteller.craft-anything
+  ai.storyteller.deckcraft
+  ai.storyteller.designcraft
+  ai.storyteller.effectcraft
+  ai.storyteller.figcraft
+  ai.storyteller.filmcraft
+  ai.storyteller.gridcraft
+  ai.storyteller.lightcraft
+  ai.storyteller.materialcraft
+  ai.storyteller.pdfcraft
+  ai.storyteller.photocraft
+  ai.storyteller.soundcraft
+  ai.storyteller.texturecraft
+  ai.storyteller.vectorcraft
+  ai.storyteller.wordcraft
+)
+
+DO_SYNC=1
+INSTALL=0
+INSTALL_PKGS=()
+
+while (($#)); do
+  case "$1" in
+    --no-sync) DO_SYNC=0 ;;
+    --install-all) INSTALL=1; INSTALL_PKGS+=("${ALL_PKGS[@]}") ;;
+    --install) INSTALL=1; shift; while (($#)) && [[ $1 != --* ]]; do INSTALL_PKGS+=("$1"); shift; done; continue ;;
+    -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "artcraft-setup: неизвестный аргумент: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+say() { printf '%s\n' "$*"; }
+
+# ── 1. ключ подписи ──────────────────────────────────────────────────────────
+if pacman-key --list-keys "$KEY_FP" >/dev/null 2>&1; then
+  say "= ключ ArtCraft уже импортирован и подписан локально"
+else
+  say "+ импорт ключа ArtCraft ($KEY_FP)"
+  sudo pacman-key --init
+  tmp=$(mktemp)
+  trap 'rm -f "$tmp"' EXIT
+  curl -fsSL "$KEY_URL" -o "$tmp"
+  sudo pacman-key --add "$tmp"
+  sudo pacman-key --lsign-key "$KEY_FP"
+  rm -f "$tmp"
+  trap - EXIT
+fi
+
+# ── 2. конфиг репозитория (обновляем только при изменениях) ──────────────────
+tmpc=$(mktemp)
+trap 'rm -f "$tmpc"' EXIT
+curl -fsSL "$REPO_URL" -o "$tmpc"
+if sudo test -f "$REPO_CONF" && sudo cmp -s "$tmpc" "$REPO_CONF"; then
+  say "= $REPO_CONF актуален"
+else
+  sudo install -Dm644 "$tmpc" "$REPO_CONF"
+  say "+ $REPO_CONF обновлён"
+fi
+rm -f "$tmpc"
+trap - EXIT
+
+# ── 3. Include в pacman.conf ─────────────────────────────────────────────────
+if grep -Fxq "$INCLUDE_LINE" "$PACMAN_CONF"; then
+  say "= Include уже есть в pacman.conf"
+else
+  printf '\n# ArtCraft repository\n%s\n' "$INCLUDE_LINE" | sudo tee -a "$PACMAN_CONF" >/dev/null
+  say "+ Include добавлен в pacman.conf"
+fi
+
+# ── 4. базы репозиториев ─────────────────────────────────────────────────────
+if ((DO_SYNC)); then
+  sudo pacman -Sy --noconfirm >/dev/null
+  say "+ базы репозиториев обновлены (pacman -Sy)"
+fi
+
+# ── 5. установка пакетов ─────────────────────────────────────────────────────
+if ((INSTALL)); then
+  if ((${#INSTALL_PKGS[@]} == 0)); then
+    say "artcraft-setup: --install без имён пакетов" >&2
+    exit 2
+  fi
+  say "+ pacman -S --needed ${#INSTALL_PKGS[@]} пакет(ов)"
+  sudo pacman -S --needed --noconfirm "${INSTALL_PKGS[@]}"
+fi
+
+say "готово."
