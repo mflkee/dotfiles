@@ -1,6 +1,6 @@
 # dsync v2 (Rust) — hub-based machine state synchronizer over QUIC
 # Hub: archlinux-server:42069 (systemd user unit dsync-hub.service)
-# Machine names: desktop, notebook, archlinux-mkair, archlinux-server
+# Machine names: desktop, notebook, archlinux-mkair, archlinux-server, mkair-server-tmn
 #
 [machine]
 name = "{{ if eq .chezmoi.hostname "archlinux-desktop" }}desktop{{ else if eq .chezmoi.hostname "archlinux-notebook" }}notebook{{ else }}{{ .chezmoi.hostname }}{{ end }}"
@@ -11,7 +11,7 @@ address = "{{ if eq .chezmoi.hostname "archlinux-server" }}127.0.0.1{{ else }}10
 [projects.dsync]
 path = "/home/mflkee/projects/dsync"
 branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server", "mkair-server-tmn"]
 # rebuild client + (если на машине крутится хаб) отложенный restart хаба.
 # Раньше хаб обновлялся только руками и отстал на 6 недель — см. CHANGELOG.
 post_pull = "bash ~/projects/dsync/scripts/post-pull.sh"
@@ -19,7 +19,7 @@ post_pull = "bash ~/projects/dsync/scripts/post-pull.sh"
 [projects.dotfiles]
 path = "/home/mflkee/dotfiles"
 branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server", "mkair-server-tmn"]
 post_pull = "chezmoi apply --force"
 
 # awgq: CLI + веб-панель. Явный проект — хаб раскатывает на весь флот
@@ -29,7 +29,7 @@ post_pull = "chezmoi apply --force"
 [projects.awgq]
 path = "/home/mflkee/projects/awgq"
 branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server", "mkair-server-tmn"]
 post_pull = "bash ~/projects/awgq/scripts/awgq-post-pull.sh"
 
 # gopass-хранилище (репозиторий mflkee/passstore, private).
@@ -55,7 +55,7 @@ machines = ["notebook", "desktop", "archlinux-mkair"]
 [auto_projects]
 root = "~/projects"
 branch = "main"
-machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
+machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server", "mkair-server-tmn"]
 sync = false
 
 # Авто-захват правок живых dotfiles при dsync push (см. AGENTS.md).
@@ -137,6 +137,11 @@ user = "mflkee"
 
 [remote.archlinux-mkair]
 host = "100.89.59.195"
+port = 22
+user = "mflkee"
+
+[remote.mkair-server-tmn]
+host = "100.89.18.223"
 port = 22
 user = "mflkee"
 {{ end }}
