@@ -182,13 +182,12 @@ DEFAULTS=(
 )
 
 # ─── форматы, которые НЕ должны уехать в Craft ───────────────────────────────
-# mime|предпочтительный обработчик. Если сейчас стоит «не-craft» приложение —
-# не трогаем (уважаем выбор пользователя); если стоит craft или пусто —
-# выставляем предпочтительный.
+# mime|обработчик[|запасной обработчик…]. Если MIME уже закреплён пользователем
+# не-craft приложением — не трогаем; иначе берём первый УСТАНОВЛЕННЫЙ из цепочки.
 KEEP=(
   'text/plain|nvim.desktop'
   'text/html|zen.desktop'
-  'text/markdown|com.bilingify.readest.desktop'
+  'text/markdown|com.bilingify.readest.desktop|nvim.desktop'
 )
 
 say() { printf '%s\n' "$*"; }
@@ -265,14 +264,19 @@ for row in "${DEFAULTS[@]}"; do set_default "${row%%|*}" "${row#*|}"; done
 
 say "── 3/4 форматы, которые остаются у прежних приложений"
 for row in "${KEEP[@]}"; do
-  mime="${row%%|*}"; id="${row#*|}"
+  IFS='|' read -r -a parts <<<"$row"
+  mime="${parts[0]}"
+  id=""
+  for cand in "${parts[@]:1}"; do
+    if desktop_exists "$cand"; then id="$cand"; break; fi
+  done
   cur=$(xdg-mime query default "$mime" 2>/dev/null || true)
-  if [[ $cur == "$id" ]]; then
+  if [[ -n $id && $cur == "$id" ]]; then
     say "  = $mime → $id"
   elif is_pinned "$mime" && ! is_craft "$cur"; then
     say "  = $mime → $cur (закреплено пользователем, не craft)"
-  elif ! desktop_exists "$id"; then
-    say "  ! $mime: $id не установлен — оставляю ${cur:-пусто}"
+  elif [[ -z $id ]]; then
+    say "  ! $mime: ни один из обработчиков (${parts[*]:1}) не установлен — оставляю ${cur:-пусто}"
   else
     set_default "$mime" "$id"
   fi
