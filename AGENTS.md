@@ -23,11 +23,12 @@ cd ~/obs_main && git add -A && git commit -m "description"
 
 ## dsync v2 (Rust, replaces old Python v1)
 - **Hub**: `archlinux-server:42069` (QUIC), systemd user unit `dsync-hub.service`, `loginctl enable-linger mflkee` enabled. Data: `~/.local/share/dsync-hub/machines.json`
-- **Clients**: `~/.local/bin/dsync`, config `~/.config/dsync/dsync/config.toml` (chezmoi template), 15-min `dsync.timer` on desktop/mkair/notebook
+- **Clients**: `~/.local/bin/dsync`, config `~/.config/dsync/dsync/config.toml` (chezmoi template), 15-min `dsync.timer` на desktop/mkair/notebook/mkair-server-tmn
 - **Flow**: client pushes state → hub stores → hub SSH-pulls `dotfiles` + `dsync` на все машины (`git pull --rebase --autostash` — незакоммиченная работа не теряется) + runs `post_pull` (dotfiles: `chezmoi apply`, dsync: rebuild бинаря)
 - **`~/projects` — НЕ Syncthing (отменено 2026-09-24)**: Syncthing-папка `projects` удалена со всех машин (синк `.git` файлами — анти-паттерн, рвал `.git`). Теперь **каждая машина сама** работает с репо через **git+GitHub** (`git@github.com:mflkee/…`); dsync только **анонсирует состояния** (`[auto_projects] sync = false`: ветка, dirty, ahead/behind — смотрится в `dsync tui` → Projects), НО не разворачивает и не автокоммитит их. Пулятся только явные `[projects.*]` = `dotfiles`, `dsync`, `awgq`, `passstore`. Дисциплина: git-операции по репо — в один момент на одной машине, при совместной работе — pull/merge через GitHub.
 - **`passstore`** (с 2026-10-13): gopass-хранилище секретов, `~/.password-store` → `mflkee/passstore` (private). Раскатывается **без archlinux-server** (список `machines`): там приёмник бэкапов, а в хранилище лежит приватный ключ их расшифровки. Хаб раскатывает только проекты из своей копии конфига, поэтому проект описан на всех машинах, а ограничение задаёт `machines`; после правки списка хаб надо перезапустить. Детали — vault `servers/secret-store.md`.
-- **Machine names**: desktop, notebook, archlinux-mkair, archlinux-server. Hostname mapping: archlinux-desktop→desktop, archlinux-notebook→notebook, archlinux-mkair→archlinux-mkair, archlinux-server→archlinux-server. Notebook SSH-pull by IP `100.89.198.212`
+- **Machine names**: desktop, notebook, archlinux-mkair, archlinux-server, mkair-server-tmn. Hostname mapping: archlinux-desktop→desktop, archlinux-notebook→notebook, archlinux-mkair→archlinux-mkair, archlinux-server→archlinux-server, mkair-server-tmn→mkair-server-tmn (имя = hostname). Notebook SSH-pull by IP `100.89.198.212`, mkair-server-tmn — `100.89.18.223`.
+- **Доступ к репо на клиентах**: `dotfiles` и `dsync` публичные → хаб клонит их по https, ключ не нужен. `awgq` приватный → на `mkair-server-tmn` заведён read-only deploy-key `~/.ssh/id_ed25519_github` (только репо awgq). `passstore` на tmn не раскатывается.
 - **Source**: `~/projects/dsync`; build: `cargo build --release`, deploy binary to `~/.local/bin/dsync` (client) / `dsync-hub` (server)
 - **Note**: binary is a single ~18MB ELF with rustls (no cert verification)
 - **Секреты**: per-machine токен хаба — sidecar `~/.config/dsync/dsync/tokens.toml` (0600, chezmoi-ignored, в git не попадает). Новой машине его надо завести вручную (`[hub_connect] token = "…"` из `[hub] tokens` на сервере), иначе хаб отвергнет запросы и машина будет «offline».
@@ -222,3 +223,35 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 - **Раскатка на флот**: репозиторий `awgq` — явный проект dsync (`[projects.awgq]`), хаб клонит/пулит его на все машины; `post_pull = scripts/awgq-post-pull.sh` (создаёт venv, symlink `~/.local/bin/awgq`, ставит web-зависимости). После первого pull на машине — `awgq web up` (один раз).
 - **Критично**: один конфиг = один ключ = **одно активное устройство одновременно** (у провайдера лимит до 5 устройств, но шарение одного ключа ведёт к «качелям»/лагам по всей сети). Для каждого устройства — свой конфиг/ключ. После разбора 2026-09-24: VPN на ноутах выключен (`disabled`), дом работает на Keenetic.
 - **Пакеты**: `amneziawg-linux` (модуль ядра), `amneziawg-tools` (`awg-quick`), `amneziawg-go` (userspace, опционально). Нужен `openresolv` (иначе `resolvconf: command not found`).
+
+## polkit-агент (иначе pkexec = exit 127)
+- **Симптом**: GUI-установщик (`ArtCraft Launcher`, обновляторы, монтирование) падает с
+  `the system installer stopped with error 127 (usually refused permission or no polkit authentication agent)`.
+  Это код возврата **pkexec**: агента авторизации в сессии нет. Проверка: `pkexec /usr/bin/true` →
+  `Error creating textual authentication agent … exit=127`.
+- **Фикс на флоте**: `~/.local/bin/polkit-agent-ensure`, вызывается из
+  `~/.config/niri/config.kdl` (`spawn-sh-at-startup`). Логика: есть Noctalia → выставляет
+  `shell.polkit_agent = true` (её встроенный агент; состояние в `~/.local/state/noctalia/settings.toml`,
+  машина-локальное, переживает ребут); нет Noctalia (mkair-server-tmn) → поднимает
+  `polkit-gnome-authentication-agent-1`. Проверка: `journalctl --user -u noctalia-shell | grep -i polkit`
+  → `registered Polkit authentication agent`, либо `pkexec /usr/bin/id -u` → `0`.
+- **Ручное включение**: `noctalia msg config-set shell.polkit_agent true`
+  (ночью/по ssh нужны `XDG_RUNTIME_DIR`, `WAYLAND_DISPLAY`, `NIRI_SOCKET` из сессии).
+
+## ArtCraft (Storyteller) — репозиторий, приложения, дефолты
+- **Репозиторий**: pacman-репо `artcraft` (`getartcraft.com`), ключ `2B76741B…B9D7C3ED`,
+  `/etc/pacman.d/artcraft.conf`, `Include` в `pacman.conf`. Настраивается идемпотентно:
+  `artcraft-setup` (повторный запуск ничего не дублирует; `--no-sync`, `--install-all`, `--install pkg…`).
+- **Набор**: 18 пакетов — launcher, `ai.artcraft.app`, anicraft, cadcraft, craft-anything, deckcraft,
+  designcraft, effectcraft, figcraft, filmcraft, gridcraft, lightcraft, materialcraft, pdfcraft,
+  photocraft, soundcraft, texturecraft, vectorcraft, wordcraft (≈1.45 ГБ загрузки / ≈3.9 ГБ на диске).
+  Ставятся системно (`/usr/share/applications`), MimeType уже в пакетах.
+- **Дефолты**: `~/.config/scripts/craft-defaults.sh` (`--dry-run`/`--check`) — pdf→PdfCraft,
+  png/jpeg/tiff/webp/gif→PhotoCraft, RAW+HEIC→LightCraft, svg/ai/eps→VectorCraft,
+  видео→FilmCraft, аудио→SoundCraft, docx/odt/rtf/tex→WordCraft, pptx→DeckCraft, xlsx/csv→GridCraft,
+  dxf/dwg→CadCraft, 3D→TextureCraft, fla/xfl→AniCraft. `text/plain`/`text/html`/`text/markdown`
+  не перехватываются (KEEP-цепочка: nvim → readest → nvim).
+- **Грабли**: `xdg-mime query default` без записи в `mimeapps.list` отдаёт «первое рекомендованное»
+  из `mimeinfo.cache` — это не выбор пользователя; скрипт учитывает (проверяет пин в `mimeapps.list`).
+- **Состояние флота**: desktop, mkair-server-tmn — репо + все 18 + дефолты; server — только репо
+  (headless); mkair, notebook — скрипты и hook уже развёрнуты, установка ждёт sudo-пароль.
