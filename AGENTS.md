@@ -80,10 +80,29 @@ cd ~/obs_main && git add -A && git commit -m "description"
   `session list --format json` → `session export` изменившихся; на других —
   `session import`. Экспорт идёт с `--standalone` (в V2 экспорт через общий
   сервис недетерминированно обрезается — баг CLI).
-- Локальный индекс `~/.local/share/dsync/state.json`; сбойные элементы не
-  теряются (seq откатывается), только что импортированное не пере-отправляется.
+  `projects = []` — **канал выключен целиком** (ни экспорта, ни применения).
+- Локальный индекс `~/.local/share/dsync/state.json`: `seq`, `items`,
+  `failures`, `dead`. Пулл идёт **страницами** (`max_bytes`/`next_seq`/
+  `has_more`) и только по нужным каналам; уже применённое пропускается, поэтому
+  ретрай не дёргает `tmux-resurrect restore` повторно. Сбойный элемент после
+  `[state] retry_limit` (3) попыток уходит в **dead-letter** и не блокирует
+  канал: `dsync state list`, `dsync state retry [channel:key]`.
 - **opencode нужен V2** (`@opencode/cli` → `~/.opencode/bin/opencode`), иначе
-  сессии не синкаются (tmux при этом работает).
+  сессии не синкаются (tmux при этом работает). `dsync doctor` это проверяет.
+- **Пуллы хаба change-driven** (`[hub] pull_only_on_change`, `deployed.json`):
+  SSH-пулл и `post_pull` выполняются только когда `commit_hash` проекта
+  изменился; офлайн-машины (`last_push` старше `offline_skip_after_secs` = 45 мин)
+  не дёргаются вовсе, сетевые ошибки не ретраятся. Видно в логе хаба:
+  `pull plan from desktop: 2 started, 9 unchanged, 0 offline`.
+- **Самообновление**: `[projects.dsync] post_pull = scripts/post-pull.sh` —
+  собирает бинарь, обновляет клиент и (на машине с хабом) планирует
+  `systemctl --user restart dsync-hub` через `systemd-run --on-active=3`.
+- Диагностика: `dsync status` (версия хаба + локальный state: seq/applied/
+  failing/dead-letter), `dsync status --json`, `dsync doctor` (дрейф версий,
+  размер стейт-стора, tmp-мусор, opencode V1/V2).
+- **ENOSPC 28.10.2026**: хаб ловил `No space left on device` при атомарной
+  записи → сотни нулевых `*.tmp-*` в `~/.local/share/dsync-hub`. Теперь хаб
+  чистит такие файлы при старте; если снова появятся — проверить `df -h /home`.
 
 ### How to access Obsidian from any machine
 - `obsidian-memory` MCP — reads vault files locally (via Syncthing)
