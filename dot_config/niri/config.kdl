@@ -338,10 +338,26 @@ window-rule {
     clip-to-geometry true
 }
 
-// Игровые лаунчеры (Heroic, Steam) — плавающие: их диалоги/магазины плохо выглядят в тайле.
+// Heroic — плавающий: его диалоги/магазины плохо выглядят в тайле.
 window-rule {
-    match app-id=r#"^(com\.heroicgameslauncher\.hgl|heroic|steam)$"#
+    match app-id=r#"^(com\.heroicgameslauncher\.hgl|heroic)$"#
     open-floating true
+}
+
+// Steam — НЕ плавающий, обычная колонка.
+// Грабли (2026-11-11): Steam — X11-приложение под xwayland-satellite, а при
+// prefer-no-csd у него нет ни заголовка, ни кнопки закрытия. Будучи плавающим,
+// он разворачивался на 1888x1014 (весь экран), рисовался ПОВЕРХ тайловой
+// раскладки и не скроллился вместе с ней, а колоночная навигация (Mod+Left/
+// Right, Mod+колесо) при фокусе на плавающем окне не работает вообще — фокус
+// остаётся на нём. Ощущение: «Steam приклеился, не закрыть и не переключиться».
+// Закрывается он при этом нормально (Mod+Q = close-window), а уйти с плавающего
+// окна можно Mod+Shift+Tab (focus-window-previous).
+// Меню Steam — это X11-попапы, в тайл они не попадают, так что визуально
+// ничего не ломается.
+window-rule {
+    match app-id=r#"^steam$"#
+    open-floating false
 }
 
 // Матовое стекло для терминала (ghostty: background-opacity = 0.88).
