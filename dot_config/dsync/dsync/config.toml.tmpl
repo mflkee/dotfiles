@@ -12,8 +12,9 @@ address = "{{ if eq .chezmoi.hostname "archlinux-server" }}127.0.0.1{{ else }}10
 path = "/home/mflkee/projects/dsync"
 branch = "main"
 machines = ["notebook", "desktop", "archlinux-mkair", "archlinux-server"]
-# rebuild + replace client binary after pull (hub binary is updated manually)
-post_pull = "cargo build --release --quiet && cp -f target/release/dsync ~/.local/bin/dsync"
+# rebuild client + (если на машине крутится хаб) отложенный restart хаба.
+# Раньше хаб обновлялся только руками и отстал на 6 недель — см. CHANGELOG.
+post_pull = "bash ~/projects/dsync/scripts/post-pull.sh"
 
 [projects.dotfiles]
 path = "/home/mflkee/dotfiles"
@@ -89,6 +90,10 @@ exclude = [
 [state]
 tmux = true
 tmux_restore = true
+# Сколько раз повторять применение сбойного элемента состояния, прежде чем
+# убрать его в dead-letter (перестать блокировать канал). Смотреть/повторить:
+#   dsync state list / dsync state retry
+retry_limit = 3
 
 # Сессии opencode: по умолчанию — для всех [projects.*]. Можно ограничить:
 # [state.opencode]
@@ -104,6 +109,16 @@ projects = []
 [hub]
 bind = "0.0.0.0:42069"
 data_dir = "/home/mflkee/.local/share/dsync-hub"
+
+# Экономия пуллов (раньше каждый push каждого клиента дёргал все проекты на
+# всех машинах — ~1700 SSH-пуллов в сутки, из них ~1000 в офлайн-машину):
+# * не пулить машину, не выходившую на связь дольше offline_skip_after_secs
+#   (0 = пулить всегда);
+# * не пулить проект, чей commit уже развёрнут на этой машине
+#   (pull_only_on_change); post_pull (chezmoi apply / cargo build) тоже
+#   выполняется только при реальном изменении.
+offline_skip_after_secs = 2700
+pull_only_on_change = true
 
 [remote.archlinux-server]
 host = "127.0.0.1"
