@@ -71,9 +71,12 @@ machines:
     browser: firefox
     has_anaconda: false
     has_niri: true
-    # vpntel (tun2socks через HTTP-прокси телефона) на десктопе не нужен —
-    # отключено 2026-11-14, устройства нет в схеме.
-    has_vpntel: false
+    # vpntel (tun2socks через HTTP-прокси телефона): сервис оставлен, но
+    # автозапуск выключен — включается вручную (sudo systemctl start vpntel).
+    has_vpntel: true
+    vpntel_autostart: false
+    vpntel_proxy_if: wlo1
+    vpntel_nas_host: "webdav.mkair.ru"
     # Микрофон для hyprwhspr (PipeWire source name). На десктопе default-source
     # — Focusrite Scarlett Solo с цифровой тишиной на входе, рабочий микрофон —
     # USB PnP Audio Device (JMTek 0c76:161e).

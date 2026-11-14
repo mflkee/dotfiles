@@ -7,7 +7,20 @@
 #
 # Скрипт идемпотентен: если всё уже совпадает с эталоном, просто выходит.
 # Управляется chezmoi; вызывается из run_onchange_after_install-vpntel.sh.tmpl.
+#
+# Автозапуск задаётся в .chezmoidata/machines.yaml ключом vpntel_autostart
+# (по умолчанию true). При vpntel_autostart: false сервис ставится, но
+# остаётся выключенным — поднимать вручную: sudo systemctl start vpntel.service
 set -euo pipefail
+
+{{- $m := dict }}
+{{- if hasKey .machines .chezmoi.hostname }}
+{{-   $m = index .machines .chezmoi.hostname }}
+{{- end }}
+{{- $autostart := true }}
+{{- if hasKey $m "vpntel_autostart" }}
+{{-   $autostart = index $m "vpntel_autostart" }}
+{{- end }}
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "Ошибка: запусти от root:  sudo $0" >&2
@@ -19,6 +32,16 @@ SRC_STOP="{{ .chezmoi.homeDir }}/.local/bin/vpntel-stop.sh"
 DST_VP=/usr/local/bin/vpntel-watchdog
 DST_STOP=/usr/local/bin/vpntel-stop.sh
 UNIT=/etc/systemd/system/vpntel.service
+AUTOSTART="{{ $autostart }}"
+
+# Включение/выключение автозапуска — по флагу vpntel_autostart из machines.yaml.
+apply_autostart() {
+    if [ "${AUTOSTART}" = "true" ]; then
+        systemctl enable vpntel.service >/dev/null 2>&1 || true
+    else
+        systemctl disable vpntel.service >/dev/null 2>&1 || true
+    fi
+}
 
 # --- Что нужно поставить ----------------------------------------------------
 needs_install=false
@@ -27,7 +50,8 @@ cmp -s "${SRC_STOP}" "${DST_STOP}" 2>/dev/null || needs_install=true
 [ -f "${UNIT}" ] || needs_install=true
 
 if [ "${needs_install}" = false ]; then
-    echo "[vpntel] уже установлен и актуален."
+    apply_autostart
+    echo "[vpntel] уже установлен и актуален (autostart=${AUTOSTART})."
     exit 0
 fi
 
@@ -68,16 +92,20 @@ WantedBy=multi-user.target
 SERVICE
 
 systemctl daemon-reload
-systemctl enable vpntel.service >/dev/null 2>&1 || true
+apply_autostart
 
 # Перезапускаем, только если сервис уже был активен: при первой установке
 # телефон может быть недоступен — это нормально, watchdog сам включит туннель,
 # когда прокси появится.
-if systemctl is-active --quiet vpntel.service; then
+if ! systemctl is-active --quiet vpntel.service; then
+    if [ "${AUTOSTART}" = "true" ]; then
+        echo "[vpntel] установлен и включён (запустится при загрузке)"
+    else
+        echo "[vpntel] установлен, автозапуск выключен — вручную: sudo systemctl start vpntel.service"
+    fi
+else
     systemctl restart vpntel.service
     echo "[vpntel] перезапущен"
-else
-    echo "[vpntel] установлен и включён (запустится при загрузке)"
 fi
 
 echo "[vpntel] setup complete"
