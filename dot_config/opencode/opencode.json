@@ -118,8 +118,7 @@
       },
       "zen": {
         "type": "remote",
-        "url": "http://127.0.0.1:8877/mcp",
-        "disabled": true
+        "url": "http://127.0.0.1:8877/mcp"
       },
       "shadcn": {
         "type": "local",

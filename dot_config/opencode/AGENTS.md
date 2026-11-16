@@ -38,7 +38,7 @@ Hub = archlinux-server (Syncthing-хаб + dsync QUIC UDP `0.0.0.0:42069`); dsyn
 | `playwright` | local | Браузерная автоматизация (headless chromium) |
 | `context7` | remote | Актуальная дока библиотек/фреймворков (`https://mcp.context7.com/mcp`) |
 | `blender` | local | **disabled по умолчанию** — управление живым Blender (`uvx mcp-for-blender`, аддон `blender_mcp.py`, сокет 9876). Включать через `/mcps`, когда Blender запущен |
-| `zen` | remote | **disabled по умолчанию** — Zen-браузер (`http://127.0.0.1:8877/mcp`). Источник: `~/projects/zen-mcp` (MV2-расширение + systemd user `zen-mcp.service`). Включать на машинах с Zen |
+| `zen` | remote | **включён по умолчанию** — Zen-браузер (`http://127.0.0.1:8877/mcp`). Источник: `~/projects/zen-mcp` (MV2-расширение + systemd user `zen-mcp.service`). Нужен запущенный Zen с расширением; на машинах без Zen сервер просто отвечает ошибкой подключения — выключать через `/mcps` |
 | `shadcn` | local | **disabled по умолчанию** — `npx -y shadcn@latest mcp`. Требует `components.json` в cwd; включать проектным конфигом (см. ниже) |
 
 ### Включить shadcn в проекте
