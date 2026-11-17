@@ -699,7 +699,11 @@ binds {
     // Mod+Space       { switch-layout "next"; }
     // Mod+Shift+Space { switch-layout "prev"; }
 
-    Ctrl+Shift+S allow-inhibiting=false { screenshot; }
+    // Ctrl+Shift+S — скриншот области с аннотациями (Noctalia: стрелка, текст, блюр, обрезка).
+    // На машинах без Noctalia скрипт сам откатывается на grim+slurp (см. scripts/screenshot_annotate.sh).
+    Ctrl+Shift+S allow-inhibiting=false repeat=false hotkey-overlay-title="Screenshot + annotate (Noctalia)" {
+        spawn-sh "sh $HOME/.config/scripts/screenshot_annotate.sh"
+    }
     Print allow-inhibiting=false { screenshot; }
     Ctrl+Print allow-inhibiting=false { screenshot-screen; }
     Alt+Print allow-inhibiting=false { screenshot-window; }
