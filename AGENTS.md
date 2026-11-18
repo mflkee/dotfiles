@@ -278,11 +278,14 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   designcraft, effectcraft, figcraft, filmcraft, gridcraft, lightcraft, materialcraft, pdfcraft,
   photocraft, soundcraft, texturecraft, vectorcraft, wordcraft (≈1.45 ГБ загрузки / ≈3.9 ГБ на диске).
   Ставятся системно (`/usr/share/applications`), MimeType уже в пакетах.
-- **Дефолты**: `~/.config/scripts/craft-defaults.sh` (`--dry-run`/`--check`) — pdf→PdfCraft,
-  png/jpeg/tiff/webp/gif→PhotoCraft, RAW+HEIC→LightCraft, svg/ai/eps→VectorCraft,
-  видео→FilmCraft, аудио→SoundCraft, docx/odt/rtf/tex→WordCraft, pptx→DeckCraft, xlsx/csv→GridCraft,
-  dxf/dwg→CadCraft, 3D→TextureCraft, fla/xfl→AniCraft. `text/plain`/`text/html`/`text/markdown`
-  не перехватываются (KEEP-цепочка: nvim → readest → nvim).
+- **Дефолты**: `~/.config/scripts/craft-defaults.sh` (`--dry-run`/`--check`). Craft забирает только
+  **рабочие** форматы: PSD/Krita/OpenRaster/paintnet→PhotoCraft, RAW+HEIC→LightCraft,
+  svg/ai/eps→VectorCraft, docx/odt/rtf/tex→WordCraft, pptx→DeckCraft, xlsx/csv→GridCraft,
+  dxf/dwg→CadCraft, 3D→TextureCraft, fla/xfl→AniCraft, свои сессии (x-*craft)→одноимённые.
+  **Просмотр обычных файлов — простым просмотрщикам** (массив `SIMPLE` в скрипте):
+  png/jpeg/gif/webp/tiff/bmp/avif/qoi→**imv**, pdf→**zathura**, видео и аудио→**mpv**.
+  `text/plain`/`text/html`/`text/markdown` не перехватываются (KEEP-цепочка: nvim → readest → nvim).
+  Когда просмотрщик не установлен, скрипт пишет `! … не установлен` и оставляет выбор как есть.
 - **Грабли**: `xdg-mime query default` без записи в `mimeapps.list` отдаёт «первое рекомендованное»
   из `mimeinfo.cache` — это не выбор пользователя; скрипт учитывает (проверяет пин в `mimeapps.list`).
 - **Состояние флота**: desktop, mkair-server-tmn — репо + все 18 + дефолты; server — только репо

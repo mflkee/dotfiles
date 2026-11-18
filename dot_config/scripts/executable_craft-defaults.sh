@@ -44,9 +44,11 @@ DESKTOPS=(
 )
 
 # ─── что ставим по умолчанию (mime|desktop-id) ────────────────────────────────
-# Конфликты разрешены так: картинки (png/jpeg/tiff/webp/gif/…) → PhotoCraft,
-# RAW и HEIC → LightCraft, pdf → PdfCraft, svg → VectorCraft, видео → FilmCraft,
-# аудио → SoundCraft, 3D-модели → TextureCraft, dxf/dwg → CadCraft.
+# Craft забирает ТОЛЬКО свои рабочие форматы: проекты (x-photocraft, x-filmcraft,
+# x-soundcraft-session, …), PSD/Krita/OpenRaster, RAW и HEIC, svg/ai/eps,
+# docx/odt/rtf/tex, pptx, xlsx/csv, dxf/dwg, 3D-модели, fla/xfl.
+# Просмотр обычных файлов отдан простым просмотрщикам (см. SIMPLE ниже):
+# png/jpeg/gif/webp/… → imv, pdf → zathura, видео и аудио → mpv.
 # text/plain, text/html и text/markdown сознательно НЕ перехватываем (см. KEEP).
 DEFAULTS=(
   # AniCraft
@@ -70,19 +72,8 @@ DEFAULTS=(
   'application/x-figcraft|ai.storyteller.figcraft.desktop'
   'application/x-sketch|ai.storyteller.figcraft.desktop'
   'x-scheme-handler/figcraft|ai.storyteller.figcraft.desktop'
-  # FilmCraft
+  # FilmCraft (только собственные проекты; видео → mpv, см. SIMPLE)
   'application/x-filmcraft|ai.storyteller.filmcraft.desktop'
-  'video/mp4|ai.storyteller.filmcraft.desktop'
-  'video/x-m4v|ai.storyteller.filmcraft.desktop'
-  'video/quicktime|ai.storyteller.filmcraft.desktop'
-  'video/x-matroska|ai.storyteller.filmcraft.desktop'
-  'video/webm|ai.storyteller.filmcraft.desktop'
-  'video/vnd.avi|ai.storyteller.filmcraft.desktop'
-  'video/x-msvideo|ai.storyteller.filmcraft.desktop'
-  'application/mxf|ai.storyteller.filmcraft.desktop'
-  'video/mp2t|ai.storyteller.filmcraft.desktop'
-  'video/mpeg|ai.storyteller.filmcraft.desktop'
-  'video/3gpp|ai.storyteller.filmcraft.desktop'
   # GridCraft
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet|ai.storyteller.gridcraft.desktop'
   'application/vnd.ms-excel.sheet.macroEnabled.12|ai.storyteller.gridcraft.desktop'
@@ -105,9 +96,8 @@ DEFAULTS=(
   'image/x-pentax-pef|ai.storyteller.lightcraft.desktop'
   # MaterialCraft
   'application/x-materialcraft|ai.storyteller.materialcraft.desktop'
-  # PdfCraft
-  'application/pdf|ai.storyteller.pdfcraft.desktop'
-  # PhotoCraft
+  # PdfCraft (application/pdf → zathura, см. SIMPLE)
+  # PhotoCraft (только редактируемые форматы; png/jpeg/gif/webp/… → imv, см. SIMPLE)
   'application/x-photocraft|ai.storyteller.photocraft.desktop'
   'image/x-paintnet|ai.storyteller.photocraft.desktop'
   'image/openraster|ai.storyteller.photocraft.desktop'
@@ -115,35 +105,10 @@ DEFAULTS=(
   'image/vnd.adobe.photoshop|ai.storyteller.photocraft.desktop'
   'image/x-psd|ai.storyteller.photocraft.desktop'
   'image/x-psb|ai.storyteller.photocraft.desktop'
-  'image/png|ai.storyteller.photocraft.desktop'
-  'image/jpeg|ai.storyteller.photocraft.desktop'
-  'image/tiff|ai.storyteller.photocraft.desktop'
-  'image/webp|ai.storyteller.photocraft.desktop'
-  'image/gif|ai.storyteller.photocraft.desktop'
-  'image/bmp|ai.storyteller.photocraft.desktop'
-  'image/x-tga|ai.storyteller.photocraft.desktop'
-  'image/x-icon|ai.storyteller.photocraft.desktop'
-  'image/vnd.microsoft.icon|ai.storyteller.photocraft.desktop'
-  'image/x-portable-anymap|ai.storyteller.photocraft.desktop'
-  'image/x-portable-bitmap|ai.storyteller.photocraft.desktop'
-  'image/x-portable-graymap|ai.storyteller.photocraft.desktop'
-  'image/x-portable-pixmap|ai.storyteller.photocraft.desktop'
   'image/x-exr|ai.storyteller.photocraft.desktop'
   'image/vnd.radiance|ai.storyteller.photocraft.desktop'
-  'image/avif|ai.storyteller.photocraft.desktop'
-  'image/qoi|ai.storyteller.photocraft.desktop'
-  # SoundCraft
+  # SoundCraft (только собственные сессии; audio/* → mpv, см. SIMPLE)
   'application/x-soundcraft-session|ai.storyteller.soundcraft.desktop'
-  'audio/x-wav|ai.storyteller.soundcraft.desktop'
-  'audio/wav|ai.storyteller.soundcraft.desktop'
-  'audio/vnd.wave|ai.storyteller.soundcraft.desktop'
-  'audio/x-aiff|ai.storyteller.soundcraft.desktop'
-  'audio/aiff|ai.storyteller.soundcraft.desktop'
-  'audio/flac|ai.storyteller.soundcraft.desktop'
-  'audio/x-flac|ai.storyteller.soundcraft.desktop'
-  'audio/mpeg|ai.storyteller.soundcraft.desktop'
-  'audio/midi|ai.storyteller.soundcraft.desktop'
-  'audio/x-midi|ai.storyteller.soundcraft.desktop'
   # TextureCraft (3D-модели)
   'application/x-texturecraft|ai.storyteller.texturecraft.desktop'
   'model/gltf-binary|ai.storyteller.texturecraft.desktop'
@@ -188,6 +153,50 @@ KEEP=(
   'text/plain|nvim.desktop'
   'text/html|zen.desktop'
   'text/markdown|com.bilingify.readest.desktop|nvim.desktop'
+)
+
+# ─── «простые» просмотрщики: фото/PDF/видео/аудио (не редакторы) ──────────────
+# mime|обработчик. Ставим, только если обработчик установлен и текущий выбор
+# либо наш, либо Craft (пользовательский не-craft выбор не перебиваем).
+# imv — картинки, zathura — PDF, mpv — видео и аудио.
+SIMPLE=(
+  'image/png|imv.desktop'
+  'image/jpeg|imv.desktop'
+  'image/gif|imv.desktop'
+  'image/webp|imv.desktop'
+  'image/bmp|imv.desktop'
+  'image/tiff|imv.desktop'
+  'image/avif|imv.desktop'
+  'image/qoi|imv.desktop'
+  'image/x-tga|imv.desktop'
+  'image/x-icon|imv.desktop'
+  'image/vnd.microsoft.icon|imv.desktop'
+  'image/x-portable-anymap|imv.desktop'
+  'image/x-portable-bitmap|imv.desktop'
+  'image/x-portable-graymap|imv.desktop'
+  'image/x-portable-pixmap|imv.desktop'
+  'application/pdf|org.pwmt.zathura-pdf-mupdf.desktop'
+  'video/mp4|mpv.desktop'
+  'video/x-m4v|mpv.desktop'
+  'video/quicktime|mpv.desktop'
+  'video/x-matroska|mpv.desktop'
+  'video/webm|mpv.desktop'
+  'video/vnd.avi|mpv.desktop'
+  'video/x-msvideo|mpv.desktop'
+  'application/mxf|mpv.desktop'
+  'video/mp2t|mpv.desktop'
+  'video/mpeg|mpv.desktop'
+  'video/3gpp|mpv.desktop'
+  'audio/mpeg|mpv.desktop'
+  'audio/flac|mpv.desktop'
+  'audio/x-flac|mpv.desktop'
+  'audio/wav|mpv.desktop'
+  'audio/x-wav|mpv.desktop'
+  'audio/vnd.wave|mpv.desktop'
+  'audio/aiff|mpv.desktop'
+  'audio/x-aiff|mpv.desktop'
+  'audio/midi|mpv.desktop'
+  'audio/x-midi|mpv.desktop'
 )
 
 say() { printf '%s\n' "$*"; }
@@ -262,7 +271,22 @@ fi
 say "── 2/4 значения по умолчанию (xdg-mime)"
 for row in "${DEFAULTS[@]}"; do set_default "${row%%|*}" "${row#*|}"; done
 
-say "── 3/4 форматы, которые остаются у прежних приложений"
+say "── 3/4 форматы вне Craft: простые просмотрщики и прежние приложения"
+for row in "${SIMPLE[@]}"; do
+  mime="${row%%|*}"; id="${row#*|}"
+  if ! desktop_exists "$id"; then
+    say "  ! $mime: $id не установлен — оставляю как есть"
+    continue
+  fi
+  cur=$(xdg-mime query default "$mime" 2>/dev/null || true)
+  if [[ $cur == "$id" ]]; then
+    say "  = $mime → $id"
+  elif is_pinned "$mime" && ! is_craft "$cur"; then
+    say "  = $mime → $cur (закреплено пользователем, не craft)"
+  else
+    set_default "$mime" "$id"
+  fi
+done
 for row in "${KEEP[@]}"; do
   IFS='|' read -r -a parts <<<"$row"
   mime="${parts[0]}"
