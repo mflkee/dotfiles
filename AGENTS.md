@@ -207,6 +207,38 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   после reload у logind должно быть `HandleLidSwitch=suspend`, `HandleLidSwitchExternalPower=ignore`,
   `HandleLidSwitchDocked=ignore` (в журнале — `systemd-logind: Config file reloaded.`).
 
+## Крышка нетбука debian-server (камера-коробка, 2026-11-18)
+- **Железо**: HP Mini 110-3100 (Atom + NM10), Debian 12 i386, headless. Стоит как камера-сервер,
+  крышку закрывают — машина должна продолжать писать.
+- `/etc/systemd/logind.conf.d/10-lid.conf`: `HandleLidSwitch=ignore`,
+  `HandleLidSwitchExternalPower=ignore`, `HandleLidSwitchDocked=ignore` (по умолчанию был `suspend`).
+- **Грабли (важно, отличается от archlinux):** на systemd **252** (Debian 12) у `systemd-logind`
+  нет `ExecReload` → `systemctl reload systemd-logind` отвечает
+  `Job type reload is not applicable`. Применять так: **`systemctl kill -s HUP systemd-logind`** —
+  logind сам перечитывает конфиг, сессии не рвутся (обошлось без restart, который здесь не нужен).
+  На archlinux (systemd 254+) работает обычный `reload` (см. раздел про archlinux-notebook выше).
+- Проверка применённого: `busctl get-property org.freedesktop.login1 /org/freedesktop/login1 \
+  org.freedesktop.login1.Manager HandleLidSwitch HandleLidSwitchExternalPower HandleLidSwitchDocked`
+  → три `s "ignore"`.
+- **Подсветка матрицы**: `/usr/local/bin/lid-backlight` + `lid-backlight.service` (root, автозапуск):
+  опрашивает `/proc/acpi/button/lid/LID/state` каждые 2 с, при `closed` пишет `0` в
+  `/sys/class/backlight/acpi_video0/brightness`, при `open` возвращает прежнюю яркость
+  (`logger -t lid-backlight`). Закрытый LCD с включённой подсветкой = лишний нагрев и свет.
+  udev-правилом не сделать: `SW_LID` uevent не генерирует.
+- **Батарея BAT0 мертва** (`capacity 0`, `Not charging`): любой чих по питанию = мгновенное
+  выключение (это и был инцидент 18.11). Заменить батарейку HP Mini 110 или поставить UPS —
+  для этой коробки батарея и есть её UPS.
+- **Автозапуск после включения (проверено ребутом 18.11, 14:26):** всё стартует без логина —
+  `camera.service`, `camera-upload.timer`, `camera-stall-guard.timer`, `netbird`, `ssh`,
+  `lid-backlight.service` (`systemctl is-enabled` → `enabled`). `~1.5 мин` от подачи питания до записи.
+  `camera-upload.service` дополнительно получил `ExecStartPre=/usr/local/lib/antix-camera/wait-clock.sh`
+  и `After/Wants=time-sync.target`: после обрыва питания RTC уезжает в дефолт, и без этого сегменты
+  уехали бы в `Камера/2026/04/28`.
+- **Консоль**: автологин на tty1 — `/etc/systemd/system/getty@tty1.service.d/autologin.conf`
+  (`agetty --autologin mflkee`), из `~/.profile` вызывается `/usr/local/bin/camera-status`
+  (время, uptime, `camera.service`, спул, последняя загрузка, netbird, ссылка HLS).
+  Проверка: `loginctl list-sessions` → `mflkee seat0 tty1`.
+
 ## NetBird MCP (machine management)
 - Opencode has a built-in NetBird MCP tool (`netbird` MCP server).
 - Requires `NETBIRD_API_KEY` env var (personal access token from NetBird dashboard).
