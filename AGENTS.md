@@ -286,6 +286,10 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   png/jpeg/gif/webp/tiff/bmp/avif/qoi→**imv**, pdf→**zathura**, видео и аудио→**mpv**.
   `text/plain`/`text/html`/`text/markdown` не перехватываются (KEEP-цепочка: nvim → readest → nvim).
   Когда просмотрщик не установлен, скрипт пишет `! … не установлен` и оставляет выбор как есть.
+  **Второе место, где живут ассоциации — `~/.config/yazi/yazi.toml`** (`[open] prepend_rules`):
+  у yazi свои правила, xdg-mime он не спрашивает. Там тоже imv/zathura/mpv (`openers` `imv`,
+  `zathura`, `mpv`); правки держать синхронно со скриптом, иначе «в терминале открывается просмотрщик,
+  а в yazi — PhotoCraft».
 - **Грабли**: `xdg-mime query default` без записи в `mimeapps.list` отдаёт «первое рекомендованное»
   из `mimeinfo.cache` — это не выбор пользователя; скрипт учитывает (проверяет пин в `mimeapps.list`).
 - **Состояние флота**: desktop, mkair-server-tmn — репо + все 18 + дефолты; server — только репо

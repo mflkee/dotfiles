@@ -19,6 +19,14 @@ edit = [
 zathura = [
 	{ run = "zathura %s", desc = "Zathura (PDF)", orphan = true },
 ]
+# Простые просмотрщики (синхронно с ~/.config/scripts/craft-defaults.sh и
+# xdg-mime: imv → изображения, zathura → pdf, mpv → видео/аудио).
+imv = [
+	{ run = "imv %s", desc = "imv (изображения)", orphan = true },
+]
+mpv = [
+	{ run = "mpv %s", desc = "mpv (видео/аудио)", orphan = true },
+]
 libreoffice = [
 	{ run = "libreoffice %s", desc = "LibreOffice", orphan = true },
 ]
@@ -73,11 +81,11 @@ prepend_rules = [
 	{ url = "*.csv", use = "gridcraft" },
 	{ url = "*.tsv", use = "gridcraft" },
 
-	# PdfCraft / VectorCraft: pdf и вектор
-	{ url = "*.pdf", use = "pdfcraft" },
-	{ url = "*.svg", use = "vectorcraft" },
-	{ url = "*.svgz", use = "vectorcraft" },
+	# PdfCraft / VectorCraft: только рабочие форматы; просмотр pdf → zathura
+	{ url = "*.pdf", use = "zathura" },
 	{ url = "*.fig", use = "figcraft" },
+	{ url = "*.svg", use = "imv" },
+	{ url = "*.svgz", use = "imv" },
 
 	# LightCraft: RAW (раньше, чем растровые ниже)
 	{ url = "*.dng", use = "lightcraft" },
@@ -91,58 +99,61 @@ prepend_rules = [
 	{ url = "*.rw", use = "lightcraft" },
 	{ url = "*.pef", use = "lightcraft" },
 
-	# PhotoCraft: растровая графика и рабочие форматы редакторов
-	{ url = "*.png", use = "photocraft" },
-	{ url = "*.jpg", use = "photocraft" },
-	{ url = "*.jpeg", use = "photocraft" },
-	{ url = "*.jfif", use = "photocraft" },
-	{ url = "*.tif", use = "photocraft" },
-	{ url = "*.tiff", use = "photocraft" },
-	{ url = "*.webp", use = "photocraft" },
-	{ url = "*.gif", use = "photocraft" },
-	{ url = "*.bmp", use = "photocraft" },
-	{ url = "*.avif", use = "photocraft" },
-	{ url = "*.qoi", use = "photocraft" },
-	{ url = "*.exr", use = "photocraft" },
-	{ url = "*.hdr", use = "photocraft" },
-	{ url = "*.ico", use = "photocraft" },
-	{ url = "*.xpm", use = "photocraft" },
-	{ url = "*.pbm", use = "photocraft" },
-	{ url = "*.pgm", use = "photocraft" },
-	{ url = "*.ppm", use = "photocraft" },
-	{ url = "*.pnm", use = "photocraft" },
-	{ url = "*.tga", use = "photocraft" },
+	# Просмотр фото → imv; редактируемые форматы → PhotoCraft
+	{ url = "*.png", use = "imv" },
+	{ url = "*.jpg", use = "imv" },
+	{ url = "*.jpeg", use = "imv" },
+	{ url = "*.jfif", use = "imv" },
+	{ url = "*.tif", use = "imv" },
+	{ url = "*.tiff", use = "imv" },
+	{ url = "*.webp", use = "imv" },
+	{ url = "*.gif", use = "imv" },
+	{ url = "*.bmp", use = "imv" },
+	{ url = "*.avif", use = "imv" },
+	{ url = "*.heic", use = "imv" },
+	{ url = "*.heif", use = "imv" },
+	{ url = "*.jxl", use = "imv" },
+	{ url = "*.qoi", use = "imv" },
+	{ url = "*.ico", use = "imv" },
+	{ url = "*.xpm", use = "imv" },
+	{ url = "*.pbm", use = "imv" },
+	{ url = "*.pgm", use = "imv" },
+	{ url = "*.ppm", use = "imv" },
+	{ url = "*.pnm", use = "imv" },
+	{ url = "*.tga", use = "imv" },
+
+	# PhotoCraft: рабочие форматы редакторов (imv их не читает)
 	{ url = "*.psd", use = "photocraft" },
 	{ url = "*.psb", use = "photocraft" },
 	{ url = "*.kra", use = "photocraft" },
 	{ url = "*.ora", use = "photocraft" },
 	{ url = "*.pdn", use = "photocraft" },
+	{ url = "*.exr", use = "photocraft" },
+	{ url = "*.hdr", use = "photocraft" },
 
-	# FilmCraft: видео
-	{ url = "*.mp4", use = "filmcraft" },
-	{ url = "*.m4v", use = "filmcraft" },
-	{ url = "*.mov", use = "filmcraft" },
-	{ url = "*.mkv", use = "filmcraft" },
-	{ url = "*.webm", use = "filmcraft" },
-	{ url = "*.avi", use = "filmcraft" },
-	{ url = "*.mxf", use = "filmcraft" },
-	{ url = "*.ts", use = "filmcraft" },
-	{ url = "*.m2ts", use = "filmcraft" },
-	{ url = "*.mpg", use = "filmcraft" },
-	{ url = "*.mpeg", use = "filmcraft" },
-	{ url = "*.mpe", use = "filmcraft" },
-	{ url = "*.3gp", use = "filmcraft" },
-
-	# SoundCraft: звук
-	{ url = "*.wav", use = "soundcraft" },
-	{ url = "*.wave", use = "soundcraft" },
-	{ url = "*.aif", use = "soundcraft" },
-	{ url = "*.aiff", use = "soundcraft" },
-	{ url = "*.aifc", use = "soundcraft" },
-	{ url = "*.flac", use = "soundcraft" },
-	{ url = "*.mp3", use = "soundcraft" },
-	{ url = "*.mid", use = "soundcraft" },
-	{ url = "*.midi", use = "soundcraft" },
+	# видео и аудио → mpv
+	{ url = "*.mp4", use = "mpv" },
+	{ url = "*.m4v", use = "mpv" },
+	{ url = "*.mov", use = "mpv" },
+	{ url = "*.mkv", use = "mpv" },
+	{ url = "*.webm", use = "mpv" },
+	{ url = "*.avi", use = "mpv" },
+	{ url = "*.mxf", use = "mpv" },
+	{ url = "*.ts", use = "mpv" },
+	{ url = "*.m2ts", use = "mpv" },
+	{ url = "*.mpg", use = "mpv" },
+	{ url = "*.mpeg", use = "mpv" },
+	{ url = "*.mpe", use = "mpv" },
+	{ url = "*.3gp", use = "mpv" },
+	{ url = "*.wav", use = "mpv" },
+	{ url = "*.wave", use = "mpv" },
+	{ url = "*.aif", use = "mpv" },
+	{ url = "*.aiff", use = "mpv" },
+	{ url = "*.aifc", use = "mpv" },
+	{ url = "*.flac", use = "mpv" },
+	{ url = "*.mp3", use = "mpv" },
+	{ url = "*.mid", use = "mpv" },
+	{ url = "*.midi", use = "mpv" },
 
 	# CADCraft: чертежи
 	{ url = "*.dxf", use = "cadcraft" },
