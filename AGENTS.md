@@ -307,3 +307,10 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   из `mimeinfo.cache` — это не выбор пользователя; скрипт учитывает (проверяет пин в `mimeapps.list`).
 - **Состояние флота**: desktop, mkair-server-tmn — репо + все 18 + дефолты; server — только репо
   (headless); mkair, notebook — скрипты и hook уже развёрнуты, установка ждёт sudo-пароль.
+- **Нативный Wayland (niri)**: под XWayland у Craft не открываются системные диалоги — в WordCraft
+  «молчит» File → Export → PDF. Флотский фикс — `~/.config/environment.d/50-craft-wayland.conf`
+  (в chezmoi: `FILMCRAFT_WAYLAND`, `LIGHTCRAFT_WAYLAND`, `DECKCRAFT_WAYLAND`, `SOUNDCRAFT_WAYLAND`,
+  `CADCRAFT_WAYLAND`, `WORDCRAFT_WAYLAND` = 1); применяется после перелогина. WordCraft имеет ещё
+  свой переключатель `displayServer: wayland`. Детали и статус машин — vault
+  `servers/craft-apps-wayland.md`.
+
