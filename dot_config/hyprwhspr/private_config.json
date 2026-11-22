@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/goodroot/hyprwhspr/main/share/config.schema.json",
-  "use_hypr_bindings": true,
+  "external_bindings": true,
   "language": "ru",
   "transcription_backend": "faster-whisper",
   "faster_whisper_model": "small",
