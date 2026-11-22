@@ -70,9 +70,12 @@ if [ "$cursess" = "$target" ]; then
     if [ -z "$now" ] || [ "$now" = "$target" ]; then
         # last-session не помог (нет его или он указывает на ту же сессию):
         # берём самую недавно использованную сессию кроме убиваемой.
-        prev=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' 2>/dev/null |
-            sort -rn |
-            awk -v t="$target" '$2 != t { print $2; exit }')
+        # session_last_attached у никогда не подключённой сессии пустой,
+        # поэтому подставляем 0; разделитель «|» — чтобы имена с пробелами
+        # не разваливались на поля.
+        prev=$(tmux list-sessions -F '#{?session_last_attached,#{session_last_attached},0}|#{session_name}' 2>/dev/null |
+            sort -t'|' -k1,1 -rn |
+            awk -F'|' -v t="$target" '$2 != t { print $2; exit }')
         [ -n "$prev" ] || die "это последняя сессия tmux — переключаться некуда"
         sc -t "$prev" 2>/dev/null || die "не удалось переключиться на $prev"
         now=$(client_session)
