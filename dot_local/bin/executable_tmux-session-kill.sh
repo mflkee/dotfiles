@@ -3,19 +3,17 @@
 #
 # Зачем: если убить сессию, к которой привязан клиент (ту, на которой сейчас
 # сидишь), tmux уничтожает и клиент — терминал просто отваливается в шелл, а
-# остальные сессии живы. В дереве сессий (`C-a s`) это лечится только так:
-# сначала пересадить клиента на предыдущую сессию, потом убить старую.
-# Перебиндить клавиши внутри дерева нельзя — там клавиши зашиты в tmux
-# (таблицы tree-mode не существует, `list-keys -T tree-mode` её не находит).
+# остальные сессии живы.
 #
 # «Предыдущая сессия» = та, на которой клиент сидел до текущей (tmux-овский
 # last-session, тот же, что у `switch-client -l`); если он указывает на
 # убиваемую сессию — берём самую свежую по attach среди остальных.
 #
 # Использование:
-#   tmux-session-kill.sh <сессия> [<клиент>]
-# Обычно вызывается алиасом tmux (ssd / ыыв), который подставляет
-# <сессия> = "#{session_name}", <клиент> = "#{client_name}".
+#   tmux-session-kill.sh <сессия> [<клиент>]      # по имени
+#   tmux-session-kill.sh id:3     [<клиент>]      # по id ($3) — так зовёт меню,
+#                                                 # чтобы не экранировать имена
+# Обычно вызывается алиасом tmux (ssd / ыыв) и меню (tmux-session-menu.sh).
 
 target="${1:-}"
 client="${2:-}"
@@ -40,10 +38,25 @@ case "$client" in
 esac
 [ -n "$client" ] || client=$(tmux list-clients -F '#{client_name}' 2>/dev/null | head -1)
 
-if [ -z "$target" ]; then
-    target=$(tmux display-message -p '#{session_name}' 2>/dev/null)
-fi
-[ -n "$target" ] || die "не удалось определить сессию"
+[ -n "$target" ] || target=$(tmux display-message -p '#{session_name}' 2>/dev/null)
+
+# id:3 -> $3, имя -> =имя (точное совпадение, без префиксного матчинга)
+case "$target" in
+    id:*)
+        sid="\$${target#id:}"
+        target_name=$(tmux display-message -p -t "$sid" '#{session_name}' 2>/dev/null)
+        kt="$sid"
+        ;;
+    "")
+        target_name=""
+        kt=""
+        ;;
+    *)
+        target_name="$target"
+        kt="=$target"
+        ;;
+esac
+[ -n "$target_name" ] || die "сессия '$target' не найдена"
 
 # switch-client с -c только когда клиент известен (без -c tmux берёт текущий).
 sc() {
@@ -63,11 +76,11 @@ client_session() {
 
 cursess=$(client_session)
 
-if [ "$cursess" = "$target" ]; then
+if [ "$cursess" = "$target_name" ]; then
     # Сессия под клиентом: сначала уходим на предыдущую.
     sc -l 2>/dev/null
     now=$(client_session)
-    if [ -z "$now" ] || [ "$now" = "$target" ]; then
+    if [ -z "$now" ] || [ "$now" = "$target_name" ]; then
         # last-session не помог (нет его или он указывает на ту же сессию):
         # берём самую недавно использованную сессию кроме убиваемой.
         # session_last_attached у никогда не подключённой сессии пустой,
@@ -75,15 +88,15 @@ if [ "$cursess" = "$target" ]; then
         # не разваливались на поля.
         prev=$(tmux list-sessions -F '#{?session_last_attached,#{session_last_attached},0}|#{session_name}' 2>/dev/null |
             sort -t'|' -k1,1 -rn |
-            awk -F'|' -v t="$target" '$2 != t { print $2; exit }')
+            awk -F'|' -v t="$target_name" '$2 != t { print $2; exit }')
         [ -n "$prev" ] || die "это последняя сессия tmux — переключаться некуда"
         sc -t "$prev" 2>/dev/null || die "не удалось переключиться на $prev"
         now=$(client_session)
-        [ "$now" != "$target" ] || die "клиент всё ещё на $target, убивать опасно"
-        log "switch $target -> $prev (last-session не сработал)"
+        [ "$now" != "$target_name" ] || die "клиент всё ещё на $target_name, убивать опасно"
+        log "switch $target_name -> $prev (last-session не сработал)"
     fi
 fi
 
-err=$(tmux kill-session -t "=$target" 2>&1) || die "$err"
+err=$(tmux kill-session -t "$kt" 2>&1) || die "$err"
 
-log "ok: killed $target (client ${client:-none}, was ${cursess:-unknown})"
+log "ok: killed $target_name (client ${client:-none}, was ${cursess:-unknown})"
