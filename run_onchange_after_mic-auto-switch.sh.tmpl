@@ -1,0 +1,68 @@
+#!/bin/bash
+# vim: ft=bash
+# run_onchange hash-mic-auto-switch: 2026-11-22 mic follows system default + BT
+
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if not $has_niri }}
+echo "Not a desktop machine, skipping mic-auto-switch setup."
+exit 0
+{{- end }}
+
+set -uo pipefail
+
+# hyprwhspr больше не пиннит микрофон (config.json.tmpl без audio_device_name):
+# он следует системному default-source. Этот скрипт:
+#   1) на десктопе уводит default-source со Scarlett (цифровая тишина) на USB-микрофон;
+#   2) включает user-сервис mic-auto-switch (BT-наушники -> их микрофон);
+#   3) перезапускает hyprwhspr, чтобы он перечитал config.json.
+
+if ! command -v pactl >/dev/null 2>&1; then
+  echo "[mic-auto-switch] pactl not found, skipping."
+  exit 0
+fi
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/mic-auto-switch"
+SAVED="$STATE_DIR/previous-source"
+
+usb_mic() {
+  pactl list short sources 2>/dev/null |
+    awk '$2 ~ /usb-0c76_USB_PnP_Audio_Device/ {print $2; exit}'
+}
+
+# --- 1. Десктоп: Scarlett Solo — только ЦАП, вход молчит -----
+if [[ "$(uname -n)" == "archlinux-desktop" ]]; then
+  usb=$(usb_mic)
+  if [[ -n "$usb" ]]; then
+    cur=$(pactl get-default-source 2>/dev/null || true)
+    if [[ "$cur" == *Focusrite_Scarlett* ]]; then
+      echo "[mic-auto-switch] default source is Scarlett (silent) -> $usb"
+      pactl set-default-source "$usb" || true
+    fi
+    if [[ -s "$SAVED" ]] && grep -q 'Focusrite_Scarlett' "$SAVED"; then
+      echo "[mic-auto-switch] saved fallback was Scarlett -> $usb"
+      printf '%s\n' "$usb" > "$SAVED"
+    fi
+  else
+    echo "[mic-auto-switch] WARNING: USB PnP mic not found on desktop"
+  fi
+fi
+
+# --- 2. Включить сервис -------------------------------------
+if systemctl --user show-environment >/dev/null 2>&1; then
+  systemctl --user daemon-reload || true
+  systemctl --user enable --now mic-auto-switch.service || true
+  echo "[mic-auto-switch] $(systemctl --user is-active mic-auto-switch.service 2>/dev/null || echo inactive)"
+else
+  echo "[mic-auto-switch] no user systemd bus; enable later with: systemctl --user enable --now mic-auto-switch.service"
+fi
+
+# --- 3. hyprwhspr: перечитать конфиг ------------------------
+if systemctl --user is-active hyprwhspr.service >/dev/null 2>&1; then
+  systemctl --user restart hyprwhspr.service || true
+  echo "[mic-auto-switch] hyprwhspr restarted"
+fi
+
+exit 0
