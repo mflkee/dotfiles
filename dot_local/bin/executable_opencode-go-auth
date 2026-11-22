@@ -23,6 +23,9 @@
 #   opencode-go-auth auto                      переключиться на живой аккаунт, если текущий мёртв/выбран
 #   opencode-go-auth whoami [NAME]             что консоль знает о токене (email и т.п.)
 #   opencode-go-auth link NAME CLI_CRED_ID     привязать аккаунт к credential opencode CLI
+#   opencode-go-auth link NAME auto            привязать к последнему свободному креду
+#   opencode-go-auth login-cli NAME            логин в opencode Console + авто-привязка
+#   opencode-go-auth prune [--apply]           мёртвые непривязанные креды (список/удалить)
 #   opencode-go-auth status [--json] [NAME]    лимиты Go-плана (как видит виджет)
 #   opencode-go-auth check [SECONDS]           уведомить, если токен скоро истекает
 #   opencode-go-auth sync                      переписать secrets.zsh из accounts/
@@ -168,10 +171,15 @@ set_current() {
 }
 
 # CLI-сторона: переключить активный credential интеграции opencode.
+# rc=2 — аккаунт не привязан (нет accounts/<name>.cli);
+# rc=3 — opencode auth switch не сработал;
+# rc=4 — кред привязан, но просрочен (needs_auth): нужен login-cli.
 cli_switch() {
-  local name="$1" cred
+  local name="$1" cred st
   cred="$(cat "$(cli_cred_file "$name")" 2>/dev/null || true)"
   [ -n "$cred" ] || return 2
+  st="$(cred_status "$cred")"
+  [ "$st" = "needs_auth" ] && return 4
   if command -v opencode >/dev/null 2>&1; then
     if opencode auth switch opencode "$cred" >/dev/null 2>&1; then
       return 0
@@ -179,6 +187,30 @@ cli_switch() {
     return 3
   fi
   return 2
+}
+
+# ── CLI-креды OpenCode Console (интеграция "opencode" в самом opencode) ───────
+# opencode auth list --format json: массив сервисов, у каждого connections[].
+# Печатаем "<id>\t<label>\t<status>", status = ok | needs_auth | … (пустой = ok).
+
+console_creds() {
+  command -v opencode >/dev/null 2>&1 || return 1
+  opencode auth list --format json 2>/dev/null | jq -r '
+    .[] | select((.id // .serviceID) == "opencode") | .connections[] |
+    [.id, (.label // "-"), (.status.status // "ok")] | @tsv' 2>/dev/null
+}
+
+# id кредов, уже привязанных к аккаунтам (accounts/*.cli)
+linked_creds() {
+  local f
+  for f in "$ACCOUNTS_DIR"/*.cli; do
+    [ -f "$f" ] && cat "$f"
+  done 2>/dev/null || true
+}
+
+# Статус конкретного креда: ok | needs_auth | пусто (нет такого)
+cred_status() {
+  console_creds | awk -F'\t' -v id="$1" '$1 == id { print $3; exit }'
 }
 
 notify() {
@@ -204,9 +236,11 @@ commit_switch() {
   local cli_rc=0 msg=""
   cli_switch "$name" || cli_rc=$?
   if [ "$cli_rc" -eq 2 ]; then
-    msg="CLI-аккаунт не привязан (opencode-go-auth link $name <cred_id>) — только виджет"
+    msg="CLI-аккаунт не привязан (opencode-go-auth login-cli $name) — только виджет"
   elif [ "$cli_rc" -eq 3 ]; then
     msg="CLI-switch не удался — виджет переключён, CLI остался на прежнем"
+  elif [ "$cli_rc" -eq 4 ]; then
+    msg="CLI-кред просрочен (needs_auth) — opencode-go-auth login-cli $name; виджет переключён"
   fi
   refresh_widget
   if [ "$name" != "$old" ]; then
@@ -687,12 +721,97 @@ cmd_whoami() {
 cmd_link() {
   local name="$1" cred="$2"
   valid_name "$name" || die "invalid account name '$name'"
-  [ -n "$cred" ] || die "usage: opencode-go-auth link <name> <cli_credential_id>"
+  if [ "$cred" = "auto" ]; then
+    # последний кред Console, который ещё ни за одним аккаунтом не закреплён
+    cred="$(console_creds | cut -f1 | grep -vxF -f <(linked_creds) 2>/dev/null | tail -1 || true)"
+    [ -n "$cred" ] || die "нет свободных креденшелов OpenCode Console (сначала: opencode auth login opencode)"
+    echo "auto: беру $cred ($(console_creds | awk -F'\t' -v i="$cred" '$1 == i {print $2}'))"
+  fi
+  [ -n "$cred" ] || die "usage: opencode-go-auth link <name> <cli_credential_id|auto>"
+  local st; st="$(cred_status "$cred")"
+  [ "$st" = "needs_auth" ] && log "ВНИМАНИЕ: кред $cred в статусе needs_auth — сначала opencode-go-auth login-cli $name"
   local tmp; tmp="$(mktemp "$(cli_cred_file "$name").XXXXXX")"
   printf '%s\n' "$cred" >"$tmp"
   mv -f "$tmp" "$(cli_cred_file "$name")"
   chmod 600 "$(cli_cred_file "$name")"
   echo "linked $name -> opencode credential $cred"
+}
+
+# Логин в opencode Console + сразу привязка: одна команда вместо
+# `opencode auth login` + выковыривание id + `link`.
+cmd_login_cli() {
+  local name="${1:-}"
+  [ -n "$name" ] || die "usage: opencode-go-auth login-cli <name>"
+  valid_name "$name" || die "invalid account name '$name'"
+  command -v opencode >/dev/null 2>&1 || die "opencode CLI не найден в PATH"
+
+  local before after new rc=0
+  before="$(console_creds | cut -f1 | sort -u)"
+  log ""
+  log "Логин в opencode Console — аккаунт: $(account_display "$name")"
+  log "  откроется браузер, войди под нужным email"
+  log ""
+  opencode auth login opencode || die "opencode auth login завершился ошибкой"
+
+  after="$(console_creds | cut -f1 | sort -u)"
+  new="$(comm -13 <(printf '%s\n' "$before" | grep -v '^$' || true) \
+                 <(printf '%s\n' "$after" | grep -v '^$' || true) | tail -1)"
+  if [ -n "$new" ]; then
+    log "новый кред: $new"
+  else
+    # логин мог обновить существующий кред, а не создать новый
+    new="$(console_creds | awk -F'\t' '$3 != "needs_auth" { print $1 }' | tail -1)"
+    [ -n "$new" ] || die "не нашёл живой кред Console — привяжи вручную: opencode-go-auth link $name <id>"
+    log "новых кредов нет, беру последний живой: $new"
+  fi
+
+  cmd_link "$name" "$new"
+  cli_switch "$name" || rc=$?
+  case "$rc" in
+    0) log "CLI переключён на $name" ;;
+    4) log "привязано, но кред всё ещё needs_auth — повтори логин" ;;
+    *) log "привязано, но switch не подтвердился (rc=$rc) — проверь: opencode auth list" ;;
+  esac
+  refresh_widget
+}
+
+# Чистка мёртвых кредов Console, не привязанных ни к одному аккаунту.
+cmd_prune() {
+  local apply=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+      --apply) apply=1 ;;
+      -h|--help) printf 'usage: opencode-go-auth prune [--apply]\n'; return 0 ;;
+      *) die "usage: opencode-go-auth prune [--apply]" ;;
+    esac
+  done
+  local used tmp n=0 id label st
+  tmp="$(mktemp)"
+  linked_creds >"$tmp"
+  while IFS=$'\t' read -r id label st; do
+    [ -n "$id" ] || continue
+    grep -qxF "$id" "$tmp" && continue
+    case "$st" in needs_auth|error|invalid|expired) ;; *) continue ;; esac
+    n=$((n + 1))
+    if [ "$apply" -eq 1 ]; then
+      if opencode auth logout opencode "$id" >/dev/null 2>&1; then
+        log "удалён мёртвый кред: $id ($label, $st)"
+      else
+        log "не удалось удалить $id ($label)"
+      fi
+    else
+      printf 'мёртвый: %s  (%s, %s)\n' "$id" "$label" "$st"
+    fi
+  done <<EOF
+$(console_creds)
+EOF
+  rm -f "$tmp"
+  if [ "$n" -eq 0 ]; then
+    echo "мёртвых непривязанных кредов нет"
+  elif [ "$apply" -eq 0 ]; then
+    echo "(ничего не удалено — повтори с --apply)"
+  fi
+  return 0
 }
 
 cmd_logout() {
@@ -735,6 +854,8 @@ case "${1:-}" in
   auto)  cmd_auto ;;
   whoami) cmd_whoami "${2:-}" ;;
   link)  cmd_link "${2:-}" "${3:-}" ;;
+  login-cli) cmd_login_cli "${2:-}" ;;
+  prune) shift; cmd_prune "$@" ;;
   status) shift; cmd_status "$@" ;;
   sync)  sync_secrets ;;
   logout) cmd_logout "${2:-}" ;;
