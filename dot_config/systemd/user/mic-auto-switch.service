@@ -1,0 +1,15 @@
+[Unit]
+Description=Автовыбор микрофона: Bluetooth-наушники, когда подключены
+Documentation=file:%h/.config/scripts/mic-auto-switch.sh
+PartOf=graphical-session.target
+After=graphical-session.target pipewire.service wireplumber.service pipewire-pulse.service
+Wants=pipewire-pulse.service
+
+[Service]
+Type=simple
+ExecStart=%h/.config/scripts/mic-auto-switch.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
