@@ -514,7 +514,7 @@ cmd_list() {
     expires="$(account_field "$name" expires_at 2>/dev/null || echo 0)"
     label="$(account_field "$name" label 2>/dev/null || true)"
     clicred="$(cat "$(cli_cred_file "$name")" 2>/dev/null || true)"
-    clid=""; [ -n "$clicred" ] && clid="cli=$clicred"
+    clid=""; [ -n "$clicred" ] && clid="$clicred"
     local star=" "; [ "$name" = "$active" ] && star="*"
     printf '%s%s\t%s\torg=%s\tcli_id=%s\texpires=%s\n' \
       "$star" "$name" "${label:-—}" "${org:-?}" "${clid:-—}" \
