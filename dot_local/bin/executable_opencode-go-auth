@@ -18,6 +18,9 @@
 #   opencode-go-auth use NAME | toggle         переключить активный аккаунт (ручной флип)
 #   opencode-go-auth rotate                    выставить аккаунт по половине месяца (идемпотентно)
 #   opencode-go-auth apply [NAME]              привести ЭТУ машину к активному (файлы + CLI)
+#   opencode-go-auth billing [--json] [--follow]  какой аккаунт реально списывает Go-лимит
+#   opencode-go-auth link-go NAME <cred|auto>  привязать Go-ключ (интеграция opencode-go)
+#   opencode-go-auth login-go NAME             логин Go-ключа под аккаунтом (интерактивно)
 #   opencode-go-auth list                      список аккаунтов + метка + активный + срок токенов
 #   opencode-go-auth label NAME TEXT|rem       человекочитаемая метка (Kimi / Mfokinors)
 #   opencode-go-auth auto                      переключиться на живой аккаунт, если текущий мёртв/выбран
@@ -38,6 +41,13 @@
 # Секреты в репо — только в зашифрованном ~/.config/zsh/secrets.zsh (chezmoi):
 #   OPENCODE_GO_ORG_A/TOKEN_A/EXPIRES_A, … и легаси-переменные активного
 #   (OPENCODE_GO_ORG/TOKEN/EXPIRES_AT) для старых машин.
+#
+# ВАЖНО (2026-11-24): лимит Go списывается с активного креда интеграции
+# "opencode-go" (ключ oc_sk_…/sk-…), а НЕ с консольного OAuth-креда
+# (интеграция "opencode"). Проверено: console=a + Go-ключ b → расход ушёл в b.
+# Поэтому аккаунт в баре = аккаунт активного Go-ключа: `billing` определяет его
+# по метрам и (--follow) чинит current; `use` переключает Go-ключ, если он
+# привязан (`link-go`), иначе честно предупреждает, что платить продолжит другой.
 set -euo pipefail
 
 SERVER="${OPENCODE_GO_SERVER:-https://opencode.ai/console}"
@@ -52,6 +62,8 @@ ACCOUNTS_DIR="${OPENCODE_GO_ACCOUNTS:-$BASE/accounts}"
 # а виджет и CLI расходились: переключение «не работало».
 CURRENT_FILE="${OPENCODE_GO_CURRENT_FILE:-$BASE/current}"
 API="$SERVER/api/go/status"
+GO_USAGE="${OPENCODE_GO_USAGE_URL:-$ORIGIN/inference/go/v1/usage}"
+BILLING_FILE="${OPENCODE_GO_BILLING:-$BASE/billing}"
 TOKEN_URL="$SERVER/auth/device/token"
 UA="opencode-go-auth/2.0 (noctalia widget)"
 NOTIFY=(notify-send -a "OpenCode Go")
@@ -211,6 +223,213 @@ linked_creds() {
 # Статус конкретного креда: ok | needs_auth | пусто (нет такого)
 cred_status() {
   console_creds | awk -F'\t' -v id="$1" '$1 == id { print $3; exit }'
+}
+
+# ── Go-ключ: что реально списывает лимит ─────────────────────────────────────
+#
+# Активный кред интеграции "opencode-go" (`oc_sk_…`/`sk-…`) — единственное, что
+# влияет на лимиты Go. Консольный OAuth ("opencode") на них не влияет.
+
+account_go_file() { printf '%s/%s.go' "$ACCOUNTS_DIR" "$1"; }
+
+db_path() {
+  if [ -z "${DB:-}" ]; then
+    DB="$(opencode debug paths 2>/dev/null | awk '$1 == "db" { print $2 }' || true)"
+    [ -n "$DB" ] || DB="$HOME/.local/share/opencode/opencode.db"
+  fi
+  printf '%s' "$DB"
+}
+
+# Ключ активного Go-креда (тот, которым реально ходят запросы).
+active_go_key() {
+  local db raw
+  db="$(db_path)"
+  if command -v sqlite3 >/dev/null 2>&1 && [ -f "$db" ]; then
+    raw="$(sqlite3 "$db" "select value from credential where integration_id='opencode-go' and active=1 limit 1;" 2>/dev/null || true)"
+    if [ -n "$raw" ]; then
+      printf '%s' "$raw" | jq -r '(.key // .access // empty)' 2>/dev/null
+      return 0
+    fi
+  fi
+  jq -r '."opencode-go".key // empty' "$HOME/.local/share/opencode/auth.json" 2>/dev/null || true
+}
+
+go_creds() {
+  command -v opencode >/dev/null 2>&1 || return 1
+  opencode auth list --format json 2>/dev/null | jq -r '
+    .[] | select((.id // .serviceID) == "opencode-go") | .connections[] |
+    select(.type == "credential") | .id' 2>/dev/null
+}
+
+linked_go_creds() {
+  local f
+  for f in "$ACCOUNTS_DIR"/*.go; do
+    [ -f "$f" ] && cat "$f"
+  done 2>/dev/null || true
+}
+
+# Привязать Go-ключ к аккаунту (id креда интеграции opencode-go).
+cmd_link_go() {
+  local name="$1" cred="$2"
+  valid_name "$name" || die "invalid account name '$name'"
+  [ -f "$(account_file "$name")" ] || die "no credentials for account '$name' — run: opencode-go-auth login --account $name"
+  if [ "$cred" = "auto" ]; then
+    cred="$(go_creds | grep -vxF -f <(linked_go_creds) 2>/dev/null | tail -1 || true)"
+    [ -n "$cred" ] || die "нет свободных Go-кредов (сначала: opencode-go-auth login-go $name)"
+  fi
+  [ -n "$cred" ] || die "usage: opencode-go-auth link-go <name> <credential_id|auto>"
+  local tmp; tmp="$(mktemp "$(account_go_file "$name").XXXXXX")"
+  printf '%s\n' "$cred" >"$tmp"
+  mv -f "$tmp" "$(account_go_file "$name")"
+  chmod 600 "$(account_go_file "$name")"
+  echo "linked go $name -> $cred"
+}
+
+# Переключить Go-ключ аккаунта.
+# rc=2 — Go-ключ не привязан (нет accounts/<name>.go);
+# rc=3 — opencode auth switch не сработал.
+go_switch() {
+  local name="$1" cred
+  cred="$(cat "$(account_go_file "$name")" 2>/dev/null || true)"
+  [ -n "$cred" ] || return 2
+  command -v opencode >/dev/null 2>&1 || return 2
+  opencode auth switch opencode-go "$cred" >/dev/null 2>&1 || return 3
+  return 0
+}
+
+# resetsAt месячного метра аккаунта (по консольному API).
+account_month_reset() {
+  local name="$1" org access body code
+  org="$(account_field "$name" org_id)"; access="$(account_field "$name" access_token)"
+  [ -n "$org" ] && [ -n "$access" ] || return 1
+  body="$(curl -sS -m 10 -w '\n%{http_code}' -H "Authorization: Bearer $access" \
+    -H "x-org-id: $org" -H 'Accept: application/json' -H "User-Agent: $UA" "$API" 2>/dev/null || true)"
+  code="${body##*$'\n'}"
+  [ "$code" = "200" ] || return 1
+  printf '%s' "${body%$'\n'*}" | jq -r '.access.meters.month.resetsAt // empty' 2>/dev/null
+}
+
+billing_account() {
+  [ -f "$BILLING_FILE" ] || return 1
+  local n; n="$(cut -f1 "$BILLING_FILE" 2>/dev/null || true)"
+  case "$n" in ''|-) return 1 ;; esac
+  valid_name "$n" || return 1
+  printf '%s' "$n"
+}
+
+active_go_cred() {
+  local db
+  db="$(db_path)"
+  command -v sqlite3 >/dev/null 2>&1 || return 1
+  [ -f "$db" ] || return 1
+  sqlite3 "$db" "select id from credential where integration_id='opencode-go' and active=1 limit 1;" 2>/dev/null
+}
+
+# Какой аккаунт реально списывает Go: дёргаем /inference/go/v1/usage активным
+# Go-ключом и сопоставляем monthly.resetsAt с каждым аккаунтом. Результат
+# кэшируется по id активного креда: аккаунт не может измениться без смены ключа.
+cmd_billing() {
+  local json=0 follow=0 quiet=0 refresh=0 arg
+  for arg in "$@"; do
+    case "$arg" in
+      --json) json=1 ;;
+      --follow) follow=1 ;;
+      --quiet|-q) quiet=1 ;;
+      --refresh) refresh=1 ;;
+      -h|--help) printf 'usage: opencode-go-auth billing [--json] [--follow] [--refresh]\n'; return 0 ;;
+      *) die "usage: opencode-go-auth billing [--json] [--follow] [--refresh]" ;;
+    esac
+  done
+
+  local cid name="" pct="" week="" rolling="" month_reset="" cached=0
+  cid="$(active_go_cred || true)"
+  if [ "$refresh" = 0 ] && [ -n "$cid" ] && [ -f "$BILLING_FILE" ]; then
+    if [ "$(cut -f5 "$BILLING_FILE" 2>/dev/null || true)" = "$cid" ]; then
+      cached=1
+      name="$(cut -f1 "$BILLING_FILE" 2>/dev/null || true)"
+      case "$name" in '-'|'') name="" ;; esac
+      pct="$(cut -f2 "$BILLING_FILE" 2>/dev/null || true)"
+      month_reset="$(cut -f3 "$BILLING_FILE" 2>/dev/null || true)"
+      week="$(cut -f6 "$BILLING_FILE" 2>/dev/null || true)"
+      rolling="$(cut -f7 "$BILLING_FILE" 2>/dev/null || true)"
+    fi
+  fi
+
+  if [ "$cached" = 0 ]; then
+    local key usage
+    key="$(active_go_key || true)"
+    if [ -z "$key" ]; then
+      [ "$quiet" = 0 ] && log "billing: активный Go-ключ не найден"
+      return 1
+    fi
+    usage="$(curl -sS -m 12 -H "Authorization: Bearer $key" -H 'Accept: application/json' \
+      -H "User-Agent: $UA" "$GO_USAGE" 2>/dev/null || true)"
+    if ! printf '%s' "$usage" | jq -e '.usage.monthly' >/dev/null 2>&1; then
+      [ "$quiet" = 0 ] && log "billing: Go-ключ отвергнут или метры недоступны"
+      return 1
+    fi
+
+    month_reset="$(printf '%s' "$usage" | jq -r '.usage.monthly.resetsAt // empty')"
+    pct="$(printf '%s' "$usage" | jq -r '.usage.monthly.percent // 0')"
+    week="$(printf '%s' "$usage" | jq -r '.usage.weekly.percent // 0')"
+    rolling="$(printf '%s' "$usage" | jq -r '.usage.rolling.percent // 0')"
+    local n r
+    for n in $(account_list); do
+      r="$(account_month_reset "$n" || true)"
+      if [ -n "$r" ] && [ "$r" = "$month_reset" ]; then name="$n"; break; fi
+    done
+
+    local tmp
+    tmp="$(mktemp "${BILLING_FILE}.XXXXXX")"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "${name:--}" "$pct" "$month_reset" "$(date +%s)" "$cid" "$week" "$rolling" >"$tmp"
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$BILLING_FILE"
+  fi
+
+  if [ "$json" = 1 ]; then
+    jq -nc --arg account "${name:--}" --argjson month "${pct:-0}" --argjson week "${week:-0}" \
+      --argjson rolling "${rolling:-0}" --arg reset "$month_reset" --argjson now "$(date +%s)" \
+      '{account: $account, month_percent: $month, week_percent: $week,
+        rolling_percent: $rolling, month_resets_at: $reset, checked_at: $now}'
+  elif [ "$quiet" = 0 ]; then
+    if [ -n "$name" ]; then
+      printf 'billing: %s (%s)\tmonth %s%%\tweek %s%%\t5h %s%%\treset %s\n' \
+        "$(account_display "$name")" "$name" "${pct:-?}" "${week:-?}" "${rolling:-?}" "$month_reset"
+    else
+      printf 'billing: активный Go-ключ не привязан ни к одному аккаунту\tmonth %s%%\n' "${pct:-?}"
+    fi
+  fi
+
+  if [ "$follow" = 1 ] && [ -n "$name" ]; then
+    local cur; cur="$(active_name 2>/dev/null || true)"
+    if [ "$name" != "$cur" ]; then
+      set_current "$name"
+      refresh_widget
+      log "billing: бар переведён на фактический аккаунт $(account_display "$name") ($name)"
+    fi
+  fi
+  [ -n "$name" ] || return 1
+  return 0
+}
+
+# Обновить billing и привести current к тому, что реально платит.
+# requested — аккаунт, который просили в use/apply (для предупреждения).
+billing_follow() {
+  local requested="${1:-}"
+  cmd_billing --quiet >/dev/null 2>&1 || true
+  local bill; bill="$(billing_account || true)"
+  [ -n "$bill" ] || return 0
+  local cur; cur="$(active_name 2>/dev/null || true)"
+  if [ "$bill" != "$cur" ]; then
+    set_current "$bill"
+    refresh_widget
+    log "бар: current=$(account_display "$bill") — этот аккаунт реально платит Go"
+  fi
+  if [ -n "$requested" ] && [ "$bill" != "$requested" ]; then
+    notify "OpenCode Go: «$(account_display "$requested")» не платит" \
+      "Go-ключ остался на «$(account_display "$bill")». Ключ для $requested: opencode-go-auth login-go $requested"
+  fi
 }
 
 notify() {
@@ -521,6 +740,14 @@ cmd_list() {
       "$([ "${expires:-0}" -gt 0 ] 2>/dev/null && date -d "@$expires" '+%Y-%m-%d' || echo 'нет')"
   done
   echo
+  local bill pct
+  bill="$(billing_account || true)"
+  if [ -n "$bill" ]; then
+    pct="$(cut -f2 "$BILLING_FILE" 2>/dev/null || true)"
+    echo "Go платит: $(account_display "$bill") ($bill) — month ${pct:-?}%"
+  else
+    echo "Go платит: неизвестно (opencode-go-auth billing)"
+  fi
   echo "активный: ${active:-—}"
 }
 
@@ -531,8 +758,21 @@ cmd_use() {
   valid_name "$name" || die "invalid account name '$name'"
   [ -f "$(account_file "$name")" ] || die "no credentials for account '$name' — run: opencode-go-auth login --account $name"
   commit_switch "$name"
+  local go_rc=0
+  go_switch "$name" || go_rc=$?
+  case "$go_rc" in
+    0) : ;;
+    2) log "Go-ключ для «$(account_display "$name")» не привязан (opencode-go-auth login-go $name) — Go-лимит продолжит списываться с другого аккаунта" ;;
+    3) log "не удалось переключить Go-ключ на «$(account_display "$name")» — Go-лимит останется на прежнем аккаунте" ;;
+  esac
   [ -f "$SECRETS" ] && sync_secrets nopush || true
-  echo "switched to $name"
+  billing_follow "$name"
+  local bill; bill="$(billing_account || true)"
+  if [ -n "$bill" ] && [ "$bill" != "$name" ]; then
+    echo "switched to $name (Go платит $(account_display "$bill"))"
+  else
+    echo "switched to $name"
+  fi
 }
 
 cmd_toggle() {
@@ -603,6 +843,8 @@ cmd_check() {
       notify "OpenCode Go: токен «$(account_display "$name")» истекает через $(humanize "$left")" "opencode-go-auth login --account $name"
     fi
   done
+  # Заодно держим current на аккаунте, который реально платит Go.
+  cmd_billing --follow >/dev/null 2>&1 || true
   return 0
 }
 
@@ -612,6 +854,12 @@ cmd_apply() {
   [ -n "$name" ] || die "no active account set — run: opencode-go-auth use <name>"
   [ -f "$(account_file "$name")" ] || die "no credentials for account '$name'"
   commit_switch "$name"
+  local go_rc=0
+  go_switch "$name" || go_rc=$?
+  [ "$go_rc" -eq 2 ] && log "Go-ключ для «$(account_display "$name")» не привязан (login-go $name) — Go останется на текущем аккаунте"
+  [ "$go_rc" -eq 3 ] && log "не удалось переключить Go-ключ на «$(account_display "$name")»"
+  printf '%s\n' "$name" >"${BASE}/.cli-applied" 2>/dev/null || true
+  billing_follow "$name"
   echo "applied $name"
 }
 
@@ -772,7 +1020,51 @@ cmd_login_cli() {
     4) log "привязано, но кред всё ещё needs_auth — повтори логин" ;;
     *) log "привязано, но switch не подтвердился (rc=$rc) — проверь: opencode auth list" ;;
   esac
+  printf '%s\n' "$name" >"${BASE}/.cli-applied" 2>/dev/null || true
+  billing_follow "$name"
+  if [ -n "$(billing_account || true)" ] && [ "$(billing_account || true)" != "$name" ]; then
+    log "Go-лимит платит «$(account_display "$(billing_account)")»: консольный логин на него не влияет — нужен opencode-go-auth login-go $name"
+  fi
   refresh_widget
+}
+
+cmd_login_go() {
+  local name="${1:-}"
+  [ -n "$name" ] || die "usage: opencode-go-auth login-go <name>"
+  valid_name "$name" || die "invalid account name '$name'"
+  [ -f "$(account_file "$name")" ] || die "no credentials for account '$name' — run: opencode-go-auth login --account $name"
+  command -v opencode >/dev/null 2>&1 || die "opencode CLI не найден в PATH"
+
+  local before after new
+  before="$(go_creds | sort -u || true)"
+  log ""
+  log "Логин Go-ключа — аккаунт: $(account_display "$name")"
+  log "  войди в console под нужным email и вставь Go API key (oc_sk_…)"
+  log ""
+  opencode auth login opencode-go || die "opencode auth login завершился ошибкой"
+
+  after="$(go_creds | sort -u || true)"
+  new="$(comm -13 <(printf '%s\n' "$before" | grep -v '^$' || true) \
+                 <(printf '%s\n' "$after" | grep -v '^$' || true) | tail -1)"
+  if [ -z "$new" ]; then
+    new="$(printf '%s\n' "$after" | tail -1)"
+    log "нового креда нет, беру активный/последний: ${new:-—}"
+  fi
+  [ -n "$new" ] || die "не нашёл Go-кред — привяжи вручную: opencode-go-auth link-go $name <id>"
+
+  cmd_link_go "$name" "$new"
+  cmd_billing --quiet >/dev/null 2>&1 || true
+  local bill; bill="$(billing_account || true)"
+  if [ "$bill" = "$name" ]; then
+    set_current "$name"
+    printf '%s\n' "$name" >"${BASE}/.cli-applied" 2>/dev/null || true
+    [ -f "$SECRETS" ] && sync_secrets nopush || true
+    refresh_widget
+    log "OK: Go-ключ «$(account_display "$name")» активен, current=$name"
+  else
+    log "внимание: активный Go-ключ платит «$(account_display "${bill:--}")», а не «$(account_display "$name")»"
+    log "проверь, что ключ взят из консоли $name; при необходимости: opencode-go-auth link-go $name <id>"
+  fi
 }
 
 # Чистка мёртвых кредов Console, не привязанных ни к одному аккаунту.
@@ -849,6 +1141,9 @@ case "${1:-}" in
   rotate) cmd_rotate ;;
   check) cmd_check "${2:-}" ;;
   apply) cmd_apply "${2:-}" ;;
+  billing) shift; cmd_billing "$@" ;;
+  link-go) cmd_link_go "${2:-}" "${3:-}" ;;
+  login-go) cmd_login_go "${2:-}" ;;
   list)  cmd_list ;;
   label) shift; cmd_label "$@" ;;
   auto)  cmd_auto ;;

@@ -1,0 +1,11 @@
+[Unit]
+Description=Recurring check: which OpenCode Go account is billed
+
+[Timer]
+OnBootSec=3min
+OnCalendar=*:0/15
+Persistent=true
+Unit=opencode-go-billing.service
+
+[Install]
+WantedBy=timers.target

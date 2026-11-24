@@ -72,6 +72,17 @@ umask 077
 active="$(read_secret OPENCODE_GO_CURRENT)"
 [ -n "$active" ] || active=""
 
+# Локальная истина важнее флотского указателя: Go-лимит списывается с активного
+# креда интеграции "opencode-go", и его аккаунт пишет `opencode-go-auth billing`.
+# Иначе бар показывал бы чужой аккаунт (ровно этот баг был 2026-11-24).
+if [ -f "${BASE}/billing" ]; then
+  bill="$(cut -f1 "${BASE}/billing" 2>/dev/null || true)"
+  case "$bill" in
+    '' | '-' | *[!a-z0-9]*) : ;;
+    *) active="$bill" ;;
+  esac
+fi
+
 names=""
 org="$(read_secret OPENCODE_GO_ORG_A)"; token="$(read_secret OPENCODE_GO_TOKEN_A)"
 expires="$(read_secret OPENCODE_GO_EXPIRES_A)"

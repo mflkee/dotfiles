@@ -1,0 +1,6 @@
+[Unit]
+Description=Keep the OpenCode Go bar on the account that actually bills
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/opencode-go-auth billing --follow
