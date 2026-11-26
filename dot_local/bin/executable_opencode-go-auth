@@ -1058,10 +1058,15 @@ cmd_login_go() {
 
   local before after new
   before="$(go_creds | sort -u || true)"
+  local keys_url="$SERVER/account#api-keys"
   log ""
   log "Логин Go-ключа — аккаунт: $(account_display "$name")"
-  log "  войди в console под нужным email и вставь Go API key (oc_sk_…)"
+  log "  откроется браузер: $keys_url"
+  log "  войди под нужным email, создай/скопируй Go API key (oc_sk_…)"
   log ""
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$keys_url" >/dev/null 2>&1 || true
+  fi
   opencode auth login opencode-go || die "opencode auth login завершился ошибкой"
 
   after="$(go_creds | sort -u || true)"
