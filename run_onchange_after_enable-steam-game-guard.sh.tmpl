@@ -1,0 +1,33 @@
+#!/bin/bash
+# vim: ft=bash
+# Enable steam-game-guard: while a Steam/Proton game runs it pauses hyprwhspr
+# and switches to the performance power profile, restoring both on exit.
+# Only needed on machines with a graphical session.
+#
+# Managed by chezmoi; re-runs whenever this file changes.
+
+{{- $has_niri := false -}}
+{{- if hasKey .machines .chezmoi.hostname -}}
+{{-   $has_niri = (index .machines .chezmoi.hostname).has_niri -}}
+{{- end -}}
+{{- if not $has_niri }}
+echo "Not a desktop machine, skipping steam-game-guard setup."
+exit 0
+{{- end }}
+
+command -v systemctl >/dev/null 2>&1 || exit 0
+[ -d "$HOME/.config/systemd/user" ] || exit 0
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+systemctl --user daemon-reload >/dev/null 2>&1 || true
+# WantedBy may have changed over time: recreate the wants symlinks cleanly
+systemctl --user disable steam-game-guard.service >/dev/null 2>&1 || true
+systemctl --user enable steam-game-guard.service >/dev/null 2>&1 || true
+
+# Start now if a graphical session is already running; otherwise it starts with
+# the user manager at next login (WantedBy=default.target).
+if pgrep -x niri >/dev/null 2>&1 || pgrep -x gnome-shell >/dev/null 2>&1; then
+    systemctl --user start steam-game-guard.service >/dev/null 2>&1 || true
+fi
+exit 0
