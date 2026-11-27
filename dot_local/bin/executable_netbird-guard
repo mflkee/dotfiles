@@ -24,6 +24,13 @@ systemctl is-active --quiet netbird || {
     exit 0
 }
 
+# Userspace-режим не создаёт kernel-интерфейс wt0 — гард там не применим
+# (иначе он будет перезапускать NetBird каждые 2 минуты впустую).
+if netbird status 2>/dev/null | grep -qi 'Interface type: Userspace'; then
+    log "userspace interface — skip"
+    exit 0
+fi
+
 has_ip() {
     ip -4 -o addr show dev "$IFACE" 2>/dev/null | grep -q ' inet '
 }
