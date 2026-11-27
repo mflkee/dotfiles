@@ -15,7 +15,7 @@
 
 id = "mflkee/opencode-go-usage"
 name = "OpenCode Go Usage"
-version = "1.4.0"
+version = "1.5.0"
 plugin_api = 3
 author = "mflkee"
 license = "MIT"

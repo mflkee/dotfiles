@@ -66,8 +66,8 @@ local function json_decode(s)
 end
 
 -- ── stubs ────────────────────────────────────────────────────────────────────
-local H = { pending = nil, stream = nil, done = nil, timeout = nil, asyncFails = false,
-  notified = {}, errors = {}, logs = {}, noCreds = false, accountExpiry = nil }
+local H = { pending = nil, stream = nil, streams = {}, done = nil, timeout = nil, asyncFails = false,
+  notified = {}, errors = {}, logs = {}, noCreds = false, accountExpiry = nil, noGoKey = nil }
 local widget = { text = nil, color = nil, tooltip = nil }
 
 local function make_noctalia(cfg)
@@ -87,20 +87,25 @@ local function make_noctalia(cfg)
         if e == nil then return nil end
         local lbl = H.accountLabels and H.accountLabels[acct]
         local extra = lbl and ('"label":"' .. lbl .. '",') or ""
-        return '{"org_id":"wrk_X","access_token":"t",' .. extra .. '"expires_at":' .. e .. '}'
+        local org = acct == "a" and "wrk_A" or "wrk_B"
+        return '{"org_id":"' .. org .. '","access_token":"t",' .. extra .. '"expires_at":' .. e .. '}'
       end
       return nil
     end,
     json = { decode = function(s) local ok, v = pcall(json_decode, s); if ok then return v end return nil end },
     http = function(req, cb) H.pending = cb; H.lastReq = req; return true end,
     runAsync = function(cmd, cb, timeout)
-      H.stream = cmd; H.done = cb; H.timeout = timeout
+      H.stream = cmd; H.streams[#H.streams+1] = cmd; H.done = cb; H.timeout = timeout
       if not H.asyncFails then return true end
       return false
     end,
     listDir = function() if H.oneAccount then return { "a.json" } end return { "a.json", "b.json" } end,
     fileExists = function(p)
       if H.oneAccount and tostring(p):find("b%.json$") then return false end
+      if H.noGoKey then
+        local n = tostring(p):match("accounts/([%w_%-]+)%.go$")
+        if n and H.noGoKey[n] then return false end
+      end
       return true
     end,
     setUpdateInterval = function() end,
@@ -113,7 +118,8 @@ end
 
 local function newWidget(cfg)
   H.pending, H.stream, H.done, H.timeout, H.asyncFails = nil, nil, nil, nil, false
-  H.notified, H.errors, H.logs, H.noCreds, H.accountExpiry = {}, {}, {}, false, nil
+  H.streams = {}
+  H.notified, H.errors, H.logs, H.noCreds, H.accountExpiry, H.noGoKey = {}, {}, {}, false, nil, nil
   H.accountLabels = nil
   H.oneAccount = false
   widget.text, widget.color, widget.tooltip = nil, nil, nil
@@ -125,7 +131,7 @@ local function newWidget(cfg)
   }
   local chunk = assert(loadfile(PLUGIN))
   chunk()
-  return { update = _G.update, onClick = _G.onClick, onIpc = _G.onIpc, widget = widget }
+  return { update = _G.update, onClick = _G.onClick, onRightClick = _G.onRightClick, onIpc = _G.onIpc, widget = widget }
 end
 
 local function respond(body, status, ok)
@@ -193,6 +199,9 @@ local w5b = newWidget({ auto_switch = "off" })
 respond("{}", 403, true)
 check("текст A ⚠", w5b.widget.text == "A ⚠")
 check("auto не запускался", H.stream == nil)
+w5b.onClick()
+check("клик при ⚠ запускает login", table.concat(H.streams, " "):find("login") ~= nil)
+check("клик при ⚠ не делает use", table.concat(H.streams, " "):find(" use ") == nil)
 
 print("### 5c: auto_switch=auth -> лимит 100% не переключает")
 local w5c = newWidget()
@@ -254,6 +263,28 @@ os.time = realTime
 check("метка вернулась к активному", w6e.widget.text:find("B…") == nil)
 check("нет тегов", w6e.widget.text:find("[<>]") == nil)
 
+print("### 6f: у цели нет Go-ключа -> консоль + login-go, без use")
+local w6f = newWidget()
+H.noGoKey = { b = true }
+respond(meters(0, 0, 0))
+w6f.onClick()
+local all6f = table.concat(H.streams, " ")
+check("открыта страница API-ключей", all6f:find("xdg%-open") ~= nil and all6f:find("api%-keys") ~= nil)
+check("запущен login-go b", all6f:find("login%-go") ~= nil and all6f:find("'b'") ~= nil)
+check("use не запускался", all6f:find(" use ") == nil)
+check("есть уведомление", #H.notified >= 1)
+
+print("### 6g: один аккаунт + 100% -> открывается страница Go")
+local w6g = newWidget()
+H.oneAccount = true
+H.accountExpiry = { a = os.time() + 86400 }
+respond(meters(1200000000, 0, 0)) -- 5h выбран на 100%
+w6g.onClick()
+local all6g = table.concat(H.streams, " ")
+check("открыт xdg-open", all6g:find("xdg%-open") ~= nil)
+check("страница Go организации", all6g:find("/wrk_A/go") ~= nil)
+check("use не запускался", all6g:find(" use ") == nil)
+
 print("### 7: display=all -> все метры в баре")
 local w7 = newWidget({ display = "all" })
 respond(meters(120000000, 300000000, 1800000000))
@@ -296,14 +327,16 @@ check("переключения нет", H.stream == nil)
 check("это обновление данных", H.pending ~= nil)
 check("нет ошибок", #H.errors == 0)
 
-print("### 14: все токены протухли -> понятная ошибка, без переключения")
+print("### 14: все токены протухли -> понятная ошибка и логин, без переключения")
 local w14 = newWidget()
 respond(meters(0, 0, 0))
 H.accountExpiry = { a = os.time() - 10, b = os.time() - 10 }
 w14.onClick()
-check("переключения нет", H.stream == nil)
+local all14 = table.concat(H.streams, " ")
+check("login запущен", all14:find("login") ~= nil)
+check("use не запускался", all14:find(" use ") == nil)
 check("есть ошибка", #H.errors == 1)
-check("ошибка про токены", H.errors[1] ~= nil and H.errors[1][2]:find("протухли") ~= nil)
+check("ошибка про протухший токен", H.errors[1] ~= nil and H.errors[1][2]:find("протух") ~= nil)
 
 print("### 15: метки аккаунтов (Kimi / Mfokinors) в баре и тултипе")
 local w15 = newWidget()
@@ -322,6 +355,14 @@ w16.onClick()
 check("переключения нет", H.stream == nil)
 check("запрошено обновление", H.pending ~= nil)
 check("нет ошибок", #H.errors == 0)
+
+print("### 17: правая кнопка -> консоль OpenCode")
+local w17 = newWidget()
+respond(meters(0, 0, 0))
+w17.onRightClick()
+local all17 = table.concat(H.streams, " ")
+check("xdg-open консоли", all17:find("xdg%-open") ~= nil and all17:find("opencode%.ai/console") ~= nil)
+check("есть уведомление", #H.notified >= 1)
 
 print()
 print(("%d/%d checks passed"):format(checks - fails, checks))

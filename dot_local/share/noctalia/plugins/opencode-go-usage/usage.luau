@@ -31,6 +31,11 @@ local DEFAULT_CREDENTIALS = BASE_DIR .. "/credentials.json"
 local CURRENT_FILE = BASE_DIR .. "/current"
 local ACCOUNTS_DIR = BASE_DIR .. "/accounts"
 local USER_AGENT = "opencode-go-usage/1.2 (noctalia bar widget)"
+-- Куда отправлять человека, когда виджет не может починиться сам: консоль
+-- OpenCode (сменить организацию/аккаунт), страница API-ключей и страница Go
+-- конкретной организации (Extra Usage / апгрейд).
+local CONSOLE = API:gsub("/api/go/status$", "")
+local ACCOUNT_URL = CONSOLE .. "/account#api-keys"
 
 -- Ayu's yellow: the palette has no warning role, so severity is spelled out.
 local COLOR_WARN = "#e6b450"
@@ -79,6 +84,7 @@ local pendingFetch = false
 local lastSeen = {}
 local autoBusy = false
 local lastAutoAt = 0
+local lastFixAt = 0
 
 -- render определён ниже (секция rendering), но зовётся из runSwitch(),
 -- который объявлен раньше по тексту. Без форвард-декларации ссылка внутри
@@ -87,6 +93,7 @@ local lastAutoAt = 0
 -- То же самое для fetch: runSwitch завершает переключение его вызовом.
 local render
 local fetch
+local accountNames
 
 -- ── account state ────────────────────────────────────────────────────────────
 
@@ -117,6 +124,7 @@ local function accountMeta(name)
     expires = tonumber(decoded.expires_at),
     label = type(decoded.label) == "string" and decoded.label or "",
     email = type(decoded.email) == "string" and decoded.email or "",
+    org_id = type(decoded.org_id) == "string" and decoded.org_id or "",
   }
 end
 
@@ -149,6 +157,82 @@ local function accountDisplay(name)
   return name:upper()
 end
 
+-- У аккаунта есть привязанный Go-ключ? Без accounts/<name>.go переключение
+-- бессмысленно: Go-лимит продолжит списываться с активного ключа другого
+-- аккаунта, и billing_follow вернёт current обратно.
+local function hasGoKey(name)
+  return noctalia.fileExists(ACCOUNTS_DIR .. "/" .. name .. ".go")
+end
+
+-- Аккаунт, который надо чинить/логинить: активный, если он существует,
+-- иначе первый известный (или "a" для пустой установки).
+local function loginTarget()
+  if activeAccount ~= "" and accountMeta(activeAccount) ~= nil then
+    return activeAccount
+  end
+  local names = accountNames()
+  return names[1] or "a"
+end
+
+local function goPageUrl(name)
+  local meta = accountMeta(name)
+  if meta ~= nil and meta.org_id ~= "" then
+    return CONSOLE .. "/" .. meta.org_id .. "/go"
+  end
+  return CONSOLE
+end
+
+-- ── открытие браузера/терминала ──────────────────────────────────────────────
+
+local function shQuote(value)
+  return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
+end
+
+-- Запустить команду отдельно от виджета: setsid -f отвязывает процесс, чтобы
+-- runAsync не ждал закрытия терминала/браузера.
+local function runDetached(command)
+  local quoted = shQuote(command)
+  local script = "if command -v setsid >/dev/null 2>&1; then setsid -f sh -c "
+    .. quoted .. "; else sh -c " .. quoted .. " >/dev/null 2>&1 & fi"
+  noctalia.runAsync(script, function() end, 5000)
+end
+
+local function openUrl(url)
+  runDetached("xdg-open " .. shQuote(url) .. " >/dev/null 2>&1")
+end
+
+local function openTerminal(command)
+  local q = shQuote(command)
+  local script = "for t in ghostty alacritty foot xterm; do "
+    .. "if command -v \"$t\" >/dev/null 2>&1; then "
+    .. "case \"$t\" in "
+    .. "ghostty) exec ghostty -e sh -lc " .. q .. " ;; "
+    .. "alacritty) exec alacritty -e sh -lc " .. q .. " ;; "
+    .. "foot) exec foot sh -lc " .. q .. " ;; "
+    .. "xterm) exec xterm -e sh -lc " .. q .. " ;; "
+    .. "esac; fi; done"
+  runDetached(script)
+end
+
+-- Логин консольного токена: device flow, скрипт сам откроет браузер и покажет
+-- код. Терминал нужен, чтобы код и прогресс были видны, а окно не закрылось
+-- сразу после ошибки.
+local function launchLogin(name)
+  local tool = noctalia.expandPath("~/.local/bin/opencode-go-auth")
+  local command = shQuote(tool) .. " login --account " .. shQuote(name)
+    .. "; printf '\\nГотово. Нажми Enter, чтобы закрыть…'; read -r _"
+  openTerminal(command)
+end
+
+-- Логин Go-ключа: opencode auth login требует интерактивный TTY, поэтому
+-- только терминал. Скрипт сам открывает страницу API-ключей в браузере.
+local function launchLoginGo(name)
+  local tool = noctalia.expandPath("~/.local/bin/opencode-go-auth")
+  local command = shQuote(tool) .. " login-go " .. shQuote(name)
+    .. "; printf '\\nГотово. Нажми Enter, чтобы закрыть…'; read -r _"
+  openTerminal(command)
+end
+
 local function accountLabel()
   if transitionalAccount ~= "" then
     -- Обычный текст: бар НЕ понимает разметку, и <span>…</span> печатался
@@ -163,7 +247,7 @@ local function accountLabel()
 end
 
 -- Все аккаунты из accounts/*.json (fallback a/b). Отсортированы по имени.
-local function accountNames()
+function accountNames()
   local entries = noctalia.listDir(ACCOUNTS_DIR)
   local names = {}
   if type(entries) == "table" then
@@ -535,8 +619,9 @@ render = function()
       table.insert(rows, { key = "updated", value = os.date("%H:%M", updatedAt) })
     end
     if CLICK_ACTION == "switch" then
-      table.insert(rows, { key = "клик", value = "переключить аккаунт" })
+      table.insert(rows, { key = "клик", value = "переключить / починить" })
     end
+    table.insert(rows, { key = "ПКМ", value = "консоль OpenCode" })
     barWidget.setTooltip(rows)
     return
   end
@@ -736,29 +821,78 @@ function update()
   end
 end
 
+-- Левая кнопка: если виджет в порядке — переключить аккаунт; если что-то
+-- сломано (токен, нет Go-ключа, лимит) — открыть браузер/терминал с нужным
+-- действием, а не молча возвращаться на прежний аккаунт.
 function onClick()
   if CLICK_ACTION == "refresh" then
     manual = true
     fetch()
     return
   end
-  -- Один аккаунт — переключать некуда: клик просто обновляет цифры.
-  if #accountNames() < 2 then
-    manual = true
-    fetch()
+
+  local now = os.time()
+  local canFix = now - lastFixAt >= 10
+  if canFix then
+    lastFixAt = now
+  end
+
+  -- 1. Сломан сам активный аккаунт: нужен вход (device flow откроет браузер).
+  if status == "setup" or status == "auth"
+     or (activeAccount ~= "" and tokenExpired(activeAccount)) then
+    if not canFix then return end
+    local who = loginTarget()
+    local reason
+    if status == "setup" then
+      reason = "нет учётных данных"
+    elseif status == "auth" then
+      reason = "токен отвергнут"
+    else
+      reason = "токен протух"
+    end
+    launchLogin(who)
+    noctalia.notifyError("OpenCode Go",
+      reason .. " у «" .. accountDisplay(who) .. "» — открыл браузер и терминал")
     return
   end
-  local target, reason = nextAccount()
-  if target == nil then
-    noctalia.notifyError("OpenCode Go", reason or "некуда переключаться")
+
+  local target = nextAccount()
+
+  -- 2. Есть куда переключаться, но у цели нет Go-ключа: само переключение
+  -- вернётся на текущего плательщика. Открываем API-ключи + login-go.
+  if target ~= nil and target ~= activeAccount and not hasGoKey(target) then
+    if not canFix then return end
+    openUrl(ACCOUNT_URL)
+    launchLoginGo(target)
+    noctalia.notify("OpenCode Go",
+      "у «" .. accountDisplay(target) .. "» нет Go-ключа — открыл консоль и терминал")
     return
   end
-  if target == activeAccount then
-    manual = true
-    fetch()
+
+  -- 3. Нормальное переключение.
+  if target ~= nil and target ~= activeAccount then
+    runSwitch(target)
     return
   end
-  runSwitch(target)
+
+  -- 4. Переключаться некуда и лимит выбран: в браузер на страницу Go.
+  if #readings > 0 and worst(readings).percent >= 100 then
+    if not canFix then return end
+    openUrl(goPageUrl(loginTarget()))
+    noctalia.notify("OpenCode Go", "лимит выбран — открыл страницу Go")
+    return
+  end
+
+  -- 5. Всё в порядке (или один аккаунт): просто обновляем цифры.
+  manual = true
+  fetch()
+end
+
+-- Правая кнопка — всегда консоль OpenCode: там можно сменить организацию,
+-- посмотреть биллинг и ключи, даже когда виджет уверен, что всё хорошо.
+function onRightClick()
+  openUrl(CONSOLE)
+  noctalia.notify("OpenCode Go", "открыл консоль OpenCode")
 end
 
 function onIpc(event)
