@@ -1,0 +1,13 @@
+[Unit]
+Description=Steam game guard (pause hyprwhspr, set performance profile)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/steam-game-guard
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

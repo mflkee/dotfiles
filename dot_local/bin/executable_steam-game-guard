@@ -1,0 +1,83 @@
+#!/bin/bash
+# Steam game guard: while any Steam/Proton game is running, stop resource-heavy
+# background services (hyprwhspr) and switch to the performance power profile.
+# Restores everything ~15s after the last game exits.
+#
+# Detection: Steam launches Proton games through the "reaper" process whose
+# command line contains "SteamLaunch AppId=<id>".
+set -u
+
+SVC="hyprwhspr.service"
+POLL=5
+IDLE_RESET=15
+STATE="${XDG_RUNTIME_DIR:-/tmp}/steam-game-guard.state"
+
+active=0            # 1 = we are in "game mode"
+stopped_stt=0       # 1 = we stopped hyprwhspr ourselves
+prev_profile=""     # power profile before switching
+idle=0
+
+log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
+
+save_state() { printf '%s %s\n' "$stopped_stt" "${prev_profile:-}" > "$STATE"; }
+clear_state() { rm -f "$STATE"; }
+
+game_running() { pgrep -f 'SteamLaunch AppId=' >/dev/null 2>&1; }
+
+restore() {
+    if [ "$stopped_stt" = 1 ]; then
+        systemctl --user start "$SVC" && log "restored: started $SVC"
+        systemctl --user reset-failed "$SVC" >/dev/null 2>&1 || true
+        stopped_stt=0
+    fi
+    if [ -n "$prev_profile" ] && [ "$prev_profile" != "performance" ]; then
+        powerprofilesctl set "$prev_profile" >/dev/null 2>&1 && \
+            log "restored: power profile -> $prev_profile"
+    fi
+    prev_profile=""
+    clear_state
+}
+
+# restore state after a service restart
+if [ -r "$STATE" ]; then
+    read -r stopped_stt prev_profile < "$STATE" || true
+fi
+
+log "$(basename "$0"): started (stopped_stt=${stopped_stt:-0}, prev_profile=${prev_profile:-none})"
+
+# if a previous instance stopped things but no game is running now - restore
+if ! game_running && [ "${stopped_stt:-0}" = 1 ]; then
+    log "no game running, restoring previous state"
+    restore
+fi
+
+while :; do
+    if game_running; then
+        idle=0
+        if [ "$active" = 0 ]; then
+            active=1
+            if [ -z "$prev_profile" ]; then
+                prev_profile=$(powerprofilesctl get 2>/dev/null || true)
+            fi
+            if [ -n "$prev_profile" ] && [ "$prev_profile" != "performance" ]; then
+                powerprofilesctl set performance >/dev/null 2>&1 && \
+                    log "game started: power profile $prev_profile -> performance"
+            fi
+            if [ "$stopped_stt" = 0 ] && systemctl --user is-active --quiet "$SVC"; then
+                systemctl --user stop "$SVC" && log "game started: stopped $SVC"
+                systemctl --user reset-failed "$SVC" >/dev/null 2>&1 || true
+                stopped_stt=1
+            fi
+            save_state
+        fi
+    else
+        if [ "$active" = 1 ]; then
+            idle=$((idle + POLL))
+            if [ "$idle" -ge "$IDLE_RESET" ]; then
+                active=0
+                restore
+            fi
+        fi
+    fi
+    sleep "$POLL"
+done
