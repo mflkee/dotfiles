@@ -283,8 +283,10 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
   `ip route get 100.89.126.211`; если маршрут не через `wt0` — запускает
   `awgq netbird fix`. Логи: `journalctl --user -u netbird-guard`.
 - Файлы в chezmoi: `dot_local/bin/executable_netbird-guard`,
-  `dot_config/systemd/user/netbird-guard.{service,timer}`. На каждой машине
-  таймер включается один раз: `systemctl --user enable --now netbird-guard.timer`.
+  `dot_config/systemd/user/netbird-guard.{service,timer}`; таймер включается
+  автоматически `run_onchange_after_enable-netbird-guard.sh` при `chezmoi apply`
+  (там, где есть `netbird`). Ручная проверка:
+  `systemctl --user enable --now netbird-guard.timer`.
 - Проверка: `systemctl --user list-timers netbird-guard.timer`,
   `ip -4 -o addr show dev wt0`, `awgq status` → `Mesh (NETBIRD): ON`.
 
