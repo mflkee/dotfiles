@@ -1,0 +1,9 @@
+[Unit]
+Description=Restore NetBird wt0 IPv4 after suspend/network flap
+Documentation=man:netbird(1)
+
+[Service]
+Type=oneshot
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/netbird-guard
+TimeoutStartSec=180

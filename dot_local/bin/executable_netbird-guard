@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# netbird-guard — восстанавливает IPv4 на wt0 после resume/сетевого флапа.
+#
+# Симптом (2026-11-27): `netbird status` показывает Connected и NetBird IP, но
+# у wt0 нет адреса. При включённом AmneziaWG (full) маршрут к 100.89.0.0/16
+# уходит в wg0, и хаб/машины становятся «недоступны» (SSH/ping таймаутят),
+# хотя сервер жив. `netbird up` отвечает «Already connected» и не помогает —
+# нужен полный down/up, чтобы демон пересоздал интерфейс.
+#
+# Запускается systemd-таймером netbird-guard.timer (каждые 2 минуты).
+# Работает без sudo: сокет демона /var/run/netbird.sock доступен пользователю;
+# `awgq netbird fix` (если нужен) использует passwordless sudo для `ip`.
+set -uo pipefail
+
+IFACE="${NETBIRD_GUARD_IFACE:-wt0}"
+TARGET="${NETBIRD_GUARD_TARGET:-100.89.126.211}"
+DRY_RUN="${NETBIRD_GUARD_DRY_RUN:-0}"
+
+log() { printf '[netbird-guard] %s\n' "$*"; }
+
+command -v netbird >/dev/null 2>&1 || exit 0
+systemctl is-active --quiet netbird || {
+    log "netbird.service is not active — skip"
+    exit 0
+}
+
+has_ip() {
+    ip -4 -o addr show dev "$IFACE" 2>/dev/null | grep -q ' inet '
+}
+
+# Штатный путь: адрес на месте — ничего не делаем.
+has_ip && exit 0
+
+log "$IFACE has no IPv4 — restarting netbird (down/up)"
+if [ "$DRY_RUN" = "1" ]; then
+    log "dry-run: skipping restart"
+    exit 0
+fi
+
+timeout 30 netbird down >/dev/null 2>&1 || log "netbird down failed (continuing)"
+timeout 90 netbird up >/dev/null 2>&1 || log "netbird up failed"
+
+for _ in $(seq 1 30); do
+    sleep 1
+    if has_ip; then
+        log "$IFACE recovered: $(ip -4 -o addr show dev "$IFACE" | awk '{print $4; exit}')"
+        route=$(ip route get "$TARGET" 2>/dev/null | head -1)
+        case "$route" in
+            *"dev $IFACE"*)
+                log "route to $TARGET via $IFACE"
+                ;;
+            *)
+                log "route to $TARGET is not via $IFACE; applying awgq netbird fix"
+                timeout 60 awgq netbird fix >/dev/null 2>&1 ||
+                    log "awgq netbird fix failed"
+                ;;
+        esac
+        exit 0
+    fi
+done
+
+log "$IFACE still has no IPv4 after restart"
+exit 1
