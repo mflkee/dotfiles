@@ -269,6 +269,25 @@ ssh mkair-server-tmn "journalctl -u nut-monitor -f"  # лог upsmon
 - **Критично**: один конфиг = один ключ = **одно активное устройство одновременно** (у провайдера лимит до 5 устройств, но шарение одного ключа ведёт к «качелям»/лагам по всей сети). Для каждого устройства — свой конфиг/ключ. После разбора 2026-09-24: VPN на ноутах выключен (`disabled`), дом работает на Keenetic.
 - **Пакеты**: `amneziawg-linux` (модуль ядра), `amneziawg-tools` (`awg-quick`), `amneziawg-go` (userspace, опционально). Нужен `openresolv` (иначе `resolvconf: command not found`).
 
+## netbird-guard — самовосстановление mesh-интерфейса
+
+- **Симптом (2026-11-27)**: `netbird status` показывает `Connected` и NetBird IP,
+  но `ip -4 addr show wt0` пуст. При включённом AmneziaWG (full) маршрут к
+  `100.89.0.0/16` уходит в `wg0`, и хаб/машины «недоступны» (SSH/ping таймаут),
+  хотя сервер жив. `netbird up` отвечает `Already connected` и не помогает —
+  нужен полный `netbird down && netbird up` (без sudo, сокет демона доступен
+  пользователю), затем при необходимости `awgq netbird fix`.
+- **Автоматика**: `~/.local/bin/netbird-guard` + user-таймер
+  `netbird-guard.timer` (каждые 2 минуты, `OnBootSec=1min`; linger включён).
+  Скрипт: нет IPv4 на `wt0` → `netbird down/up`, ждёт адрес до 30 с, проверяет
+  `ip route get 100.89.126.211`; если маршрут не через `wt0` — запускает
+  `awgq netbird fix`. Логи: `journalctl --user -u netbird-guard`.
+- Файлы в chezmoi: `dot_local/bin/executable_netbird-guard`,
+  `dot_config/systemd/user/netbird-guard.{service,timer}`. На каждой машине
+  таймер включается один раз: `systemctl --user enable --now netbird-guard.timer`.
+- Проверка: `systemctl --user list-timers netbird-guard.timer`,
+  `ip -4 -o addr show dev wt0`, `awgq status` → `Mesh (NETBIRD): ON`.
+
 ## polkit-агент (иначе pkexec = exit 127)
 - **Симптом**: GUI-установщик (`ArtCraft Launcher`, обновляторы, монтирование) падает с
   `the system installer stopped with error 127 (usually refused permission or no polkit authentication agent)`.
