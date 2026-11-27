@@ -365,6 +365,15 @@ window-rule {
     open-floating false
 }
 
+// Игры Steam/Proton (X11 через xwayland-satellite) — фуллскрин и НЕ плавающие.
+// Плавающее окно игры перекрывает раскладку, не сворачивается и плохо ведёт
+// себя с фокусом/вводом; в фуллскрине переключение воркспейсов работает.
+window-rule {
+    match app-id=r#"^steam_app_\d+$"#
+    open-floating false
+    open-fullscreen true
+}
+
 // Матовое стекло для терминала (ghostty: background-opacity = 0.88).
 // В niri 26.04 глобальный блок blur{} лишь задаёт параметры размытия — чтобы
 // оно реально включилось, окну нужен background-effect. При активном эффекте
