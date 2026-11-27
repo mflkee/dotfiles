@@ -1064,7 +1064,7 @@ cmd_login_go() {
   log "  откроется браузер: $keys_url"
   log "  войди под нужным email, создай/скопируй Go API key (oc_sk_…)"
   log ""
-  if command -v xdg-open >/dev/null 2>&1; then
+  if [ "${OPENCODE_GO_NO_BROWSER:-0}" != "1" ] && command -v xdg-open >/dev/null 2>&1; then
     xdg-open "$keys_url" >/dev/null 2>&1 || true
   fi
   opencode auth login opencode-go || die "opencode auth login завершился ошибкой"

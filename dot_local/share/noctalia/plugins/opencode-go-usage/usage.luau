@@ -228,7 +228,8 @@ end
 -- только терминал. Скрипт сам открывает страницу API-ключей в браузере.
 local function launchLoginGo(name)
   local tool = noctalia.expandPath("~/.local/bin/opencode-go-auth")
-  local command = shQuote(tool) .. " login-go " .. shQuote(name)
+  -- Плагин уже открыл страницу ключей; не открываем вторую вкладку.
+  local command = "OPENCODE_GO_NO_BROWSER=1 " .. shQuote(tool) .. " login-go " .. shQuote(name)
     .. "; printf '\\nГотово. Нажми Enter, чтобы закрыть…'; read -r _"
   openTerminal(command)
 end
