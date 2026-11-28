@@ -33,12 +33,19 @@ description: |
 
 ## Инструменты
 
-- MCP `sync-ops` — основной интерфейс: `overview`, `st-*` (папки/устройства/
-  соединения/мутации), `dsync-*` (status/doctor/push/pull).
+- MCP `sync-ops` — основной интерфейс: `st-health`, `st-hosts`, `overview`,
+  `st-*` (папки/устройства/соединения/мутации), `dsync-*`
+  (status/doctor/push/pull).
+- **Удалённые Syncthing-хосты**: у любого `st-*` есть параметр `host`
+  (`local` по умолчанию, `windows`, `server`, …). Конфиг —
+  `~/.config/opencode/sync-ops-hosts.json` (0600): SSH-цель, ключ, путь к
+  `config.xml` для API key, `remoteApi`. MCP сам поднимает
+  `ssh -N -L 127.0.0.1:<port>:127.0.0.1:8384 <host>` и ходит в remote REST.
+  `st-hosts` показывает, кто настроен и кто отвечает.
 - `scripts/syncthing-api.sh` — GET к локальному Syncthing REST из шелла,
   когда MCP недоступен (ключ подхватывает сам). См. `references/api-endpoints.md`.
 
-Быстрая сводка всегда начинается с `overview`.
+Быстрая сводка всегда начинается с `st-health` (или `overview`, если нужен dsync).
 
 ## Доктор: симптом → проверки → вердикт
 
@@ -47,13 +54,15 @@ description: |
 
 ### «Папка не синкается» / «расходится»
 
-1. `overview` — есть ли папка, не `paused`, кто вообще `connected`.
-2. `st-folder-status <id>` — `needBytes`, `errors`, `state`. Ненулевой
+1. `st-health <id>` — состояние папки, `needBytes`/`needFiles`/`needDeletes`,
+   `errors`, completion и онлайн по каждому устройству, готовые `warnings`.
+2. `overview` — есть ли папка, не `paused`, кто вообще `connected`.
+3. `st-folder-status <id>` — `needBytes`, `errors`, `state`. Ненулевой
    `needBytes` + активный peer = просто идёт передача, не баг.
-3. `st-completion <id>` — % по **каждому** устройству. Ключевой сигнал:
+4. `st-completion <id>` — % по **каждому** устройству. Ключевой сигнал:
    у кого-то 100%, у кого-то 0% → проблема на стороне отстающего узла,
    а не в папке.
-4. `st-connections` — по какому адресу соединение: LAN, NetBird или
+5. `st-connections` — по какому адресу соединение: LAN, NetBird или
    `relay://` (relay = медленно; объясняет «висит на 99%»).
 
 Вердикт формулировать цифрами: «нужно 1.2 GB, идёт через relay, поэтому
@@ -127,9 +136,13 @@ description: |
 - **PUT/DELETE в Syncthing REST отвечают 200 с ПУСТЫМ телом** — не парсить
   ответ как JSON.
 - Конфиг применяется **асинхронно** — после add/update подождать 1–2 сек.
-- GUI только `127.0.0.1:8384` на всех машинах → удалённый REST возможен лишь
-  через ssh с самой машины или туннель; напрямую по NetBird/LAN нет.
-  Ключ: `~/.local/state/syncthing/config.xml`, тег `<apikey>`.
+- GUI только `127.0.0.1:8384` на всех машинах, наружу не торчит. Удалённый
+  REST — только через SSH-туннель (это умеет MCP `sync-ops` по `host`) или
+  с самой машины. `apiUrl` в конфиге хоста — на случай, если GUI специально
+  открыт по LAN. Ключ: `~/.local/state/syncthing/config.xml`, тег `<apikey>`.
+- **Windows-хост по SSH** доступен только в локальной сети/хотспоте (порт 22
+  наружу закрыт); снаружи Syncthing работает через relay/NAT, а SSH — нет.
+  `st-hosts` покажет `ok=false`, пока не окажешься с ним в одной сети.
 - **Не синкать `.git`** (и вообще вложенные репозитории) — Syncthing рвёт
   объекты и генерирует тысячи конфликтов. Лечится `~/<folder>/.stignore`
   на **каждой** машине. В `.stignore` комментарий — только `//`, `#` НЕ
